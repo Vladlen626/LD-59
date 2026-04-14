@@ -1,0 +1,23 @@
+{
+  "name": "_Project.Network",
+  "rootNamespace": "Project.Network",
+  "references": [
+    "_Project.Gameplay",
+    "_Project.Infrastructure",
+    "PlatformCore.Core",
+    "PlatformCore.Infrastructure",
+    "PlatformCore.Infrastructure.FishNet",
+    "FishNet.Runtime",
+    "UniTask"
+  ],
+  "defineConstraints": [
+    "LEN_PROJECT_HAS_FISHNET"
+  ],
+  "versionDefines": [
+    {
+      "name": "com.firstgeargames.fishnet",
+      "expression": "0.0.0",
+      "define": "LEN_PROJECT_HAS_FISHNET"
+    }
+  ]
+}

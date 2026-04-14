@@ -1,0 +1,14 @@
+{
+  "name": "_Project.Editor",
+  "rootNamespace": "Project.Editor",
+  "references": [
+    "_Project.Core",
+    "_Project.Infrastructure",
+    "_Project.Gameplay",
+    "PlatformCore.Core",
+    "PlatformCore.Infrastructure"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

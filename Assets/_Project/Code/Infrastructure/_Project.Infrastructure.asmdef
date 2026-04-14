@@ -1,0 +1,9 @@
+{
+  "name": "_Project.Infrastructure",
+  "rootNamespace": "Project.Infrastructure",
+  "references": [
+    "_Project.Core",
+    "PlatformCore.Core",
+    "PlatformCore.Infrastructure"
+  ]
+}

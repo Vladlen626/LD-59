@@ -1,0 +1,79 @@
+# === Unity standard ===
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+MemoryCaptures/
+Recordings/
+
+# === IDE & OS ===
+.vs/
+.idea/
+.vscode/
+.DS_Store
+*.swp
+Thumbs.db
+
+# === Unity Project files ===
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# === Builds & Packages ===
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# === FMOD Integration (FIXED) ===
+# Игнорируем кэш и логи
+.cache/
+fmod.log
+fmod_editor.log
+/[Aa]ssets/Plugins/FMOD/Cache/*
+
+# НЕ ИГНОРИРУЕМ важные ресурсы плагина
+!/[Aa]ssets/Plugins/FMOD/**/lib/*
+!/[Aa]ssets/Gizmos/FMOD/*
+!/[Aa]ssets/Editor Default Resources/FMOD/*
+
+# === FMOD Studio Project (если он в репозитории) ===
+.fmod/
+*.fspro.user
+*.fspro.unsaved
+*.fspro.restore
+/FMODStudioProject/Build/
+/FMODStudioProject/.cache/
+/FMODStudioProject/.user/
+
+# Never ignore DLLs in the FMOD subfolder.
+!/[Aa]ssets/Plugins/FMOD/**/lib/*
+
+# Don't ignore images and gizmos used by FMOD in the Unity Editor.
+!/[Aa]ssets/Gizmos/FMOD/*
+!/[Aa]ssets/Editor Default Resources/FMOD/*
+
+# Ignore the Cache folder since it is updated locally.
+/[Aa]ssets/Plugins/FMOD/Cache/*
+
+# Ignore bank files in the StreamingAssets folder.
+/[Aa]ssets/StreamingAssets/**/*.bank
+/[Aa]ssets/StreamingAssets/**/*.bank.meta
+
+# If the source bank files are kept outside of the StreamingAssets folder then these can be ignored.
+# Log files can be ignored.
+fmod_editor.log
