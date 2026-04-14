@@ -1,9 +1,9 @@
 {
   "dependencies": {
     "com.cysharp.unitask": {
-      "version": "file:../../UniTask-2.5.10/src/UniTask/Assets/Plugins/UniTask",
+      "version": "file:com.cysharp.unitask",
       "depth": 0,
-      "source": "local",
+      "source": "embedded",
       "dependencies": {}
     },
     "com.kyrylokuzyk.primetween": {
