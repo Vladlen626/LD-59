@@ -7,7 +7,7 @@ using PlatformCore.Services.Factory;
 using PlatformCore.Services.Input;
 using PlatformCore.Services.UI;
 using Project.Gameplay.Player;
-using Project.Gameplay.Station.Authoring;
+using Project.Gameplay.Scene;
 using Project.Gameplay.Station.Controllers;
 using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Train;
@@ -97,15 +97,15 @@ namespace Project.Bootstrap
 
 			await _lifecycle.RegisterAsync(new SamplePlayerMovementController(playerView, inputService, cursorService));
 
-			var stationProvider = Object.FindObjectOfType<StationDaySerializedProvider>();
-			if (!stationProvider)
+			var sceneContext = Object.FindObjectOfType<SceneContext>();
+			if (!sceneContext)
 			{
 				loggerService?.LogWarning(
-					"[GameRoot] StationDaySerializedProvider is missing in loaded scenes. Station gameplay flow is disabled.");
+					"[GameRoot] SceneContext is missing in loaded scenes. Station gameplay flow is disabled.");
 			}
 			else
 			{
-				var stationSetup = stationProvider.BuildRuntimeSetup();
+				var stationSetup = sceneContext.BuildRuntimeSetup();
 				if (stationSetup.Scenarios.Count == 0)
 				{
 					loggerService?.LogWarning(

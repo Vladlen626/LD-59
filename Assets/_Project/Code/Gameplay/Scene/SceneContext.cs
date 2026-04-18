@@ -1,17 +1,21 @@
 using System.Collections.Generic;
+using PlatformCore.Services;
 using Project.Gameplay.Station.Configs;
 using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Station.Runtime;
 using UnityEngine;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
-namespace Project.Gameplay.Station.Authoring
+namespace Project.Gameplay.Scene
 {
-	public sealed class StationDaySerializedProvider : MonoBehaviour
+	public sealed class SceneContext : MonoBehaviour, ISceneContext
 	{
 		[SerializeField] [Min(0)] private int _initialDebt = 1_000;
 		[SerializeField] private Transform _trainSpawnPoint;
 		[SerializeField] private Transform _trainSpawnParent;
 		[SerializeField] private StationDayConfig _dayConfig = new StationDayConfig();
+
+		public UnityScene Scene { get; private set; }
 
 		public DayRuleSet BuildRuleSet()
 		{
@@ -35,7 +39,7 @@ namespace Project.Gameplay.Station.Authoring
 				inspectionJournal);
 		}
 
-		public StationDayRuntimeSetup BuildRuntimeSetup()
+		public SceneRuntimeSetup BuildRuntimeSetup()
 		{
 			var dayConfig = GetOrCreateDayConfig();
 			var ruleSet = dayConfig.BuildRuleSet();
@@ -45,11 +49,16 @@ namespace Project.Gameplay.Station.Authoring
 				new DebtModel(_initialDebt),
 				new InspectionJournalModel());
 
-			return new StationDayRuntimeSetup(
+			return new SceneRuntimeSetup(
 				runtimeModel,
 				scenarios,
 				_trainSpawnPoint,
 				_trainSpawnParent);
+		}
+
+		private void Awake()
+		{
+			Scene = gameObject.scene;
 		}
 
 		private void OnValidate()
@@ -73,9 +82,9 @@ namespace Project.Gameplay.Station.Authoring
 		}
 	}
 
-	public readonly struct StationDayRuntimeSetup
+	public readonly struct SceneRuntimeSetup
 	{
-		public StationDayRuntimeSetup(
+		public SceneRuntimeSetup(
 			StationRuntimeModel runtimeModel,
 			List<TrainScenario> scenarios,
 			Transform trainSpawnPoint,
