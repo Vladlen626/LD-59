@@ -1,0 +1,47 @@
+[
+  {
+    "id": "grain_sacks",
+    "display_name": "Grain Sacks",
+    "prefab_resource_path": "Cargo/GrainSacks"
+  },
+  {
+    "id": "timber",
+    "display_name": "Timber",
+    "prefab_resource_path": "Cargo/Timber"
+  },
+  {
+    "id": "cheese_wheels",
+    "display_name": "Cheese Wheels",
+    "prefab_resource_path": "Cargo/CheeseWheels"
+  },
+  {
+    "id": "canned_food",
+    "display_name": "Canned Food",
+    "prefab_resource_path": "Cargo/CannedFood"
+  },
+  {
+    "id": "medical_supplies",
+    "display_name": "Medical Supplies",
+    "prefab_resource_path": "Cargo/MedicalSupplies"
+  },
+  {
+    "id": "weapon_crates",
+    "display_name": "Weapon Crates",
+    "prefab_resource_path": "Cargo/WeaponCrates"
+  },
+  {
+    "id": "dynamite_crates",
+    "display_name": "Dynamite Crates",
+    "prefab_resource_path": "Cargo/DynamiteCrates"
+  },
+  {
+    "id": "moonshine_barrels",
+    "display_name": "Moonshine Barrels",
+    "prefab_resource_path": "Cargo/MoonshineBarrels"
+  },
+  {
+    "id": "prisoner_transport",
+    "display_name": "Prisoner Transport",
+    "prefab_resource_path": "Cargo/PrisonerTransport"
+  }
+]

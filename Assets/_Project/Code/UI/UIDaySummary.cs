@@ -48,7 +48,7 @@ public sealed class UIDaySummary : UIBaseElement
 			_title.SetText(_titleFormat, dayIndex);
 		}
 
-		ApplyColors(correctCount, mistakesCount, totalFines, totalPayout, remainingDebt);
+		ApplyColors(correctCount, mistakesCount, totalFines, totalPayout);
 
 		UINumberTweenUtils.Animate(_checked, _checkedFormat, checkedCount, _numberWriteDuration);
 		UINumberTweenUtils.Animate(_correct, _correctFormat, correctCount, _numberWriteDuration);
@@ -72,8 +72,7 @@ public sealed class UIDaySummary : UIBaseElement
 		int correctCount,
 		int mistakesCount,
 		int totalFines,
-		int totalPayout,
-		int remainingDebt)
+		int totalPayout)
 	{
 		SetColor(_checked, _defaultColor);
 		SetColor(_correct, correctCount > 0 ? _positiveColor : _defaultColor);

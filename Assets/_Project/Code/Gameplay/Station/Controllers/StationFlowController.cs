@@ -15,6 +15,8 @@ namespace Project.Gameplay.Station.Controllers
 		private readonly StationRuntimeModel _runtimeModel;
 		private readonly InspectionJudge _inspectionJudge;
 		private readonly TrainSpawnController _trainSpawnController;
+		private readonly TrainMovementController _trainMovementController;
+		private readonly TrainCargoPresentationController _trainCargoPresentationController;
 		private readonly IReadOnlyList<TrainScenario> _dayScenarios;
 		private readonly ILoggerService _loggerService;
 		private bool _isActive;
@@ -37,12 +39,16 @@ namespace Project.Gameplay.Station.Controllers
 			StationSharedRuntimeContext runtimeContext,
 			InspectionJudge inspectionJudge,
 			TrainSpawnController trainSpawnController,
+			TrainCargoPresentationController trainCargoPresentationController,
+			TrainMovementController trainMovementController,
 			IReadOnlyList<TrainScenario> dayScenarios,
 			ILoggerService loggerService)
 		{
 			_runtimeModel = runtimeContext.RuntimeModel;
 			_inspectionJudge = inspectionJudge;
 			_trainSpawnController = trainSpawnController;
+			_trainCargoPresentationController = trainCargoPresentationController;
+			_trainMovementController = trainMovementController;
 			_dayScenarios = dayScenarios ?? Array.Empty<TrainScenario>();
 			_loggerService = loggerService;
 		}
@@ -70,6 +76,7 @@ namespace Project.Gameplay.Station.Controllers
 			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetActiveCaseIndex(-1);
+			_runtimeModel.SetTrainTransitState(TrainTransitState.None);
 			_runtimeModel.SetFlowState(StationFlowState.Inactive);
 		}
 
@@ -148,6 +155,36 @@ namespace Project.Gameplay.Station.Controllers
 						continue;
 					}
 
+					var presented = await _trainCargoPresentationController.PresentScenarioAsync(trainView, nextScenario);
+					if (_isActive == false)
+					{
+						return;
+					}
+					if (!presented)
+					{
+						_loggerService?.LogWarning(
+							$"[StationFlow] Failed to present cargo for case index {nextIndex}. Skipping case.");
+						_trainSpawnController.ClearCurrentTrain();
+						_runtimeModel.ClearActiveScenario();
+						nextIndex = FindNextCaseIndex(nextIndex + 1);
+						continue;
+					}
+
+					var arrived = await _trainMovementController.PlayArrivalAsync();
+					if (_isActive == false)
+					{
+						return;
+					}
+					if (!arrived)
+					{
+						_loggerService?.LogWarning(
+							$"[StationFlow] Train arrival was interrupted for case index {nextIndex}. Skipping case.");
+						_trainSpawnController.ClearCurrentTrain();
+						_runtimeModel.ClearActiveScenario();
+						nextIndex = FindNextCaseIndex(nextIndex + 1);
+						continue;
+					}
+
 					LogCaseDetails(nextScenario, nextIndex);
 					BeginInspection();
 					return;
@@ -184,6 +221,13 @@ namespace Project.Gameplay.Station.Controllers
 				return false;
 			}
 
+			if (_runtimeModel.HasInspectedCurrentWagon == false)
+			{
+				_loggerService?.LogWarning(
+					$"[StationFlow] Dispatch blocked for case {_runtimeModel.ActiveCaseIndex + 1}. Inspect the wagon first.");
+				return false;
+			}
+
 			_runtimeModel.SetFlowState(StationFlowState.ResolveCase);
 
 			var scenario = _runtimeModel.ActiveScenario;
@@ -199,11 +243,20 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.StationDay.RegisterCompletedCase();
 			LogResolveResult(result, scenario);
 
-			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
+			CompleteResolvedCaseAsync().Forget();
+			return true;
+		}
+
+		private async UniTaskVoid CompleteResolvedCaseAsync()
+		{
+			await _trainMovementController.PlayDepartureAsync();
+			if (_isActive == false)
+			{
+				return;
+			}
 
 			EnterAwaitingTrainCall();
-			return true;
 		}
 
 		private void EnterAwaitingDecision()

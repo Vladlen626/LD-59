@@ -5,6 +5,10 @@ namespace Project.Gameplay.Station.Runtime
 {
 	public sealed class StationRuntimeModel
 	{
+		public event Action<TrainScenario> ActiveScenarioChanged;
+		public event Action<StationFlowState> FlowStateChanged;
+		public event Action<bool> CurrentWagonInspectionChanged;
+
 		public StationRuntimeModel(
 			StationDayModel stationDay,
 			DebtModel debt,
@@ -20,27 +24,69 @@ namespace Project.Gameplay.Station.Runtime
 		public InspectionJournalModel InspectionJournal { get; }
 		public TrainScenario ActiveScenario { get; private set; }
 		public StationFlowState FlowState { get; private set; } = StationFlowState.Inactive;
+		public TrainTransitState TrainTransitState { get; private set; } = TrainTransitState.None;
 		public int ActiveCaseIndex { get; private set; } = -1;
+		public bool HasInspectedCurrentWagon { get; private set; }
 		public bool HasActiveScenario => ActiveScenario != null;
+		public bool IsTrainInTransit =>
+			TrainTransitState == TrainTransitState.Arriving ||
+			TrainTransitState == TrainTransitState.Departing;
 
 		public void SetActiveScenario(TrainScenario scenario)
 		{
+			ResetCurrentWagonInspection();
 			ActiveScenario = scenario;
+			ActiveScenarioChanged?.Invoke(ActiveScenario);
 		}
 
 		public void ClearActiveScenario()
 		{
+			ResetCurrentWagonInspection();
 			ActiveScenario = null;
+			ActiveScenarioChanged?.Invoke(null);
 		}
 
 		public void SetFlowState(StationFlowState flowState)
 		{
+			if (FlowState == flowState)
+			{
+				return;
+			}
+
 			FlowState = flowState;
+			FlowStateChanged?.Invoke(FlowState);
+		}
+
+		public void SetTrainTransitState(TrainTransitState trainTransitState)
+		{
+			TrainTransitState = trainTransitState;
 		}
 
 		public void SetActiveCaseIndex(int caseIndex)
 		{
 			ActiveCaseIndex = Math.Max(-1, caseIndex);
+		}
+
+		public void MarkCurrentWagonInspected()
+		{
+			if (HasInspectedCurrentWagon)
+			{
+				return;
+			}
+
+			HasInspectedCurrentWagon = true;
+			CurrentWagonInspectionChanged?.Invoke(true);
+		}
+
+		public void ResetCurrentWagonInspection()
+		{
+			if (HasInspectedCurrentWagon == false)
+			{
+				return;
+			}
+
+			HasInspectedCurrentWagon = false;
+			CurrentWagonInspectionChanged?.Invoke(false);
 		}
 	}
 }

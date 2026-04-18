@@ -7,6 +7,7 @@ using Project.Gameplay.Interaction;
 using Project.Gameplay.Player;
 using Project.Gameplay.Scene;
 using Project.Gameplay.Station.Domain;
+using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Station.Views;
 using Project.Gameplay.Train;
 using UnityEngine;
@@ -22,6 +23,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		private readonly SamplePlayerView _playerView;
 		private readonly SceneContext _sceneContext;
+		private readonly StationRuntimeModel _runtimeModel;
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly StationFlowController _stationFlowController;
 		private readonly IInputService _inputService;
@@ -40,6 +42,7 @@ namespace Project.Gameplay.Station.Controllers
 		public StationInteractionController(
 			SamplePlayerView playerView,
 			SceneContext sceneContext,
+			StationSharedRuntimeContext runtimeContext,
 			TrainSpawnController trainSpawnController,
 			StationFlowController stationFlowController,
 			IInputService inputService,
@@ -48,6 +51,7 @@ namespace Project.Gameplay.Station.Controllers
 		{
 			_playerView = playerView;
 			_sceneContext = sceneContext;
+			_runtimeModel = runtimeContext.RuntimeModel;
 			_trainSpawnController = trainSpawnController;
 			_stationFlowController = stationFlowController;
 			_inputService = inputService;
@@ -88,6 +92,12 @@ namespace Project.Gameplay.Station.Controllers
 		{
 			if (_isActive == false)
 			{
+				return;
+			}
+
+			if (_runtimeModel.IsTrainInTransit)
+			{
+				_hoveredInteractable = null;
 				return;
 			}
 
@@ -277,11 +287,6 @@ namespace Project.Gameplay.Station.Controllers
 			var doorInteractable = currentTrain.DoorInteractable;
 			if (!doorInteractable)
 			{
-				doorInteractable = currentTrain.GetComponentInChildren<WagonDoorInteractableView>(true);
-			}
-
-			if (!doorInteractable)
-			{
 				_loggerService?.LogWarning("[StationInteraction] WagonDoorInteractableView is missing on TrainView.");
 				return;
 			}
@@ -307,17 +312,27 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void OnDoorInteracted()
 		{
-			if (CanInteractWithCase() == false || !_currentDoorInteractable)
+			if (_runtimeModel.IsTrainInTransit || CanInteractWithCase() == false || !_currentDoorInteractable)
 			{
 				return;
 			}
 
 			_isDoorOpened = !_isDoorOpened;
 			_currentDoorInteractable.SetOpenState(_isDoorOpened);
+
+			if (_isDoorOpened)
+			{
+				_runtimeModel.MarkCurrentWagonInspected();
+			}
 		}
 
 		private void OnActionButtonInteracted()
 		{
+			if (_runtimeModel.IsTrainInTransit)
+			{
+				return;
+			}
+
 			if (_stationFlowController.IsAwaitingDecision)
 			{
 				if (_stationFlowController.ResolveCase(_selectedDecision, out _))
@@ -333,6 +348,11 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void OnDecisionToggleInteracted(PlayerDecision decision)
 		{
+			if (_runtimeModel.IsTrainInTransit)
+			{
+				return;
+			}
+
 			_selectedDecision = decision;
 		}
 

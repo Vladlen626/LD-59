@@ -6,6 +6,7 @@
     "_Project.Infrastructure",
     "PlatformCore.Core",
     "PlatformCore.Infrastructure",
-    "UniTask"
+    "UniTask",
+    "Unity.TextMeshPro"
   ]
 }

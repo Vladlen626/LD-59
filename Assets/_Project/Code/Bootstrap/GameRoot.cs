@@ -146,11 +146,29 @@ namespace Project.Bootstrap
 						ProjectGameplayResourcePaths.Trains_CargoWagon,
 						stationSetup.TrainSpawnPoint,
 						stationSetup.TrainSpawnParent);
+					var cargoCatalogLoader = new CargoCatalogLoader(configService);
+					var trainCargoPresentationController = new TrainCargoPresentationController(
+						objectFactory,
+						trainSpawnController,
+						cargoCatalogLoader,
+						loggerService);
+					var trainMovementController = new TrainMovementController(
+						trainSpawnController,
+						stationRuntimeContext,
+						stationSetup,
+						loggerService);
 					var stationFlowController = new StationFlowController(
 						stationRuntimeContext,
 						new InspectionJudge(),
 						trainSpawnController,
+						trainCargoPresentationController,
+						trainMovementController,
 						dayScenarios,
+						loggerService);
+					var stationInspectionInfoController = new StationInspectionInfoController(
+						sceneContext,
+						stationRuntimeContext,
+						cargoCatalogLoader,
 						loggerService);
 					var daySummaryController = new DaySummaryController(
 						uiService,
@@ -161,6 +179,7 @@ namespace Project.Bootstrap
 					var stationInteractionController = new StationInteractionController(
 						playerView,
 						sceneContext,
+						stationRuntimeContext,
 						trainSpawnController,
 						stationFlowController,
 						inputService,
@@ -171,7 +190,10 @@ namespace Project.Bootstrap
 					{
 						playerMovementController,
 						trainSpawnController,
+						trainCargoPresentationController,
+						trainMovementController,
 						daySummaryController,
+						stationInspectionInfoController,
 						stationFlowController,
 						stationInteractionController,
 					};

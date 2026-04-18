@@ -72,26 +72,38 @@ namespace Project.Gameplay.Station.Domain
 				return RejectedCleanTrainReason;
 			}
 
-			var reasons = new List<InspectionErrorReason>(4);
+			var reasonCount = 0;
+			reasonCount += isForbiddenCargo ? 1 : 0;
+			reasonCount += isManifestMismatch ? 1 : 0;
+			reasonCount += hasHiddenContraband ? 1 : 0;
+			reasonCount += hasIllegalMarker ? 1 : 0;
+
+			if (reasonCount == 0)
+			{
+				return Array.Empty<InspectionErrorReason>();
+			}
+
+			var reasons = new InspectionErrorReason[reasonCount];
+			var index = 0;
 
 			if (isForbiddenCargo)
 			{
-				reasons.Add(InspectionErrorReason.AllowedForbiddenCargo);
+				reasons[index++] = InspectionErrorReason.AllowedForbiddenCargo;
 			}
 
 			if (isManifestMismatch)
 			{
-				reasons.Add(InspectionErrorReason.AllowedManifestMismatch);
+				reasons[index++] = InspectionErrorReason.AllowedManifestMismatch;
 			}
 
 			if (hasHiddenContraband)
 			{
-				reasons.Add(InspectionErrorReason.AllowedHiddenContraband);
+				reasons[index++] = InspectionErrorReason.AllowedHiddenContraband;
 			}
 
 			if (hasIllegalMarker)
 			{
-				reasons.Add(InspectionErrorReason.AllowedIllegalMarker);
+				reasons[index] = InspectionErrorReason.AllowedIllegalMarker;
 			}
 
 			return reasons;
