@@ -6,29 +6,41 @@ namespace Project.Gameplay.Station.Views
 	public sealed class StationInspectionInfoView : MonoBehaviour
 	{
 		[Header("References")]
+		[SerializeField] private TMP_Text _forbiddenCargoTitle;
 		[SerializeField] private TMP_Text _forbiddenCargoValue;
+		[SerializeField] private TMP_Text _manifestTitle;
 		[SerializeField] private TMP_Text _manifestCargoValue;
 		[SerializeField] private TMP_Text _manifestDescriptionValue;
 		[SerializeField] private TMP_Text _dispatchStatusValue;
 
+		[Header("Runtime Layout")]
+		[SerializeField] private bool _autoCreateDefaultTexts = true;
+		[SerializeField] private Vector3 _titleLocalScale = new Vector3(0.08f, 0.08f, 0.08f);
+		[SerializeField] private Vector3 _valueLocalScale = new Vector3(0.075f, 0.075f, 0.075f);
+
 		[Header("Fallback Text")]
-		[SerializeField] private string _emptyForbiddenCargoText = "None";
-		[SerializeField] private string _emptyManifestCargoText = "No active manifest";
+		[SerializeField] private string _emptyForbiddenCargoText = "No bans today";
+		[SerializeField] private string _emptyManifestCargoText = "No papers";
 		[SerializeField] private string _emptyManifestDescriptionText = "-";
 		[SerializeField] private string _emptyDispatchStatusText = "Waiting for train";
 
-		[Header("Dispatch Colors")]
-		[SerializeField] private Color _dispatchReadyColor = new Color(0.22f, 0.62f, 0.24f);
-		[SerializeField] private Color _dispatchLockedColor = new Color(0.74f, 0.18f, 0.14f);
-		[SerializeField] private Color _dispatchNeutralColor = new Color(0.85f, 0.82f, 0.72f);
+		private static readonly Color HeadingColor = new(0.93f, 0.84f, 0.55f);
+		private static readonly Color ValueColor = new(0.9f, 0.88f, 0.8f);
 
 		private void Awake()
 		{
+			EnsureDefaultTexts();
+			HideDispatchStatus();
 			Clear();
 		}
 
 		public void SetForbiddenCargo(string text)
 		{
+			if (_forbiddenCargoTitle)
+			{
+				_forbiddenCargoTitle.text = "Today's Bans";
+			}
+
 			if (_forbiddenCargoValue)
 			{
 				_forbiddenCargoValue.text = string.IsNullOrWhiteSpace(text)
@@ -39,6 +51,11 @@ namespace Project.Gameplay.Station.Views
 
 		public void SetManifest(string cargoName, string description)
 		{
+			if (_manifestTitle)
+			{
+				_manifestTitle.text = "Current Papers";
+			}
+
 			if (_manifestCargoValue)
 			{
 				_manifestCargoValue.text = string.IsNullOrWhiteSpace(cargoName)
@@ -61,15 +78,7 @@ namespace Project.Gameplay.Station.Views
 
 		public void SetDispatchState(string status, DispatchState dispatchState)
 		{
-			if (!_dispatchStatusValue)
-			{
-				return;
-			}
-
-			_dispatchStatusValue.text = string.IsNullOrWhiteSpace(status)
-				? _emptyDispatchStatusText
-				: status;
-			_dispatchStatusValue.color = ResolveDispatchColor(dispatchState);
+			HideDispatchStatus();
 		}
 
 		public void Clear()
@@ -79,16 +88,68 @@ namespace Project.Gameplay.Station.Views
 			SetDispatchState(string.Empty, DispatchState.Neutral);
 		}
 
-		private Color ResolveDispatchColor(DispatchState dispatchState)
+		private void EnsureDefaultTexts()
 		{
-			switch (dispatchState)
+			if (_autoCreateDefaultTexts == false)
 			{
-				case DispatchState.Ready:
-					return _dispatchReadyColor;
-				case DispatchState.Locked:
-					return _dispatchLockedColor;
-				default:
-					return _dispatchNeutralColor;
+				return;
+			}
+
+			_forbiddenCargoTitle ??= CreateText(
+				"Today's Bans Title",
+				new Vector3(-0.62f, 0.82f, 0f),
+				_titleLocalScale,
+				1.8f,
+				HeadingColor);
+			_forbiddenCargoValue ??= CreateText(
+				"Today's Bans Value",
+				new Vector3(-0.62f, 0.48f, 0f),
+				_valueLocalScale,
+				1.45f,
+				ValueColor);
+			_manifestTitle ??= CreateText(
+				"Current Papers Title",
+				new Vector3(-0.62f, -0.1f, 0f),
+				_titleLocalScale,
+				1.8f,
+				HeadingColor);
+			_manifestCargoValue ??= CreateText(
+				"Current Papers Cargo",
+				new Vector3(-0.62f, -0.44f, 0f),
+				_valueLocalScale,
+				1.55f,
+				ValueColor);
+			_manifestDescriptionValue ??= CreateText(
+				"Current Papers Description",
+				new Vector3(-0.62f, -0.75f, 0f),
+				_valueLocalScale,
+				1.25f,
+				new Color(0.82f, 0.79f, 0.72f));
+		}
+
+		private TMP_Text CreateText(
+			string name,
+			Vector3 localPosition,
+			Vector3 localScale,
+			float fontSize,
+			Color color)
+		{
+			var text = StationWorldTextFactory.CreateBillboardLabel(
+				transform,
+				name,
+				localPosition,
+				localScale,
+				fontSize,
+				TextAlignmentOptions.TopLeft);
+			text.color = color;
+			return text;
+		}
+
+		private void HideDispatchStatus()
+		{
+			if (_dispatchStatusValue)
+			{
+				_dispatchStatusValue.gameObject.SetActive(false);
 			}
 		}
 

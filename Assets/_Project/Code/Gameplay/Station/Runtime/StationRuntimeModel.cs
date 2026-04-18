@@ -7,6 +7,7 @@ namespace Project.Gameplay.Station.Runtime
 	{
 		public event Action<TrainScenario> ActiveScenarioChanged;
 		public event Action<StationFlowState> FlowStateChanged;
+		public event Action<TrainTransitState> TrainTransitStateChanged;
 		public event Action<bool> CurrentWagonInspectionChanged;
 
 		public StationRuntimeModel(
@@ -59,7 +60,13 @@ namespace Project.Gameplay.Station.Runtime
 
 		public void SetTrainTransitState(TrainTransitState trainTransitState)
 		{
+			if (TrainTransitState == trainTransitState)
+			{
+				return;
+			}
+
 			TrainTransitState = trainTransitState;
+			TrainTransitStateChanged?.Invoke(TrainTransitState);
 		}
 
 		public void SetActiveCaseIndex(int caseIndex)

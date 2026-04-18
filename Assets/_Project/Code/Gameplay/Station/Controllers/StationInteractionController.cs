@@ -69,8 +69,18 @@ namespace Project.Gameplay.Station.Controllers
 			_isActive = true;
 			_rayOrigin = ResolveRayOrigin();
 			SubscribeSceneInteractables();
+
+			if (_runtimeModel != null)
+			{
+				_runtimeModel.ActiveScenarioChanged += OnRuntimeScenarioChanged;
+				_runtimeModel.FlowStateChanged += OnFlowStateChanged;
+				_runtimeModel.TrainTransitStateChanged += OnTrainTransitStateChanged;
+				_runtimeModel.CurrentWagonInspectionChanged += OnInspectionStateChanged;
+			}
+
 			_trainSpawnController.CurrentTrainChanged += OnCurrentTrainChanged;
 			OnCurrentTrainChanged(_trainSpawnController.CurrentTrain);
+			RefreshInteractableHints();
 		}
 
 		public void Deactivate()
@@ -78,6 +88,14 @@ namespace Project.Gameplay.Station.Controllers
 			if (_isActive == false)
 			{
 				return;
+			}
+
+			if (_runtimeModel != null)
+			{
+				_runtimeModel.ActiveScenarioChanged -= OnRuntimeScenarioChanged;
+				_runtimeModel.FlowStateChanged -= OnFlowStateChanged;
+				_runtimeModel.TrainTransitStateChanged -= OnTrainTransitStateChanged;
+				_runtimeModel.CurrentWagonInspectionChanged -= OnInspectionStateChanged;
 			}
 
 			_trainSpawnController.CurrentTrainChanged -= OnCurrentTrainChanged;
@@ -294,7 +312,9 @@ namespace Project.Gameplay.Station.Controllers
 			_currentDoorInteractable = doorInteractable;
 			_currentDoorInteractable.Interacted += OnDoorInteracted;
 			_currentDoorInteractable.SetOpenState(false);
+			_currentDoorInteractable.SetHintVisible(CanInspectCurrentWagon());
 			_isDoorOpened = false;
+			RefreshInteractableHints();
 		}
 
 		private void UnbindCurrentDoorInteractable()
@@ -306,6 +326,7 @@ namespace Project.Gameplay.Station.Controllers
 
 			_currentDoorInteractable.Interacted -= OnDoorInteracted;
 			_currentDoorInteractable.SetOpenState(false);
+			_currentDoorInteractable.SetHintVisible(false);
 			_currentDoorInteractable = null;
 			_isDoorOpened = false;
 		}
@@ -324,26 +345,42 @@ namespace Project.Gameplay.Station.Controllers
 			{
 				_runtimeModel.MarkCurrentWagonInspected();
 			}
+
+			RefreshInteractableHints();
 		}
 
 		private void OnActionButtonInteracted()
 		{
 			if (_runtimeModel.IsTrainInTransit)
 			{
+				ShowActionFeedback("Train in motion");
 				return;
 			}
 
 			if (_stationFlowController.IsAwaitingDecision)
 			{
+				if (_runtimeModel.HasInspectedCurrentWagon == false)
+				{
+					ShowActionFeedback("Open wagon first");
+					RefreshInteractableHints();
+					return;
+				}
+
 				if (_stationFlowController.ResolveCase(_selectedDecision, out _))
 				{
 					ResetDecisionSelection();
 				}
 
+				RefreshInteractableHints();
 				return;
 			}
 
-			_stationFlowController.TryCallNextTrain();
+			if (_stationFlowController.TryCallNextTrain() == false)
+			{
+				ShowActionFeedback(_runtimeModel.FlowState == StationFlowState.FinishDay ? "Day complete" : "Stand by");
+			}
+
+			RefreshInteractableHints();
 		}
 
 		private void OnDecisionToggleInteracted(PlayerDecision decision)
@@ -354,6 +391,7 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			_selectedDecision = decision;
+			RefreshInteractableHints();
 		}
 
 		private bool CanInteractWithCase()
@@ -368,6 +406,108 @@ namespace Project.Gameplay.Station.Controllers
 			if (_sceneContext.DecisionToggle)
 			{
 				_sceneContext.DecisionToggle.SetDecision(_selectedDecision);
+			}
+
+			RefreshInteractableHints();
+		}
+
+		private void OnRuntimeScenarioChanged(TrainScenario _)
+		{
+			RefreshInteractableHints();
+		}
+
+		private void OnFlowStateChanged(StationFlowState _)
+		{
+			RefreshInteractableHints();
+		}
+
+		private void OnTrainTransitStateChanged(TrainTransitState _)
+		{
+			RefreshInteractableHints();
+		}
+
+		private void OnInspectionStateChanged(bool _)
+		{
+			RefreshInteractableHints();
+		}
+
+		private void RefreshInteractableHints()
+		{
+			RefreshActionButtonHint();
+			RefreshDoorHint();
+			RefreshDecisionToggleHint();
+		}
+
+		private void RefreshActionButtonHint()
+		{
+			if (!_sceneContext.ActionButton)
+			{
+				return;
+			}
+
+			if (_runtimeModel.IsTrainInTransit)
+			{
+				_sceneContext.ActionButton.SetDisplay("Train in motion", StationActionButtonInteractableView.DisplayState.Blocked);
+				return;
+			}
+
+			if (_stationFlowController.IsAwaitingDecision)
+			{
+				var needsInspection = _runtimeModel.HasInspectedCurrentWagon == false;
+				_sceneContext.ActionButton.SetDisplay(
+					needsInspection ? "Open wagon first" : "Dispatch Train",
+					needsInspection
+						? StationActionButtonInteractableView.DisplayState.Blocked
+						: StationActionButtonInteractableView.DisplayState.Ready);
+				return;
+			}
+
+			if (_stationFlowController.IsAwaitingTrainCall)
+			{
+				_sceneContext.ActionButton.SetDisplay("Call Train", StationActionButtonInteractableView.DisplayState.Ready);
+				return;
+			}
+
+			if (_runtimeModel.FlowState == StationFlowState.FinishDay)
+			{
+				_sceneContext.ActionButton.SetDisplay("Day complete", StationActionButtonInteractableView.DisplayState.Neutral);
+				return;
+			}
+
+			_sceneContext.ActionButton.SetDisplay("Stand by", StationActionButtonInteractableView.DisplayState.Neutral);
+		}
+
+		private void RefreshDoorHint()
+		{
+			if (_currentDoorInteractable)
+			{
+				_currentDoorInteractable.SetHintVisible(CanInspectCurrentWagon());
+			}
+		}
+
+		private void RefreshDecisionToggleHint()
+		{
+			if (_sceneContext.DecisionToggle)
+			{
+				_sceneContext.DecisionToggle.SetDecision(_selectedDecision);
+			}
+		}
+
+		private bool CanInspectCurrentWagon()
+		{
+			return _isActive &&
+				_currentDoorInteractable &&
+				_stationFlowController.IsAwaitingDecision &&
+				_runtimeModel.IsTrainInTransit == false;
+		}
+
+		private void ShowActionFeedback(string message)
+		{
+			if (_sceneContext.ActionButton)
+			{
+				_sceneContext.ActionButton.ShowTemporaryFeedback(
+					message,
+					StationActionButtonInteractableView.DisplayState.Blocked);
 			}
 		}
 	}

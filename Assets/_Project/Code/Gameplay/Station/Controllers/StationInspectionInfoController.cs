@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
@@ -10,17 +9,14 @@ using Project.Gameplay.Station.Configs;
 using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Station.Views;
+using UnityEngine;
 
 namespace Project.Gameplay.Station.Controllers
 {
 	public sealed class StationInspectionInfoController : IBaseController, IActivatable, IDeactivatable
 	{
-		private const string WaitingForTrainStatus = "Waiting for train";
-		private const string TrainInTransitStatus = "Train in transit";
-		private const string InspectWagonFirstStatus = "Locked: inspect wagon first";
-		private const string ReadyToDispatchStatus = "Ready to dispatch";
-		private const string ReviewManifestStatus = "Review manifest";
-		private const string NoneText = "None";
+		private const string NoBansText = "No bans today";
+		private const string NoCargoText = "No papers";
 
 		private readonly SceneContext _sceneContext;
 		private readonly StationRuntimeModel _runtimeModel;
@@ -28,7 +24,8 @@ namespace Project.Gameplay.Station.Controllers
 		private readonly ILoggerService _loggerService;
 
 		private IReadOnlyDictionary<string, CargoTypeConfig> _cargoConfigs;
-		private string _forbiddenCargoText = NoneText;
+		private StationInspectionInfoView _fallbackView;
+		private string _forbiddenCargoText = NoBansText;
 		private bool _hasForbiddenCargoText;
 		private bool _isCatalogLoadInProgress;
 		private bool _isActive;
@@ -57,14 +54,11 @@ namespace Project.Gameplay.Station.Controllers
 			if (_runtimeModel != null)
 			{
 				_runtimeModel.ActiveScenarioChanged += OnRuntimeStateChanged;
-				_runtimeModel.FlowStateChanged += OnFlowStateChanged;
-				_runtimeModel.CurrentWagonInspectionChanged += OnInspectionStateChanged;
 			}
 
-			if (_sceneContext && !_sceneContext.InspectionInfoView)
+			if (ResolveView() == null)
 			{
-				_loggerService?.LogWarning(
-					"[StationInspectionInfo] SceneContext.InspectionInfoView is not assigned. World inspection UI is disabled.");
+				_loggerService?.LogWarning("[StationInspectionInfo] Inspection info view is missing. World board is disabled.");
 			}
 
 			_hasForbiddenCargoText = false;
@@ -82,15 +76,20 @@ namespace Project.Gameplay.Station.Controllers
 			if (_runtimeModel != null)
 			{
 				_runtimeModel.ActiveScenarioChanged -= OnRuntimeStateChanged;
-				_runtimeModel.FlowStateChanged -= OnFlowStateChanged;
-				_runtimeModel.CurrentWagonInspectionChanged -= OnInspectionStateChanged;
 			}
 
 			_isActive = false;
 
-			if (_sceneContext && _sceneContext.InspectionInfoView)
+			var view = GetExistingView();
+			if (view)
 			{
-				_sceneContext.InspectionInfoView.Clear();
+				view.Clear();
+			}
+
+			if (_fallbackView)
+			{
+				Object.Destroy(_fallbackView.gameObject);
+				_fallbackView = null;
 			}
 		}
 
@@ -99,47 +98,71 @@ namespace Project.Gameplay.Station.Controllers
 			RefreshView();
 		}
 
-		private void OnFlowStateChanged(StationFlowState _)
-		{
-			RefreshView();
-		}
-
-		private void OnInspectionStateChanged(bool _)
-		{
-			RefreshView();
-		}
-
 		private void RefreshView()
 		{
-			if (_isActive == false || !_sceneContext || !_sceneContext.InspectionInfoView || _runtimeModel == null)
+			if (_isActive == false || _runtimeModel == null)
 			{
 				return;
 			}
 
-			var view = _sceneContext.InspectionInfoView;
-			var forbiddenCargoText = BuildForbiddenCargoText();
-			var activeScenario = _runtimeModel.ActiveScenario;
-			var manifestCargoText = string.Empty;
-			var manifestDescriptionText = string.Empty;
-			if (activeScenario != null)
+			var view = ResolveView();
+			if (!view)
 			{
-				manifestCargoText = BuildManifestCargoText(activeScenario.Manifest.DeclaredCargoId);
-				manifestDescriptionText = activeScenario.Manifest.DeclaredDescription;
+				return;
 			}
 
-			view.SetForbiddenCargo(forbiddenCargoText);
-
+			var forbiddenCargoText = BuildForbiddenCargoText();
+			var activeScenario = _runtimeModel.ActiveScenario;
 			if (activeScenario != null)
 			{
-				view.SetManifest(manifestCargoText, manifestDescriptionText);
+				view.SetManifest(
+					BuildManifestCargoText(activeScenario.Manifest.DeclaredCargoId),
+					activeScenario.Manifest.DeclaredDescription);
 			}
 			else
 			{
 				view.ClearManifest();
 			}
 
-			var dispatchStatus = BuildDispatchStatus();
-			view.SetDispatchState(dispatchStatus.Text, dispatchStatus.State);
+			view.SetForbiddenCargo(forbiddenCargoText);
+		}
+
+		private StationInspectionInfoView ResolveView()
+		{
+			if (_sceneContext && _sceneContext.InspectionInfoView)
+			{
+				return _sceneContext.InspectionInfoView;
+			}
+
+			if (_fallbackView)
+			{
+				return _fallbackView;
+			}
+
+			if (!_sceneContext || !_sceneContext.ActionButton)
+			{
+				return null;
+			}
+
+			var fallbackObject = new GameObject("StationInspectionInfoFallback");
+			var fallbackTransform = fallbackObject.transform;
+			fallbackTransform.SetParent(_sceneContext.ActionButton.transform, false);
+			fallbackTransform.localPosition = new Vector3(1.6f, 1.6f, 0f);
+			fallbackTransform.localRotation = Quaternion.identity;
+			fallbackTransform.localScale = Vector3.one;
+
+			_fallbackView = fallbackObject.AddComponent<StationInspectionInfoView>();
+			return _fallbackView;
+		}
+
+		private StationInspectionInfoView GetExistingView()
+		{
+			if (_sceneContext && _sceneContext.InspectionInfoView)
+			{
+				return _sceneContext.InspectionInfoView;
+			}
+
+			return _fallbackView;
 		}
 
 		private async UniTaskVoid EnsureCargoCatalogLoadedAsync()
@@ -174,7 +197,7 @@ namespace Project.Gameplay.Station.Controllers
 			var ruleSet = _runtimeModel.StationDay.CurrentRuleSet;
 			if (ruleSet == null || ruleSet.ForbiddenCargoIds.Count == 0)
 			{
-				_forbiddenCargoText = NoneText;
+				_forbiddenCargoText = NoBansText;
 				_hasForbiddenCargoText = true;
 				return _forbiddenCargoText;
 			}
@@ -184,23 +207,21 @@ namespace Project.Gameplay.Station.Controllers
 			{
 				if (builder.Length > 0)
 				{
-					builder.Append(", ");
+					builder.Append('\n');
 				}
 
+				builder.Append("- ");
 				builder.Append(ResolveCargoDisplayName(cargoId));
 			}
 
-			_forbiddenCargoText = builder.Length == 0 ? NoneText : builder.ToString();
+			_forbiddenCargoText = builder.Length == 0 ? NoBansText : builder.ToString();
 			_hasForbiddenCargoText = true;
 			return _forbiddenCargoText;
 		}
 
 		private string BuildManifestCargoText(string cargoId)
 		{
-			var cargoDisplayName = ResolveCargoDisplayName(cargoId);
-			return string.IsNullOrWhiteSpace(cargoId) || string.Equals(cargoDisplayName, cargoId, StringComparison.Ordinal)
-				? cargoDisplayName
-				: $"{cargoDisplayName} ({cargoId})";
+			return ResolveCargoDisplayName(cargoId);
 		}
 
 		private string ResolveCargoDisplayName(string cargoId)
@@ -208,7 +229,7 @@ namespace Project.Gameplay.Station.Controllers
 			var normalizedId = string.IsNullOrWhiteSpace(cargoId) ? string.Empty : cargoId.Trim();
 			if (string.IsNullOrEmpty(normalizedId))
 			{
-				return NoneText;
+				return NoCargoText;
 			}
 
 			if (_cargoConfigs == null ||
@@ -219,43 +240,6 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			return cargoConfig.display_name;
-		}
-
-		private DispatchStatus BuildDispatchStatus()
-		{
-			if (_runtimeModel.HasActiveScenario == false)
-			{
-				return new DispatchStatus(WaitingForTrainStatus, StationInspectionInfoView.DispatchState.Neutral);
-			}
-
-			if (_runtimeModel.IsTrainInTransit)
-			{
-				return new DispatchStatus(TrainInTransitStatus, StationInspectionInfoView.DispatchState.Neutral);
-			}
-
-			if (_runtimeModel.FlowState != StationFlowState.AwaitingDecision)
-			{
-				return new DispatchStatus(ReviewManifestStatus, StationInspectionInfoView.DispatchState.Neutral);
-			}
-
-			if (_runtimeModel.HasInspectedCurrentWagon == false)
-			{
-				return new DispatchStatus(InspectWagonFirstStatus, StationInspectionInfoView.DispatchState.Locked);
-			}
-
-			return new DispatchStatus(ReadyToDispatchStatus, StationInspectionInfoView.DispatchState.Ready);
-		}
-
-		private readonly struct DispatchStatus
-		{
-			public DispatchStatus(string text, StationInspectionInfoView.DispatchState state)
-			{
-				Text = text;
-				State = state;
-			}
-
-			public string Text { get; }
-			public StationInspectionInfoView.DispatchState State { get; }
 		}
 	}
 }
