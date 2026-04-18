@@ -17,6 +17,8 @@ namespace Project.Gameplay.Station.Controllers
 	{
 		private const int MaxRaycastHits = 16;
 		private const int MaxOverlapHits = 32;
+		private const float DefaultInteractionDistance = 4f;
+		private const int DefaultInteractionMask = ~0;
 
 		private readonly SamplePlayerView _playerView;
 		private readonly SceneContext _sceneContext;
@@ -141,12 +143,14 @@ namespace Project.Gameplay.Station.Controllers
 
 		private IPlayerInteractable ResolveHoveredInteractable(Transform rayOrigin)
 		{
+			var interactionDistance = GetInteractionDistance();
+			var interactionMask = GetInteractionMask();
 			var hitCount = Physics.RaycastNonAlloc(
 				rayOrigin.position,
 				rayOrigin.forward,
 				_raycastHits,
-				_sceneContext.InteractionDistance,
-				_sceneContext.InteractionMask,
+				interactionDistance,
+				interactionMask,
 				QueryTriggerInteraction.Collide);
 
 			IPlayerInteractable selected = null;
@@ -185,11 +189,13 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			var sourcePosition = _playerView ? _playerView.transform.position : _rayOrigin.position;
+			var interactionDistance = GetInteractionDistance();
+			var interactionMask = GetInteractionMask();
 			var hitCount = Physics.OverlapSphereNonAlloc(
 				sourcePosition,
-				_sceneContext.InteractionDistance,
+				interactionDistance,
 				_overlapColliders,
-				_sceneContext.InteractionMask,
+				interactionMask,
 				QueryTriggerInteraction.Collide);
 
 			IPlayerInteractable selected = null;
@@ -224,13 +230,13 @@ namespace Project.Gameplay.Station.Controllers
 
 		private Transform ResolveRayOrigin()
 		{
-			if (_sceneContext.InteractionRayOrigin)
-			{
-				return _sceneContext.InteractionRayOrigin;
-			}
-
 			if (_playerView)
 			{
+				if (_playerView.InteractionRayOrigin)
+				{
+					return _playerView.InteractionRayOrigin;
+				}
+
 				if (_playerView.CameraRoot)
 				{
 					return _playerView.CameraRoot;
@@ -246,6 +252,16 @@ namespace Project.Gameplay.Station.Controllers
 
 			var mainCamera = Camera.main;
 			return mainCamera ? mainCamera.transform : null;
+		}
+
+		private float GetInteractionDistance()
+		{
+			return _playerView ? _playerView.InteractionDistance : DefaultInteractionDistance;
+		}
+
+		private int GetInteractionMask()
+		{
+			return _playerView ? _playerView.InteractionMask : DefaultInteractionMask;
 		}
 
 		private void OnCurrentTrainChanged(TrainView currentTrain)

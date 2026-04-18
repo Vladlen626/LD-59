@@ -21,6 +21,9 @@ namespace Project.Infrastructure
 			var resourceService = new ResourceService(logger);
 			serviceLocator.Register<IResourceService, ResourceService>(resourceService);
 
+			var configService = new ConfigService(resourceService, logger);
+			serviceLocator.Register<ConfigService, ConfigService>(configService);
+
 			var objectFactory = new ObjectFactory(resourceService, logger);
 			serviceLocator.Register<IObjectFactory, ObjectFactory>(objectFactory);
 

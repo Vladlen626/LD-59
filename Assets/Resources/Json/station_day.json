@@ -1,0 +1,100 @@
+{
+  "id": "default",
+  "initial_debt": 620,
+  "day_index": 1,
+  "missed_contraband_penalty": 150,
+  "wrongful_rejection_penalty": 60,
+  "forbidden_cargo_ids": [
+    "chem_toxic"
+  ],
+  "train_scenarios": [
+    {
+      "id": "case_001",
+      "manifest": {
+        "declared_cargo_id": "grain_bulk",
+        "declared_description": "Bulk grain sacks"
+      },
+      "actual_cargo_id": "grain_bulk",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 80
+    },
+    {
+      "id": "case_002",
+      "manifest": {
+        "declared_cargo_id": "machine_parts",
+        "declared_description": "Industrial machine parts"
+      },
+      "actual_cargo_id": "machine_parts",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 80
+    },
+    {
+      "id": "case_003",
+      "manifest": {
+        "declared_cargo_id": "medical_supplies",
+        "declared_description": "Medical supplies crates"
+      },
+      "actual_cargo_id": "medical_supplies",
+      "has_hidden_contraband": true,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 80
+    },
+    {
+      "id": "case_004",
+      "manifest": {
+        "declared_cargo_id": "timber",
+        "declared_description": "Processed timber planks"
+      },
+      "actual_cargo_id": "timber",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 80
+    },
+    {
+      "id": "case_005",
+      "manifest": {
+        "declared_cargo_id": "fertilizer",
+        "declared_description": "Fertilizer compounds"
+      },
+      "actual_cargo_id": "chem_toxic",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 80
+    },
+    {
+      "id": "case_006",
+      "manifest": {
+        "declared_cargo_id": "textile_rolls",
+        "declared_description": "Textile rolls"
+      },
+      "actual_cargo_id": "textile_rolls",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 80
+    },
+    {
+      "id": "case_007",
+      "manifest": {
+        "declared_cargo_id": "electronics",
+        "declared_description": "Consumer electronics"
+      },
+      "actual_cargo_id": "electronics",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": true,
+      "reward_on_correct_decision": 80
+    },
+    {
+      "id": "case_008",
+      "manifest": {
+        "declared_cargo_id": "canned_food",
+        "declared_description": "Canned food pallets"
+      },
+      "actual_cargo_id": "weapon_parts",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 80
+    }
+  ]
+}

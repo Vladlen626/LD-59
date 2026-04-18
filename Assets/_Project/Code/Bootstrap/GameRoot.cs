@@ -8,6 +8,7 @@ using PlatformCore.Services.Input;
 using PlatformCore.Services.UI;
 using Project.Gameplay.Player;
 using Project.Gameplay.Scene;
+using Project.Gameplay.Station.Configs;
 using Project.Gameplay.Station.Controllers;
 using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Station.Runtime;
@@ -35,6 +36,7 @@ namespace Project.Bootstrap
 			var loggerService = _serviceLocator.Get<ILoggerService>();
 			var objectFactory = _serviceLocator.Get<IObjectFactory>();
 			var cameraService = _serviceLocator.Get<ICameraService>();
+			var configService = _serviceLocator.Get<ConfigService>();
 
 			var baseControllers = new IBaseController[]
 			{
@@ -64,6 +66,7 @@ namespace Project.Bootstrap
 					uiService,
 					cursorService,
 					inputService,
+					configService,
 					loggerService);
 			}
 		}
@@ -87,6 +90,7 @@ namespace Project.Bootstrap
 			IUIService uiService,
 			ICursorService cursorService,
 			IInputService inputService,
+			ConfigService configService,
 			ILoggerService loggerService)
 		{
 			var playerView = await SamplePlayerFactory.SpawnAsync(objectFactory);
@@ -117,21 +121,23 @@ namespace Project.Bootstrap
 			else
 			{
 				var stationSetup = sceneContext.BuildRuntimeSetup();
-				if (stationSetup.Scenarios.Count == 0)
+				var stationDayConfig = await configService.GetFirstOrDefaultAsync<StationDayConfig>(StationDayConfigResourcePaths.Day);
+				if (stationDayConfig == null)
 				{
-					loggerService?.LogWarning(
-						"[GameRoot] Station day scenarios list is empty. Flow controller will finish day immediately.");
-				}
-
-				if (stationSetup.DayRuleSet == null)
-				{
-					loggerService?.LogError("[GameRoot] SceneContext returned null DayRuleSet. Station gameplay flow is disabled.");
+					loggerService?.LogError("[GameRoot] Station day JSON config is missing. Station gameplay flow is disabled.");
 				}
 				else
 				{
+					stationDayConfig.BuildRuntimeData(out var dayRuleSet, out var dayScenarios);
+					if (dayScenarios.Count == 0)
+					{
+						loggerService?.LogWarning(
+							"[GameRoot] Station day scenarios list is empty. Flow controller will finish day immediately.");
+					}
+
 					var stationRuntimeContext = new StationSharedRuntimeContext(
-						new StationDayModel(stationSetup.DayRuleSet),
-						new DebtModel(stationSetup.InitialDebt),
+						new StationDayModel(dayRuleSet),
+						new DebtModel(stationDayConfig.initial_debt),
 						new InspectionJournalModel());
 
 					var trainSpawnController = new TrainSpawnController(
@@ -144,7 +150,7 @@ namespace Project.Bootstrap
 						stationRuntimeContext,
 						new InspectionJudge(),
 						trainSpawnController,
-						stationSetup.Scenarios,
+						dayScenarios,
 						loggerService);
 					var daySummaryController = new DaySummaryController(
 						uiService,

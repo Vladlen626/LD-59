@@ -1,20 +1,42 @@
 using System;
 using System.Collections.Generic;
 using Project.Gameplay.Station.Domain;
+using UnityEngine;
 
 namespace Project.Gameplay.Station.Configs
 {
 	[Serializable]
-	public class StationDayConfig
+	public sealed class StationDayConfig : BaseConfig
 	{
+		[Tooltip("Debt value at day start.")]
+		[Min(0)]
+		public int initial_debt = 1000;
+
+		[Tooltip("Display/index number of the day in logs and summary. Starts from 1.")]
+		[Min(1)]
 		public int day_index = 1;
+
+		[Tooltip("Fine applied when player allows train with hidden/forbidden violation.")]
+		[Min(0)]
 		public int missed_contraband_penalty = 100;
+
+		[Tooltip("Fine applied when player sends back a clean train.")]
+		[Min(0)]
 		public int wrongful_rejection_penalty = 40;
+
+		[Tooltip("Cargo IDs that are forbidden for this day even if declared in manifest.")]
 		public List<string> forbidden_cargo_ids = new List<string>();
+
+		[Tooltip("Ordered inspection cases for the day.")]
 		public List<TrainScenarioConfig> train_scenarios = new List<TrainScenarioConfig>();
 
-		public void ParseConfig()
+		public override void ParseConfig()
 		{
+			if (initial_debt < 0)
+			{
+				initial_debt = 0;
+			}
+
 			if (day_index < 1)
 			{
 				day_index = 1;

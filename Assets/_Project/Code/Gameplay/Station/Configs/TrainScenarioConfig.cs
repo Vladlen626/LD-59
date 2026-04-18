@@ -1,16 +1,29 @@
 using System;
 using Project.Gameplay.Station.Domain;
+using UnityEngine;
 
 namespace Project.Gameplay.Station.Configs
 {
 	[Serializable]
 	public class TrainScenarioConfig
 	{
+		[Tooltip("Unique case ID for debugging and analytics.")]
 		public string id = string.Empty;
+
+		[Tooltip("Manifest shown to player for this case.")]
 		public ManifestDataConfig manifest = new ManifestDataConfig();
+
+		[Tooltip("Real cargo ID in wagon for judge evaluation.")]
 		public string actual_cargo_id = string.Empty;
+
+		[Tooltip("True if contraband is hidden in cargo.")]
 		public bool has_hidden_contraband;
+
+		[Tooltip("True if wagon has illegal marker that must trigger SendBack.")]
 		public bool has_illegal_marker;
+
+		[Tooltip("Money earned when player verdict is correct.")]
+		[Min(0)]
 		public int reward_on_correct_decision = 50;
 
 		public void ParseConfig()
