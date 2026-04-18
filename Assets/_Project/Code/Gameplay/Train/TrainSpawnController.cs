@@ -56,12 +56,6 @@ namespace Project.Gameplay.Train
 				return null;
 			}
 
-			if (string.IsNullOrWhiteSpace(_trainResourcePath))
-			{
-				_loggerService?.LogError("[TrainSpawn] Train resource path is empty.");
-				return null;
-			}
-
 			var revision = ++_spawnRevision;
 			ClearCurrentTrainInternal();
 

@@ -12,13 +12,8 @@ namespace Project.Gameplay.Station.Domain
 			bool hasIllegalMarker,
 			int rewardOnCorrectDecision)
 		{
-			if (manifest == null)
-			{
-				throw new ArgumentNullException(nameof(manifest));
-			}
-
 			ScenarioId = Normalize(scenarioId);
-			Manifest = manifest;
+			Manifest = manifest ?? new ManifestData(string.Empty, string.Empty);
 			ActualCargoId = Normalize(actualCargoId);
 			HasHiddenContraband = hasHiddenContraband;
 			HasIllegalMarker = hasIllegalMarker;

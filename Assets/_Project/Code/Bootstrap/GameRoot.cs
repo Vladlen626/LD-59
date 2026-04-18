@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Infrastructure;
@@ -103,12 +102,13 @@ namespace Project.Bootstrap
 			}
 
 			cursorService.LockCursor();
-			var runtimeControllers = new List<IBaseController>
+			var playerMovementController = new SamplePlayerMovementController(playerView, inputService, cursorService);
+			IBaseController[] controllers = new IBaseController[]
 			{
-				new SamplePlayerMovementController(playerView, inputService, cursorService),
+				playerMovementController,
 			};
 
-			var sceneContext = Object.FindObjectOfType<SceneContext>();
+			var sceneContext = Object.FindAnyObjectByType<SceneContext>();
 			if (!sceneContext)
 			{
 				loggerService?.LogWarning(
@@ -126,49 +126,52 @@ namespace Project.Bootstrap
 				if (stationSetup.DayRuleSet == null)
 				{
 					loggerService?.LogError("[GameRoot] SceneContext returned null DayRuleSet. Station gameplay flow is disabled.");
-					await _lifecycle.RegisterControllersGroupAsync(runtimeControllers.ToArray());
-					return;
 				}
+				else
+				{
+					var stationRuntimeContext = new StationSharedRuntimeContext(
+						new StationDayModel(stationSetup.DayRuleSet),
+						new DebtModel(stationSetup.InitialDebt),
+						new InspectionJournalModel());
 
-				var stationRuntimeContext = new StationSharedRuntimeContext(
-					new StationDayModel(stationSetup.DayRuleSet),
-					new DebtModel(stationSetup.InitialDebt),
-					new InspectionJournalModel());
+					var trainSpawnController = new TrainSpawnController(
+						objectFactory,
+						loggerService,
+						ProjectGameplayResourcePaths.Trains_CargoWagon,
+						stationSetup.TrainSpawnPoint,
+						stationSetup.TrainSpawnParent);
+					var stationFlowController = new StationFlowController(
+						stationRuntimeContext,
+						new InspectionJudge(),
+						trainSpawnController,
+						stationSetup.Scenarios,
+						loggerService);
+					var daySummaryController = new DaySummaryController(
+						uiService,
+						cursorService,
+						stationFlowController,
+						stationRuntimeContext,
+						loggerService);
+					var stationInteractionController = new StationInteractionController(
+						playerView,
+						sceneContext,
+						trainSpawnController,
+						stationFlowController,
+						inputService,
+						cursorService,
+						loggerService);
 
-				var trainSpawnController = new TrainSpawnController(
-					objectFactory,
-					loggerService,
-					ProjectGameplayResourcePaths.Trains_CargoWagon,
-					stationSetup.TrainSpawnPoint,
-					stationSetup.TrainSpawnParent);
-
-				var stationFlowController = new StationFlowController(
-					stationRuntimeContext,
-					new InspectionJudge(),
-					trainSpawnController,
-					stationSetup.Scenarios,
-					loggerService);
-				var daySummaryController = new DaySummaryController(
-					uiService,
-					cursorService,
-					stationFlowController,
-					stationRuntimeContext,
-					loggerService);
-				var stationInteractionController = new StationInteractionController(
-					sceneContext,
-					trainSpawnController,
-					stationFlowController,
-					inputService,
-					cursorService,
-					loggerService);
-
-				runtimeControllers.Add(trainSpawnController);
-				runtimeControllers.Add(daySummaryController);
-				runtimeControllers.Add(stationFlowController);
-				runtimeControllers.Add(stationInteractionController);
+					controllers = new IBaseController[]
+					{
+						playerMovementController,
+						trainSpawnController,
+						daySummaryController,
+						stationFlowController,
+						stationInteractionController,
+					};
+				}
 			}
-
-			await _lifecycle.RegisterControllersGroupAsync(runtimeControllers.ToArray());
+			await _lifecycle.RegisterControllersGroupAsync(controllers);
 		}
 	}
 }

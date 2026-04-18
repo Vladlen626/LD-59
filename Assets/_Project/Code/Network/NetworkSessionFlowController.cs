@@ -14,9 +14,12 @@ namespace Project.Network
 {
 	public sealed class NetworkSessionFlowController : IBaseController, IActivatable, IDeactivatable
 	{
+		private static readonly object[] StopConnectionAsServerArgs = { true };
+
 		private readonly NetworkManager _networkManager;
 		private readonly GameLaunchSettings _launchSettings;
 		private readonly ILoggerService _loggerService;
+		private readonly List<string> _addedScenesBuffer = new List<string>(4);
 		private bool _subscribed;
 
 		public NetworkSessionFlowController(
@@ -174,7 +177,7 @@ namespace Project.Network
 			var boolMethod = type.GetMethod("StopConnection", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(bool) }, null);
 			if (boolMethod != null)
 			{
-				boolMethod.Invoke(target, new object[] { true });
+				boolMethod.Invoke(target, StopConnectionAsServerArgs);
 				return true;
 			}
 
@@ -376,7 +379,7 @@ namespace Project.Network
 				return;
 			}
 
-			var addedScenes = new List<string>();
+			_addedScenesBuffer.Clear();
 			var sceneCount = UnitySceneManager.sceneCount;
 			for (var i = 0; i < sceneCount; i++)
 			{
@@ -388,14 +391,14 @@ namespace Project.Network
 
 				if (TryAddConnectionToScene(connection, scene))
 				{
-					addedScenes.Add(scene.name);
+					_addedScenesBuffer.Add(scene.name);
 				}
 			}
 
-			if (addedScenes.Count > 0)
+			if (_addedScenesBuffer.Count > 0)
 			{
 				_loggerService?.Log(
-					$"[Multiplayer] Connection {connection.ClientId} added to scenes ({reason}): {string.Join(", ", addedScenes)}.");
+					$"[Multiplayer] Connection {connection.ClientId} added to scenes ({reason}): {string.Join(", ", _addedScenesBuffer)}.");
 			}
 		}
 

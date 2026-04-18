@@ -1,5 +1,3 @@
-using System;
-
 namespace Project.Gameplay.Station.Domain
 {
 	public sealed class InspectionCaseRecord
@@ -10,15 +8,6 @@ namespace Project.Gameplay.Station.Domain
 			TrainScenario scenario,
 			InspectionResult result)
 		{
-			if (scenario == null)
-			{
-				throw new ArgumentNullException(nameof(scenario));
-			}
-			if (result == null)
-			{
-				throw new ArgumentNullException(nameof(result));
-			}
-
 			DayIndex = dayIndex;
 			CaseIndex = caseIndex;
 			Scenario = scenario;

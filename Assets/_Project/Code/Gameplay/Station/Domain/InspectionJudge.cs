@@ -5,20 +5,14 @@ namespace Project.Gameplay.Station.Domain
 {
 	public sealed class InspectionJudge
 	{
+		private static readonly IReadOnlyList<InspectionErrorReason> RejectedCleanTrainReason =
+			new[] { InspectionErrorReason.RejectedCleanTrain };
+
 		public InspectionResult Evaluate(
 			DayRuleSet dayRuleSet,
 			TrainScenario scenario,
 			PlayerDecision playerDecision)
 		{
-			if (dayRuleSet == null)
-			{
-				throw new ArgumentNullException(nameof(dayRuleSet));
-			}
-			if (scenario == null)
-			{
-				throw new ArgumentNullException(nameof(scenario));
-			}
-
 			var isForbiddenCargo = dayRuleSet.IsCargoForbidden(scenario.ActualCargoId);
 			var isManifestMismatch = !string.Equals(
 				scenario.Manifest.DeclaredCargoId,
@@ -73,13 +67,12 @@ namespace Project.Gameplay.Station.Domain
 			bool hasHiddenContraband,
 			bool hasIllegalMarker)
 		{
-			var reasons = new List<InspectionErrorReason>();
-
 			if (playerDecision == PlayerDecision.SendBack)
 			{
-				reasons.Add(InspectionErrorReason.RejectedCleanTrain);
-				return reasons;
+				return RejectedCleanTrainReason;
 			}
+
+			var reasons = new List<InspectionErrorReason>(4);
 
 			if (isForbiddenCargo)
 			{

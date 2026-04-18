@@ -1,9 +1,10 @@
 using System;
+using Project.Gameplay.Interaction;
 using UnityEngine;
 
 namespace Project.Gameplay.Station.Views
 {
-	public sealed class WagonDoorInteractableView : MonoBehaviour, IStationInteractableView
+	public sealed class WagonDoorInteractableView : PlayerInteractableView
 	{
 		[SerializeField] private Transform _doorPivot;
 		[SerializeField] private Vector3 _openedLocalEuler = new Vector3(0f, 110f, 0f);
@@ -12,8 +13,10 @@ namespace Project.Gameplay.Station.Views
 
 		public event Action Interacted;
 
-		private void Awake()
+		protected override void Awake()
 		{
+			base.Awake();
+
 			if (!_doorPivot)
 			{
 				_doorPivot = transform;
@@ -22,7 +25,7 @@ namespace Project.Gameplay.Station.Views
 			_closedLocalRotation = _doorPivot.localRotation;
 		}
 
-		public void Interact()
+		public override void Interact()
 		{
 			Interacted?.Invoke();
 		}

@@ -18,6 +18,7 @@ namespace Project.Network
 		private ICursorService _cursorService;
 		private SamplePlayerMovementController _movementController;
 		private bool _registered;
+		private bool _registrationInProgress;
 
 		private void Awake()
 		{
@@ -31,7 +32,7 @@ namespace Project.Network
 		{
 			base.OnStartClient();
 
-			if (!IsOwner)
+			if (!IsOwner || _registered || _registrationInProgress)
 			{
 				return;
 			}
@@ -41,7 +42,7 @@ namespace Project.Network
 
 		public override void OnStopClient()
 		{
-			if (IsOwner)
+			if (_registered || _registrationInProgress)
 			{
 				UnregisterOwnerController();
 			}
@@ -56,26 +57,35 @@ namespace Project.Network
 				return;
 			}
 
-			var inputService = Locator.Resolve<IInputService>();
-			_cursorService = Locator.Resolve<ICursorService>();
-			var cameraService = Locator.Resolve<ICameraService>();
-			_lifecycleService = Locator.Resolve<LifecycleService>();
+			_registrationInProgress = true;
 
-			if (inputService == null || _cursorService == null || _lifecycleService == null)
+			try
 			{
-				return;
+				var inputService = Locator.Resolve<IInputService>();
+				_cursorService = Locator.Resolve<ICursorService>();
+				var cameraService = Locator.Resolve<ICameraService>();
+				_lifecycleService = Locator.Resolve<LifecycleService>();
+
+				if (inputService == null || _cursorService == null || _lifecycleService == null)
+				{
+					return;
+				}
+
+				_movementController = new SamplePlayerMovementController(_playerView, inputService, _cursorService);
+				await _lifecycleService.RegisterAsync(_movementController);
+				_registered = true;
+
+				if (_playerView.CameraRoot && cameraService != null)
+				{
+					cameraService.AttachPrimaryCameraTo(_playerView.CameraRoot);
+				}
+
+				_cursorService.LockCursor();
 			}
-
-			_movementController = new SamplePlayerMovementController(_playerView, inputService, _cursorService);
-			await _lifecycleService.RegisterAsync(_movementController);
-			_registered = true;
-
-			if (_playerView.CameraRoot && cameraService != null)
+			finally
 			{
-				cameraService.AttachPrimaryCameraTo(_playerView.CameraRoot);
+				_registrationInProgress = false;
 			}
-
-			_cursorService.LockCursor();
 		}
 
 		private void UnregisterOwnerController()
@@ -86,6 +96,7 @@ namespace Project.Network
 			}
 
 			_registered = false;
+			_registrationInProgress = false;
 			_movementController = null;
 			_lifecycleService = null;
 

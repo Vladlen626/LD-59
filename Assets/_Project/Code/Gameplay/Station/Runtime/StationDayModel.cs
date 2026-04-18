@@ -1,4 +1,3 @@
-using System;
 using Project.Gameplay.Station.Domain;
 
 namespace Project.Gameplay.Station.Runtime
@@ -7,7 +6,7 @@ namespace Project.Gameplay.Station.Runtime
 	{
 		public StationDayModel(DayRuleSet initialRuleSet)
 		{
-			CurrentRuleSet = initialRuleSet ?? throw new ArgumentNullException(nameof(initialRuleSet));
+			CurrentRuleSet = initialRuleSet ?? new DayRuleSet(1, null, 0, 0);
 			DayIndex = CurrentRuleSet.DayIndex;
 		}
 

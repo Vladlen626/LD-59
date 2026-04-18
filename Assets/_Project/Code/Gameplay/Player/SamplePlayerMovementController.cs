@@ -32,7 +32,7 @@ namespace Project.Gameplay.Player
 			_playerView = playerView;
 			_inputService = inputService;
 			_cursorService = cursorService;
-			_characterController = playerView.CharacterController;
+			_characterController = _playerView ? _playerView.CharacterController : null;
 		}
 
 		public void Activate()

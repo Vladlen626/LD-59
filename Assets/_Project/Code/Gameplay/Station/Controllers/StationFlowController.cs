@@ -19,6 +19,8 @@ namespace Project.Gameplay.Station.Controllers
 		private readonly ILoggerService _loggerService;
 		private bool _isActive;
 		private bool _isTrainCallInProgress;
+		private bool _isDayFinished;
+		private string _forbiddenCargoLogValue = "<none>";
 
 		public event Action DayFinished;
 
@@ -38,14 +40,9 @@ namespace Project.Gameplay.Station.Controllers
 			IReadOnlyList<TrainScenario> dayScenarios,
 			ILoggerService loggerService)
 		{
-			if (runtimeContext == null)
-			{
-				throw new ArgumentNullException(nameof(runtimeContext));
-			}
-
 			_runtimeModel = runtimeContext.RuntimeModel;
-			_inspectionJudge = inspectionJudge ?? throw new ArgumentNullException(nameof(inspectionJudge));
-			_trainSpawnController = trainSpawnController ?? throw new ArgumentNullException(nameof(trainSpawnController));
+			_inspectionJudge = inspectionJudge;
+			_trainSpawnController = trainSpawnController;
 			_dayScenarios = dayScenarios ?? Array.Empty<TrainScenario>();
 			_loggerService = loggerService;
 		}
@@ -89,6 +86,8 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetActiveCaseIndex(-1);
 			_runtimeModel.SetFlowState(StationFlowState.StartDay);
+			_isDayFinished = false;
+			UpdateForbiddenCargoLogValue();
 			_loggerService?.Log(
 				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} started. Cases={_dayScenarios.Count}.");
 
@@ -228,6 +227,12 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void FinishDay()
 		{
+			if (_isDayFinished)
+			{
+				return;
+			}
+
+			_isDayFinished = true;
 			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetFlowState(StationFlowState.FinishDay);
@@ -260,9 +265,6 @@ namespace Project.Gameplay.Station.Controllers
 		private void LogCaseDetails(TrainScenario scenario, int caseIndex)
 		{
 			var ruleSet = _runtimeModel.StationDay.CurrentRuleSet;
-			var forbiddenCargo = ruleSet.ForbiddenCargoIds.Count == 0
-				? "<none>"
-				: string.Join(", ", ruleSet.ForbiddenCargoIds);
 			var isForbidden = ruleSet.IsCargoForbidden(scenario.ActualCargoId);
 
 			_loggerService?.Log(
@@ -270,7 +272,7 @@ namespace Project.Gameplay.Station.Controllers
 				$"ManifestCargo='{scenario.Manifest.DeclaredCargoId}', " +
 				$"ManifestDesc='{scenario.Manifest.DeclaredDescription}', " +
 				$"ActualCargo='{scenario.ActualCargoId}', HiddenContraband={scenario.HasHiddenContraband}, " +
-				$"IllegalMarker={scenario.HasIllegalMarker}, ForbiddenCargo=[{forbiddenCargo}], " +
+				$"IllegalMarker={scenario.HasIllegalMarker}, ForbiddenCargo=[{_forbiddenCargoLogValue}], " +
 				$"ActualCargoForbidden={isForbidden}, " +
 				$"Penalties(Missed={ruleSet.MissedContrabandPenalty}, Wrongful={ruleSet.WrongfulRejectionPenalty}).");
 		}
@@ -287,6 +289,14 @@ namespace Project.Gameplay.Station.Controllers
 				$"Player={result.PlayerDecision}, Expected={result.ExpectedDecision}, Verdict={result.Verdict}, " +
 				$"Penalty={result.Penalty}, Reward={reward}, Reasons=[{reasons}], " +
 				$"Debt={_runtimeModel.Debt.RemainingDebt}, JournalCount={_runtimeModel.InspectionJournal.Count}.");
+		}
+
+		private void UpdateForbiddenCargoLogValue()
+		{
+			var forbiddenCargoIds = _runtimeModel.StationDay.CurrentRuleSet.ForbiddenCargoIds;
+			_forbiddenCargoLogValue = forbiddenCargoIds.Count == 0
+				? "<none>"
+				: string.Join(", ", forbiddenCargoIds);
 		}
 	}
 }

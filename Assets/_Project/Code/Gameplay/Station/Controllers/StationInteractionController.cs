@@ -3,6 +3,8 @@ using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
 using PlatformCore.Services.Input;
 using PlatformCore.Services.UI;
+using Project.Gameplay.Interaction;
+using Project.Gameplay.Player;
 using Project.Gameplay.Scene;
 using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Station.Views;
@@ -13,20 +15,28 @@ namespace Project.Gameplay.Station.Controllers
 {
 	public sealed class StationInteractionController : IBaseController, IActivatable, IDeactivatable, IUpdatable
 	{
+		private const int MaxRaycastHits = 16;
+		private const int MaxOverlapHits = 32;
+
+		private readonly SamplePlayerView _playerView;
 		private readonly SceneContext _sceneContext;
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly StationFlowController _stationFlowController;
 		private readonly IInputService _inputService;
 		private readonly ICursorService _cursorService;
 		private readonly ILoggerService _loggerService;
+		private readonly RaycastHit[] _raycastHits = new RaycastHit[MaxRaycastHits];
+		private readonly Collider[] _overlapColliders = new Collider[MaxOverlapHits];
 
 		private WagonDoorInteractableView _currentDoorInteractable;
+		private IPlayerInteractable _hoveredInteractable;
+		private Transform _rayOrigin;
 		private bool _isActive;
 		private bool _isDoorOpened;
-		private bool _hasPendingDecision;
-		private PlayerDecision _pendingDecision;
+		private PlayerDecision _selectedDecision = PlayerDecision.AllowPassage;
 
 		public StationInteractionController(
+			SamplePlayerView playerView,
 			SceneContext sceneContext,
 			TrainSpawnController trainSpawnController,
 			StationFlowController stationFlowController,
@@ -34,6 +44,7 @@ namespace Project.Gameplay.Station.Controllers
 			ICursorService cursorService,
 			ILoggerService loggerService)
 		{
+			_playerView = playerView;
 			_sceneContext = sceneContext;
 			_trainSpawnController = trainSpawnController;
 			_stationFlowController = stationFlowController;
@@ -50,6 +61,7 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			_isActive = true;
+			_rayOrigin = ResolveRayOrigin();
 			SubscribeSceneInteractables();
 			_trainSpawnController.CurrentTrainChanged += OnCurrentTrainChanged;
 			OnCurrentTrainChanged(_trainSpawnController.CurrentTrain);
@@ -65,11 +77,12 @@ namespace Project.Gameplay.Station.Controllers
 			_trainSpawnController.CurrentTrainChanged -= OnCurrentTrainChanged;
 			UnsubscribeSceneInteractables();
 			UnbindCurrentDoorInteractable();
-			ResetDecisionSelection();
+			_hoveredInteractable = null;
+			_rayOrigin = null;
 			_isActive = false;
 		}
 
-		public void OnUpdate(float deltaTime)
+		public void OnUpdate(float _)
 		{
 			if (_isActive == false)
 			{
@@ -81,90 +94,154 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
-			if (TryGetRaycastInteractable(out var interactable) == false)
+			if (_playerView && _playerView.gameObject.activeInHierarchy == false)
 			{
+				_hoveredInteractable = null;
 				return;
 			}
 
-			interactable.Interact();
+			if (!_rayOrigin)
+			{
+				_rayOrigin = ResolveRayOrigin();
+				if (!_rayOrigin)
+				{
+					return;
+				}
+			}
+
+			_hoveredInteractable = ResolveHoveredInteractable(_rayOrigin);
+			(_hoveredInteractable ?? ResolveNearestInteractable())?.Interact();
 		}
 
 		private void SubscribeSceneInteractables()
 		{
-			if (_sceneContext.TrainCallButton)
+			if (_sceneContext.ActionButton)
 			{
-				_sceneContext.TrainCallButton.Interacted += OnTrainCallInteracted;
+				_sceneContext.ActionButton.Interacted += OnActionButtonInteracted;
 			}
 
-			if (_sceneContext.AllowDecisionLever)
+			if (_sceneContext.DecisionToggle)
 			{
-				_sceneContext.AllowDecisionLever.Interacted += OnDecisionLeverInteracted;
-			}
-
-			if (_sceneContext.RejectDecisionLever)
-			{
-				_sceneContext.RejectDecisionLever.Interacted += OnDecisionLeverInteracted;
-			}
-
-			if (_sceneContext.DispatchButton)
-			{
-				_sceneContext.DispatchButton.Interacted += OnDispatchButtonInteracted;
+				_sceneContext.DecisionToggle.Interacted += OnDecisionToggleInteracted;
 			}
 		}
 
 		private void UnsubscribeSceneInteractables()
 		{
-			if (_sceneContext.DispatchButton)
+			if (_sceneContext.DecisionToggle)
 			{
-				_sceneContext.DispatchButton.Interacted -= OnDispatchButtonInteracted;
+				_sceneContext.DecisionToggle.Interacted -= OnDecisionToggleInteracted;
 			}
 
-			if (_sceneContext.RejectDecisionLever)
+			if (_sceneContext.ActionButton)
 			{
-				_sceneContext.RejectDecisionLever.Interacted -= OnDecisionLeverInteracted;
-			}
-
-			if (_sceneContext.AllowDecisionLever)
-			{
-				_sceneContext.AllowDecisionLever.Interacted -= OnDecisionLeverInteracted;
-			}
-
-			if (_sceneContext.TrainCallButton)
-			{
-				_sceneContext.TrainCallButton.Interacted -= OnTrainCallInteracted;
+				_sceneContext.ActionButton.Interacted -= OnActionButtonInteracted;
 			}
 		}
 
-		private bool TryGetRaycastInteractable(out IStationInteractableView interactable)
+		private IPlayerInteractable ResolveHoveredInteractable(Transform rayOrigin)
 		{
-			interactable = null;
+			var hitCount = Physics.RaycastNonAlloc(
+				rayOrigin.position,
+				rayOrigin.forward,
+				_raycastHits,
+				_sceneContext.InteractionDistance,
+				_sceneContext.InteractionMask,
+				QueryTriggerInteraction.Collide);
 
-			var rayOrigin = GetRayOrigin();
-			if (!rayOrigin)
+			IPlayerInteractable selected = null;
+			var selectedDistance = float.MaxValue;
+			var selectedPriority = int.MinValue;
+
+			for (var i = 0; i < hitCount; i++)
 			{
-				return false;
+				var hit = _raycastHits[i];
+				if (PlayerInteractableRegistry.TryGet(hit.collider, out var interactable) == false || interactable.CanInteract == false)
+				{
+					continue;
+				}
+
+				var isFurther = hit.distance > selectedDistance + 0.001f;
+				var sameDistanceLowerPriority = Mathf.Abs(hit.distance - selectedDistance) <= 0.001f &&
+					interactable.Priority <= selectedPriority;
+				if (isFurther || sameDistanceLowerPriority)
+				{
+					continue;
+				}
+
+				selected = interactable;
+				selectedDistance = hit.distance;
+				selectedPriority = interactable.Priority;
 			}
 
-			if (Physics.Raycast(
-					rayOrigin.position,
-					rayOrigin.forward,
-					out var hit,
-					_sceneContext.InteractionDistance,
-					_sceneContext.InteractionMask,
-					QueryTriggerInteraction.Collide) == false)
-			{
-				return false;
-			}
-
-			interactable = hit.collider.GetComponentInParent<IStationInteractableView>();
-			return interactable != null;
+			return selected;
 		}
 
-		private Transform GetRayOrigin()
+		private IPlayerInteractable ResolveNearestInteractable()
+		{
+			if (!_rayOrigin)
+			{
+				return null;
+			}
+
+			var sourcePosition = _playerView ? _playerView.transform.position : _rayOrigin.position;
+			var hitCount = Physics.OverlapSphereNonAlloc(
+				sourcePosition,
+				_sceneContext.InteractionDistance,
+				_overlapColliders,
+				_sceneContext.InteractionMask,
+				QueryTriggerInteraction.Collide);
+
+			IPlayerInteractable selected = null;
+			var selectedDistance = float.MaxValue;
+			var selectedPriority = int.MinValue;
+
+			for (var i = 0; i < hitCount; i++)
+			{
+				var collider = _overlapColliders[i];
+				if (PlayerInteractableRegistry.TryGet(collider, out var interactable) == false || interactable.CanInteract == false)
+				{
+					continue;
+				}
+
+				var point = collider.ClosestPoint(sourcePosition);
+				var distance = (point - sourcePosition).sqrMagnitude;
+				var isFurther = distance > selectedDistance + 0.001f;
+				var sameDistanceLowerPriority = Mathf.Abs(distance - selectedDistance) <= 0.001f &&
+					interactable.Priority <= selectedPriority;
+				if (isFurther || sameDistanceLowerPriority)
+				{
+					continue;
+				}
+
+				selected = interactable;
+				selectedDistance = distance;
+				selectedPriority = interactable.Priority;
+			}
+
+			return selected;
+		}
+
+		private Transform ResolveRayOrigin()
 		{
 			if (_sceneContext.InteractionRayOrigin)
 			{
 				return _sceneContext.InteractionRayOrigin;
+			}
+
+			if (_playerView)
+			{
+				if (_playerView.CameraRoot)
+				{
+					return _playerView.CameraRoot;
+				}
+
+				if (_playerView.Head)
+				{
+					return _playerView.Head;
+				}
+
+				return _playerView.transform;
 			}
 
 			var mainCamera = Camera.main;
@@ -223,45 +300,24 @@ namespace Project.Gameplay.Station.Controllers
 			_currentDoorInteractable.SetOpenState(_isDoorOpened);
 		}
 
-		private void OnTrainCallInteracted()
+		private void OnActionButtonInteracted()
 		{
-			if (_stationFlowController.TryCallNextTrain())
+			if (_stationFlowController.IsAwaitingDecision)
 			{
+				if (_stationFlowController.ResolveCase(_selectedDecision, out _))
+				{
+					ResetDecisionSelection();
+				}
+
 				return;
 			}
 
-			_loggerService?.LogWarning(
-				"[StationInteraction] Train call ignored: flow is not awaiting train call.");
+			_stationFlowController.TryCallNextTrain();
 		}
 
-		private void OnDecisionLeverInteracted(DecisionLeverInteractableView leverView)
+		private void OnDecisionToggleInteracted(PlayerDecision decision)
 		{
-			if (CanInteractWithCase() == false || !leverView)
-			{
-				return;
-			}
-
-			_pendingDecision = leverView.Decision;
-			_hasPendingDecision = true;
-		}
-
-		private void OnDispatchButtonInteracted()
-		{
-			if (CanInteractWithCase() == false)
-			{
-				return;
-			}
-
-			if (_hasPendingDecision == false)
-			{
-				_loggerService?.LogWarning("[StationInteraction] Cannot dispatch without selected decision.");
-				return;
-			}
-
-			if (_stationFlowController.ResolveCase(_pendingDecision, out _))
-			{
-				ResetDecisionSelection();
-			}
+			_selectedDecision = decision;
 		}
 
 		private bool CanInteractWithCase()
@@ -271,8 +327,12 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void ResetDecisionSelection()
 		{
-			_hasPendingDecision = false;
-			_pendingDecision = PlayerDecision.AllowPassage;
+			_selectedDecision = PlayerDecision.AllowPassage;
+
+			if (_sceneContext.DecisionToggle)
+			{
+				_sceneContext.DecisionToggle.SetDecision(_selectedDecision);
+			}
 		}
 	}
 }
