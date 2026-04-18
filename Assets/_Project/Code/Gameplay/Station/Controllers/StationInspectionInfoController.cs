@@ -16,7 +16,7 @@ namespace Project.Gameplay.Station.Controllers
 	public sealed class StationInspectionInfoController : IBaseController, IActivatable, IDeactivatable
 	{
 		private const string NoBansText = "No bans today";
-		private const string NoCargoText = "No papers";
+		private const string NoAllowedCargoText = "No papers";
 
 		private readonly SceneContext _sceneContext;
 		private readonly StationRuntimeModel _runtimeModel;
@@ -115,16 +115,14 @@ namespace Project.Gameplay.Station.Controllers
 			var activeScenario = _runtimeModel.ActiveScenario;
 			if (activeScenario != null)
 			{
-				view.SetManifest(
-					BuildManifestCargoText(activeScenario.Manifest.DeclaredCargoId),
-					activeScenario.Manifest.DeclaredDescription);
+				view.SetAllowedCargo(BuildAllowedCargoText(activeScenario.Manifest.DeclaredCargoId));
 			}
 			else
 			{
-				view.ClearManifest();
+				view.ClearAllowedCargo();
 			}
 
-			view.SetForbiddenCargo(forbiddenCargoText);
+			view.SetBans(forbiddenCargoText);
 		}
 
 		private StationInspectionInfoView ResolveView()
@@ -219,7 +217,7 @@ namespace Project.Gameplay.Station.Controllers
 			return _forbiddenCargoText;
 		}
 
-		private string BuildManifestCargoText(string cargoId)
+		private string BuildAllowedCargoText(string cargoId)
 		{
 			return ResolveCargoDisplayName(cargoId);
 		}
@@ -229,7 +227,7 @@ namespace Project.Gameplay.Station.Controllers
 			var normalizedId = string.IsNullOrWhiteSpace(cargoId) ? string.Empty : cargoId.Trim();
 			if (string.IsNullOrEmpty(normalizedId))
 			{
-				return NoCargoText;
+				return NoAllowedCargoText;
 			}
 
 			if (_cargoConfigs == null ||

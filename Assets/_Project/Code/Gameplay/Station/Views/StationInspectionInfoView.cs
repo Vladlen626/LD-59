@@ -5,23 +5,20 @@ namespace Project.Gameplay.Station.Views
 {
 	public sealed class StationInspectionInfoView : MonoBehaviour
 	{
-		[Header("References")]
-		[SerializeField] private TMP_Text _forbiddenCargoTitle;
-		[SerializeField] private TMP_Text _forbiddenCargoValue;
-		[SerializeField] private TMP_Text _manifestTitle;
-		[SerializeField] private TMP_Text _manifestCargoValue;
-		[SerializeField] private TMP_Text _manifestDescriptionValue;
-		[SerializeField] private TMP_Text _dispatchStatusValue;
+		[Header("Refs")]
+		[SerializeField] private TMP_Text _bansTitleText;
+		[SerializeField] private TMP_Text _bansValueText;
+		[SerializeField] private TMP_Text _allowedTitleText;
+		[SerializeField] private TMP_Text _allowedValueText;
 
 		[Header("Runtime Layout")]
 		[SerializeField] private bool _autoCreateDefaultTexts = true;
-		[SerializeField] private Vector3 _titleLocalScale = new Vector3(0.08f, 0.08f, 0.08f);
-		[SerializeField] private Vector3 _valueLocalScale = new Vector3(0.075f, 0.075f, 0.075f);
+		[SerializeField] private Vector3 _titleLocalScale = new(0.08f, 0.08f, 0.08f);
+		[SerializeField] private Vector3 _valueLocalScale = new(0.075f, 0.075f, 0.075f);
 
 		[Header("Fallback Text")]
-		[SerializeField] private string _emptyForbiddenCargoText = "No bans today";
-		[SerializeField] private string _emptyManifestCargoText = "No papers";
-		[SerializeField] private string _emptyManifestDescriptionText = "-";
+		[SerializeField] private string _emptyBansText = "No bans today";
+		[SerializeField] private string _emptyAllowedText = "No papers";
 
 		private static readonly Color HeadingColor = new(0.93f, 0.84f, 0.55f);
 		private static readonly Color ValueColor = new(0.9f, 0.88f, 0.8f);
@@ -29,62 +26,48 @@ namespace Project.Gameplay.Station.Views
 		private void Awake()
 		{
 			EnsureDefaultTexts();
-			HideDispatchStatus();
 			Clear();
 		}
 
-		public void SetForbiddenCargo(string text)
+		public void SetBans(string text)
 		{
-			if (_forbiddenCargoTitle)
+			if (_bansTitleText)
 			{
-				_forbiddenCargoTitle.text = "Today's Bans";
+				_bansTitleText.text = "Today's Bans";
 			}
 
-			if (_forbiddenCargoValue)
+			if (_bansValueText)
 			{
-				_forbiddenCargoValue.text = string.IsNullOrWhiteSpace(text)
-					? _emptyForbiddenCargoText
+				_bansValueText.text = string.IsNullOrWhiteSpace(text)
+					? _emptyBansText
 					: text;
 			}
 		}
 
-		public void SetManifest(string cargoName, string description)
+		public void SetAllowedCargo(string text)
 		{
-			if (_manifestTitle)
+			if (_allowedTitleText)
 			{
-				_manifestTitle.text = "Current Papers";
+				_allowedTitleText.text = "Allowed For This Train";
 			}
 
-			if (_manifestCargoValue)
+			if (_allowedValueText)
 			{
-				_manifestCargoValue.text = string.IsNullOrWhiteSpace(cargoName)
-					? _emptyManifestCargoText
-					: cargoName;
-			}
-
-			if (_manifestDescriptionValue)
-			{
-				_manifestDescriptionValue.text = string.IsNullOrWhiteSpace(description)
-					? _emptyManifestDescriptionText
-					: description;
+				_allowedValueText.text = string.IsNullOrWhiteSpace(text)
+					? _emptyAllowedText
+					: text;
 			}
 		}
 
-		public void ClearManifest()
+		public void ClearAllowedCargo()
 		{
-			SetManifest(string.Empty, string.Empty);
-		}
-
-		public void SetDispatchState(string status, DispatchState dispatchState)
-		{
-			HideDispatchStatus();
+			SetAllowedCargo(string.Empty);
 		}
 
 		public void Clear()
 		{
-			SetForbiddenCargo(string.Empty);
-			ClearManifest();
-			SetDispatchState(string.Empty, DispatchState.Neutral);
+			SetBans(string.Empty);
+			ClearAllowedCargo();
 		}
 
 		private void EnsureDefaultTexts()
@@ -94,36 +77,30 @@ namespace Project.Gameplay.Station.Views
 				return;
 			}
 
-			_forbiddenCargoTitle ??= CreateText(
-				"Today's Bans Title",
-				new Vector3(-0.62f, 0.82f, 0f),
+			_bansTitleText ??= CreateText(
+				"Bans Title",
+				new Vector3(-0.62f, 0.72f, 0f),
 				_titleLocalScale,
 				1.8f,
 				HeadingColor);
-			_forbiddenCargoValue ??= CreateText(
-				"Today's Bans Value",
-				new Vector3(-0.62f, 0.48f, 0f),
+			_bansValueText ??= CreateText(
+				"Bans Value",
+				new Vector3(-0.62f, 0.36f, 0f),
 				_valueLocalScale,
 				1.45f,
 				ValueColor);
-			_manifestTitle ??= CreateText(
-				"Current Papers Title",
-				new Vector3(-0.62f, -0.1f, 0f),
+			_allowedTitleText ??= CreateText(
+				"Allowed Title",
+				new Vector3(-0.62f, -0.12f, 0f),
 				_titleLocalScale,
 				1.8f,
 				HeadingColor);
-			_manifestCargoValue ??= CreateText(
-				"Current Papers Cargo",
-				new Vector3(-0.62f, -0.44f, 0f),
+			_allowedValueText ??= CreateText(
+				"Allowed Value",
+				new Vector3(-0.62f, -0.46f, 0f),
 				_valueLocalScale,
-				1.55f,
+				1.5f,
 				ValueColor);
-			_manifestDescriptionValue ??= CreateText(
-				"Current Papers Description",
-				new Vector3(-0.62f, -0.75f, 0f),
-				_valueLocalScale,
-				1.25f,
-				new Color(0.82f, 0.79f, 0.72f));
 		}
 
 		private TMP_Text CreateText(
@@ -142,21 +119,6 @@ namespace Project.Gameplay.Station.Views
 				TextAlignmentOptions.TopLeft);
 			text.color = color;
 			return text;
-		}
-
-		private void HideDispatchStatus()
-		{
-			if (_dispatchStatusValue)
-			{
-				_dispatchStatusValue.gameObject.SetActive(false);
-			}
-		}
-
-		public enum DispatchState
-		{
-			Neutral = 0,
-			Ready = 1,
-			Locked = 2,
 		}
 	}
 }
