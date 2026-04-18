@@ -91,6 +91,11 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void SubscribeSceneInteractables()
 		{
+			if (_sceneContext.TrainCallButton)
+			{
+				_sceneContext.TrainCallButton.Interacted += OnTrainCallInteracted;
+			}
+
 			if (_sceneContext.AllowDecisionLever)
 			{
 				_sceneContext.AllowDecisionLever.Interacted += OnDecisionLeverInteracted;
@@ -122,6 +127,11 @@ namespace Project.Gameplay.Station.Controllers
 			if (_sceneContext.AllowDecisionLever)
 			{
 				_sceneContext.AllowDecisionLever.Interacted -= OnDecisionLeverInteracted;
+			}
+
+			if (_sceneContext.TrainCallButton)
+			{
+				_sceneContext.TrainCallButton.Interacted -= OnTrainCallInteracted;
 			}
 		}
 
@@ -211,6 +221,17 @@ namespace Project.Gameplay.Station.Controllers
 
 			_isDoorOpened = !_isDoorOpened;
 			_currentDoorInteractable.SetOpenState(_isDoorOpened);
+		}
+
+		private void OnTrainCallInteracted()
+		{
+			if (_stationFlowController.TryCallNextTrain())
+			{
+				return;
+			}
+
+			_loggerService?.LogWarning(
+				"[StationInteraction] Train call ignored: flow is not awaiting train call.");
 		}
 
 		private void OnDecisionLeverInteracted(DecisionLeverInteractableView leverView)

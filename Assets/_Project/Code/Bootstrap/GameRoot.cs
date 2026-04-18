@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Infrastructure;
@@ -10,6 +11,7 @@ using Project.Gameplay.Player;
 using Project.Gameplay.Scene;
 using Project.Gameplay.Station.Controllers;
 using Project.Gameplay.Station.Domain;
+using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Train;
 using Project.Infrastructure;
 using UnityEngine;
@@ -57,7 +59,13 @@ namespace Project.Bootstrap
 			}
 			else
 			{
-				await LaunchSingleplayerAsync(objectFactory, cameraService, cursorService, inputService, loggerService);
+				await LaunchSingleplayerAsync(
+					objectFactory,
+					cameraService,
+					uiService,
+					cursorService,
+					inputService,
+					loggerService);
 			}
 		}
 
@@ -77,6 +85,7 @@ namespace Project.Bootstrap
 		private async UniTask LaunchSingleplayerAsync(
 			IObjectFactory objectFactory,
 			ICameraService cameraService,
+			IUIService uiService,
 			ICursorService cursorService,
 			IInputService inputService,
 			ILoggerService loggerService)
@@ -94,8 +103,10 @@ namespace Project.Bootstrap
 			}
 
 			cursorService.LockCursor();
-
-			await _lifecycle.RegisterAsync(new SamplePlayerMovementController(playerView, inputService, cursorService));
+			var runtimeControllers = new List<IBaseController>
+			{
+				new SamplePlayerMovementController(playerView, inputService, cursorService),
+			};
 
 			var sceneContext = Object.FindObjectOfType<SceneContext>();
 			if (!sceneContext)
@@ -112,6 +123,18 @@ namespace Project.Bootstrap
 						"[GameRoot] Station day scenarios list is empty. Flow controller will finish day immediately.");
 				}
 
+				if (stationSetup.DayRuleSet == null)
+				{
+					loggerService?.LogError("[GameRoot] SceneContext returned null DayRuleSet. Station gameplay flow is disabled.");
+					await _lifecycle.RegisterControllersGroupAsync(runtimeControllers.ToArray());
+					return;
+				}
+
+				var stationRuntimeContext = new StationSharedRuntimeContext(
+					new StationDayModel(stationSetup.DayRuleSet),
+					new DebtModel(stationSetup.InitialDebt),
+					new InspectionJournalModel());
+
 				var trainSpawnController = new TrainSpawnController(
 					objectFactory,
 					loggerService,
@@ -120,10 +143,16 @@ namespace Project.Bootstrap
 					stationSetup.TrainSpawnParent);
 
 				var stationFlowController = new StationFlowController(
-					stationSetup.RuntimeModel,
+					stationRuntimeContext,
 					new InspectionJudge(),
 					trainSpawnController,
 					stationSetup.Scenarios,
+					loggerService);
+				var daySummaryController = new DaySummaryController(
+					uiService,
+					cursorService,
+					stationFlowController,
+					stationRuntimeContext,
 					loggerService);
 				var stationInteractionController = new StationInteractionController(
 					sceneContext,
@@ -133,10 +162,13 @@ namespace Project.Bootstrap
 					cursorService,
 					loggerService);
 
-				await _lifecycle.RegisterAsync(trainSpawnController);
-				await _lifecycle.RegisterAsync(stationFlowController);
-				await _lifecycle.RegisterAsync(stationInteractionController);
+				runtimeControllers.Add(trainSpawnController);
+				runtimeControllers.Add(daySummaryController);
+				runtimeControllers.Add(stationFlowController);
+				runtimeControllers.Add(stationInteractionController);
 			}
+
+			await _lifecycle.RegisterControllersGroupAsync(runtimeControllers.ToArray());
 		}
 	}
 }

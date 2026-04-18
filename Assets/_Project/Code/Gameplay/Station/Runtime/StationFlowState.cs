@@ -9,5 +9,6 @@ namespace Project.Gameplay.Station.Runtime
 		AwaitingDecision = 4,
 		ResolveCase = 5,
 		FinishDay = 6,
+		AwaitingTrainCall = 7,
 	}
 }

@@ -20,18 +20,30 @@ namespace Project.Gameplay.Station.Controllers
 		private bool _isActive;
 		private bool _isTrainCallInProgress;
 
+		public event Action DayFinished;
+
+		public bool IsAwaitingTrainCall => _isActive &&
+			_isTrainCallInProgress == false &&
+			_runtimeModel.FlowState == StationFlowState.AwaitingTrainCall &&
+			_runtimeModel.HasActiveScenario == false;
+
 		public bool IsAwaitingDecision => _isActive &&
 			_runtimeModel.FlowState == StationFlowState.AwaitingDecision &&
 			_runtimeModel.HasActiveScenario;
 
 		public StationFlowController(
-			StationRuntimeModel runtimeModel,
+			StationSharedRuntimeContext runtimeContext,
 			InspectionJudge inspectionJudge,
 			TrainSpawnController trainSpawnController,
 			IReadOnlyList<TrainScenario> dayScenarios,
 			ILoggerService loggerService)
 		{
-			_runtimeModel = runtimeModel ?? throw new ArgumentNullException(nameof(runtimeModel));
+			if (runtimeContext == null)
+			{
+				throw new ArgumentNullException(nameof(runtimeContext));
+			}
+
+			_runtimeModel = runtimeContext.RuntimeModel;
 			_inspectionJudge = inspectionJudge ?? throw new ArgumentNullException(nameof(inspectionJudge));
 			_trainSpawnController = trainSpawnController ?? throw new ArgumentNullException(nameof(trainSpawnController));
 			_dayScenarios = dayScenarios ?? Array.Empty<TrainScenario>();
@@ -77,18 +89,30 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetActiveCaseIndex(-1);
 			_runtimeModel.SetFlowState(StationFlowState.StartDay);
+			_loggerService?.Log(
+				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} started. Cases={_dayScenarios.Count}.");
 
-			CallNextTrain();
+			EnterAwaitingTrainCall();
 		}
 
-		public void CallNextTrain()
+		public bool TryCallNextTrain()
 		{
-			if (_isActive == false || _isTrainCallInProgress)
+			if (!IsAwaitingTrainCall)
 			{
-				return;
+				return false;
+			}
+
+			var nextIndex = FindNextCaseIndex(_runtimeModel.ActiveCaseIndex + 1);
+			if (nextIndex < 0)
+			{
+				FinishDay();
+				return false;
 			}
 
 			CallNextTrainAsync().Forget();
+			_loggerService?.Log(
+				$"[StationFlow] Train call accepted. Preparing case {nextIndex + 1}.");
+			return true;
 		}
 
 		private async UniTaskVoid CallNextTrainAsync()
@@ -104,22 +128,10 @@ namespace Project.Gameplay.Station.Controllers
 
 				_runtimeModel.SetFlowState(StationFlowState.CallNextTrain);
 
-				var nextIndex = _runtimeModel.ActiveCaseIndex;
-				while (_isActive)
+				var nextIndex = FindNextCaseIndex(_runtimeModel.ActiveCaseIndex + 1);
+				while (_isActive && nextIndex >= 0)
 				{
-					nextIndex++;
-					if (nextIndex >= _dayScenarios.Count)
-					{
-						FinishDay();
-						return;
-					}
-
 					var nextScenario = _dayScenarios[nextIndex];
-					if (nextScenario == null)
-					{
-						continue;
-					}
-
 					_runtimeModel.SetActiveCaseIndex(nextIndex);
 					_runtimeModel.SetActiveScenario(nextScenario);
 
@@ -133,12 +145,16 @@ namespace Project.Gameplay.Station.Controllers
 						_loggerService?.LogWarning(
 							$"[StationFlow] Failed to spawn train for case index {nextIndex}. Skipping case.");
 						_runtimeModel.ClearActiveScenario();
+						nextIndex = FindNextCaseIndex(nextIndex + 1);
 						continue;
 					}
 
+					LogCaseDetails(nextScenario, nextIndex);
 					BeginInspection();
 					return;
 				}
+
+				FinishDay();
 			}
 			finally
 			{
@@ -182,10 +198,12 @@ namespace Project.Gameplay.Station.Controllers
 				result);
 			_runtimeModel.InspectionJournal.AddRecord(caseRecord);
 			_runtimeModel.StationDay.RegisterCompletedCase();
+			LogResolveResult(result, scenario);
+
 			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 
-			CallNextTrain();
+			EnterAwaitingTrainCall();
 			return true;
 		}
 
@@ -194,15 +212,81 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.SetFlowState(StationFlowState.AwaitingDecision);
 		}
 
+		private void EnterAwaitingTrainCall()
+		{
+			var nextIndex = FindNextCaseIndex(_runtimeModel.ActiveCaseIndex + 1);
+			if (nextIndex < 0)
+			{
+				FinishDay();
+				return;
+			}
+
+			_runtimeModel.SetFlowState(StationFlowState.AwaitingTrainCall);
+			_loggerService?.Log(
+				$"[StationFlow] Awaiting train call for case {nextIndex + 1}.");
+		}
+
 		private void FinishDay()
 		{
 			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetFlowState(StationFlowState.FinishDay);
+			DayFinished?.Invoke();
 			_loggerService?.Log(
 				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} finished. " +
 				$"Cases={_runtimeModel.StationDay.CompletedCasesCount}, " +
 				$"Debt={_runtimeModel.Debt.RemainingDebt}, Fines={_runtimeModel.Debt.TotalFines}, Earnings={_runtimeModel.Debt.TotalEarnings}.");
+		}
+
+		private int FindNextCaseIndex(int startIndex)
+		{
+			if (_dayScenarios.Count == 0)
+			{
+				return -1;
+			}
+
+			var index = Math.Max(0, startIndex);
+			for (; index < _dayScenarios.Count; index++)
+			{
+				if (_dayScenarios[index] != null)
+				{
+					return index;
+				}
+			}
+
+			return -1;
+		}
+
+		private void LogCaseDetails(TrainScenario scenario, int caseIndex)
+		{
+			var ruleSet = _runtimeModel.StationDay.CurrentRuleSet;
+			var forbiddenCargo = ruleSet.ForbiddenCargoIds.Count == 0
+				? "<none>"
+				: string.Join(", ", ruleSet.ForbiddenCargoIds);
+			var isForbidden = ruleSet.IsCargoForbidden(scenario.ActualCargoId);
+
+			_loggerService?.Log(
+				$"[StationFlow] Begin inspection case {caseIndex + 1}: " +
+				$"ManifestCargo='{scenario.Manifest.DeclaredCargoId}', " +
+				$"ManifestDesc='{scenario.Manifest.DeclaredDescription}', " +
+				$"ActualCargo='{scenario.ActualCargoId}', HiddenContraband={scenario.HasHiddenContraband}, " +
+				$"IllegalMarker={scenario.HasIllegalMarker}, ForbiddenCargo=[{forbiddenCargo}], " +
+				$"ActualCargoForbidden={isForbidden}, " +
+				$"Penalties(Missed={ruleSet.MissedContrabandPenalty}, Wrongful={ruleSet.WrongfulRejectionPenalty}).");
+		}
+
+		private void LogResolveResult(InspectionResult result, TrainScenario scenario)
+		{
+			var reasons = result.ErrorReasons.Count == 0
+				? "<none>"
+				: string.Join(", ", result.ErrorReasons);
+			var reward = result.IsCorrect ? scenario.RewardOnCorrectDecision : 0;
+
+			_loggerService?.Log(
+				$"[StationFlow] Resolve case {_runtimeModel.ActiveCaseIndex + 1}: " +
+				$"Player={result.PlayerDecision}, Expected={result.ExpectedDecision}, Verdict={result.Verdict}, " +
+				$"Penalty={result.Penalty}, Reward={reward}, Reasons=[{reasons}], " +
+				$"Debt={_runtimeModel.Debt.RemainingDebt}, JournalCount={_runtimeModel.InspectionJournal.Count}.");
 		}
 	}
 }

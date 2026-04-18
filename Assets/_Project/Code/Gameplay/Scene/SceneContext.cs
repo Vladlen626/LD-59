@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using PlatformCore.Services;
 using Project.Gameplay.Station.Configs;
 using Project.Gameplay.Station.Domain;
-using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Station.Views;
 using UnityEngine;
 using UnityScene = UnityEngine.SceneManagement.Scene;
@@ -14,6 +13,7 @@ namespace Project.Gameplay.Scene
 		[SerializeField] [Min(0)] private int _initialDebt = 1_000;
 		[SerializeField] private Transform _trainSpawnPoint;
 		[SerializeField] private Transform _trainSpawnParent;
+		[SerializeField] private TrainCallInteractableView _trainCallButton;
 		[SerializeField] private DecisionLeverInteractableView _allowDecisionLever;
 		[SerializeField] private DecisionLeverInteractableView _rejectDecisionLever;
 		[SerializeField] private DispatchButtonInteractableView _dispatchButton;
@@ -23,6 +23,7 @@ namespace Project.Gameplay.Scene
 		[SerializeField] private StationDayConfig _dayConfig = new StationDayConfig();
 
 		public UnityScene Scene { get; private set; }
+		public TrainCallInteractableView TrainCallButton => _trainCallButton;
 		public DecisionLeverInteractableView AllowDecisionLever => _allowDecisionLever;
 		public DecisionLeverInteractableView RejectDecisionLever => _rejectDecisionLever;
 		public DispatchButtonInteractableView DispatchButton => _dispatchButton;
@@ -40,30 +41,15 @@ namespace Project.Gameplay.Scene
 			return GetOrCreateDayConfig().BuildTrainScenarios();
 		}
 
-		public StationRuntimeModel BuildRuntimeModel()
-		{
-			var stationDayModel = new StationDayModel(BuildRuleSet());
-			var debtModel = new DebtModel(_initialDebt);
-			var inspectionJournal = new InspectionJournalModel();
-
-			return new StationRuntimeModel(
-				stationDayModel,
-				debtModel,
-				inspectionJournal);
-		}
-
 		public SceneRuntimeSetup BuildRuntimeSetup()
 		{
 			var dayConfig = GetOrCreateDayConfig();
 			var ruleSet = dayConfig.BuildRuleSet();
 			var scenarios = dayConfig.BuildTrainScenarios();
-			var runtimeModel = new StationRuntimeModel(
-				new StationDayModel(ruleSet),
-				new DebtModel(_initialDebt),
-				new InspectionJournalModel());
 
 			return new SceneRuntimeSetup(
-				runtimeModel,
+				ruleSet,
+				_initialDebt,
 				scenarios,
 				_trainSpawnPoint,
 				_trainSpawnParent);
@@ -98,18 +84,21 @@ namespace Project.Gameplay.Scene
 	public readonly struct SceneRuntimeSetup
 	{
 		public SceneRuntimeSetup(
-			StationRuntimeModel runtimeModel,
+			DayRuleSet dayRuleSet,
+			int initialDebt,
 			List<TrainScenario> scenarios,
 			Transform trainSpawnPoint,
 			Transform trainSpawnParent)
 		{
-			RuntimeModel = runtimeModel;
+			DayRuleSet = dayRuleSet;
+			InitialDebt = Mathf.Max(0, initialDebt);
 			Scenarios = scenarios ?? new List<TrainScenario>();
 			TrainSpawnPoint = trainSpawnPoint;
 			TrainSpawnParent = trainSpawnParent;
 		}
 
-		public StationRuntimeModel RuntimeModel { get; }
+		public DayRuleSet DayRuleSet { get; }
+		public int InitialDebt { get; }
 		public List<TrainScenario> Scenarios { get; }
 		public Transform TrainSpawnPoint { get; }
 		public Transform TrainSpawnParent { get; }
