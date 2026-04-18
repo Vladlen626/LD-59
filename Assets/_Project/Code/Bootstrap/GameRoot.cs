@@ -185,6 +185,9 @@ namespace Project.Bootstrap
 						inputService,
 						cursorService,
 						loggerService);
+					var uiHintViewController = new UIHintViewController(
+						uiService,
+						stationInteractionController);
 
 					controllers = new IBaseController[]
 					{
@@ -196,6 +199,7 @@ namespace Project.Bootstrap
 						stationInspectionInfoController,
 						stationFlowController,
 						stationInteractionController,
+						uiHintViewController,
 					};
 				}
 			}

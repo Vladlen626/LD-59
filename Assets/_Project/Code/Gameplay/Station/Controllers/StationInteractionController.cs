@@ -1,3 +1,4 @@
+using System;
 using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
@@ -20,6 +21,17 @@ namespace Project.Gameplay.Station.Controllers
 		private const int MaxOverlapHits = 32;
 		private const float DefaultInteractionDistance = 4f;
 		private const int DefaultInteractionMask = ~0;
+		private const float FeedbackDuration = 1.15f;
+		private const string HintCallTrain = "Call Train";
+		private const string HintDispatchTrain = "Dispatch Train";
+		private const string HintOpenWagonFirst = "Open wagon first";
+		private const string HintOpenWagon = "Open Wagon";
+		private const string HintCloseWagon = "Close Wagon";
+		private const string HintTrainInMotion = "Train in motion";
+		private const string HintDayComplete = "Day complete";
+		private const string HintStandBy = "Stand by";
+		private const string HintVerdictAllow = "Verdict: Allow\nInteract to switch";
+		private const string HintVerdictSendBack = "Verdict: Send Back\nInteract to switch";
 
 		private readonly SamplePlayerView _playerView;
 		private readonly SceneContext _sceneContext;
@@ -35,9 +47,16 @@ namespace Project.Gameplay.Station.Controllers
 		private WagonDoorInteractableView _currentDoorInteractable;
 		private IPlayerInteractable _hoveredInteractable;
 		private Transform _rayOrigin;
+		private string _currentHint = string.Empty;
+		private string _temporaryHint = string.Empty;
+		private float _temporaryHintUntil;
 		private bool _isActive;
 		private bool _isDoorOpened;
 		private PlayerDecision _selectedDecision = PlayerDecision.AllowPassage;
+
+		public event Action<string> HintChanged;
+
+		public string CurrentHint => _currentHint;
 
 		public StationInteractionController(
 			SamplePlayerView playerView,
@@ -80,7 +99,7 @@ namespace Project.Gameplay.Station.Controllers
 
 			_trainSpawnController.CurrentTrainChanged += OnCurrentTrainChanged;
 			OnCurrentTrainChanged(_trainSpawnController.CurrentTrain);
-			RefreshInteractableHints();
+			RefreshHint();
 		}
 
 		public void Deactivate()
@@ -104,6 +123,8 @@ namespace Project.Gameplay.Station.Controllers
 			_hoveredInteractable = null;
 			_rayOrigin = null;
 			_isActive = false;
+			ClearTemporaryHint();
+			SetCurrentHint(string.Empty);
 		}
 
 		public void OnUpdate(float _)
@@ -113,9 +134,9 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
-			if (_runtimeModel.IsTrainInTransit)
+			UpdateHoveredInteractable(ResolveCurrentHoveredInteractable());
+			if (_playerView && _playerView.gameObject.activeInHierarchy == false)
 			{
-				_hoveredInteractable = null;
 				return;
 			}
 
@@ -124,22 +145,6 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
-			if (_playerView && _playerView.gameObject.activeInHierarchy == false)
-			{
-				_hoveredInteractable = null;
-				return;
-			}
-
-			if (!_rayOrigin)
-			{
-				_rayOrigin = ResolveRayOrigin();
-				if (!_rayOrigin)
-				{
-					return;
-				}
-			}
-
-			_hoveredInteractable = ResolveHoveredInteractable(_rayOrigin);
 			(_hoveredInteractable ?? ResolveNearestInteractable())?.Interact();
 		}
 
@@ -167,6 +172,30 @@ namespace Project.Gameplay.Station.Controllers
 			{
 				_sceneContext.ActionButton.Interacted -= OnActionButtonInteracted;
 			}
+		}
+
+		private IPlayerInteractable ResolveCurrentHoveredInteractable()
+		{
+			if (_cursorService.IsCursorLocked == false)
+			{
+				return null;
+			}
+
+			if (_playerView && _playerView.gameObject.activeInHierarchy == false)
+			{
+				return null;
+			}
+
+			if (!_rayOrigin)
+			{
+				_rayOrigin = ResolveRayOrigin();
+				if (!_rayOrigin)
+				{
+					return null;
+				}
+			}
+
+			return ResolveHoveredInteractable(_rayOrigin);
 		}
 
 		private IPlayerInteractable ResolveHoveredInteractable(Transform rayOrigin)
@@ -299,6 +328,7 @@ namespace Project.Gameplay.Station.Controllers
 
 			if (!currentTrain)
 			{
+				InvalidateHintState();
 				return;
 			}
 
@@ -306,15 +336,15 @@ namespace Project.Gameplay.Station.Controllers
 			if (!doorInteractable)
 			{
 				_loggerService?.LogWarning("[StationInteraction] WagonDoorInteractableView is missing on TrainView.");
+				InvalidateHintState();
 				return;
 			}
 
 			_currentDoorInteractable = doorInteractable;
 			_currentDoorInteractable.Interacted += OnDoorInteracted;
 			_currentDoorInteractable.SetOpenState(false);
-			_currentDoorInteractable.SetHintVisible(CanInspectCurrentWagon());
 			_isDoorOpened = false;
-			RefreshInteractableHints();
+			InvalidateHintState();
 		}
 
 		private void UnbindCurrentDoorInteractable()
@@ -326,7 +356,6 @@ namespace Project.Gameplay.Station.Controllers
 
 			_currentDoorInteractable.Interacted -= OnDoorInteracted;
 			_currentDoorInteractable.SetOpenState(false);
-			_currentDoorInteractable.SetHintVisible(false);
 			_currentDoorInteractable = null;
 			_isDoorOpened = false;
 		}
@@ -346,14 +375,14 @@ namespace Project.Gameplay.Station.Controllers
 				_runtimeModel.MarkCurrentWagonInspected();
 			}
 
-			RefreshInteractableHints();
+			InvalidateHintState();
 		}
 
 		private void OnActionButtonInteracted()
 		{
 			if (_runtimeModel.IsTrainInTransit)
 			{
-				ShowActionFeedback("Train in motion");
+				ShowActionFeedback(HintTrainInMotion);
 				return;
 			}
 
@@ -361,8 +390,7 @@ namespace Project.Gameplay.Station.Controllers
 			{
 				if (_runtimeModel.HasInspectedCurrentWagon == false)
 				{
-					ShowActionFeedback("Open wagon first");
-					RefreshInteractableHints();
+					ShowActionFeedback(HintOpenWagonFirst);
 					return;
 				}
 
@@ -371,16 +399,17 @@ namespace Project.Gameplay.Station.Controllers
 					ResetDecisionSelection();
 				}
 
-				RefreshInteractableHints();
+				InvalidateHintState();
 				return;
 			}
 
 			if (_stationFlowController.TryCallNextTrain() == false)
 			{
-				ShowActionFeedback(_runtimeModel.FlowState == StationFlowState.FinishDay ? "Day complete" : "Stand by");
+				ShowActionFeedback(_runtimeModel.FlowState == StationFlowState.FinishDay ? HintDayComplete : HintStandBy);
+				return;
 			}
 
-			RefreshInteractableHints();
+			InvalidateHintState();
 		}
 
 		private void OnDecisionToggleInteracted(PlayerDecision decision)
@@ -391,7 +420,12 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			_selectedDecision = decision;
-			RefreshInteractableHints();
+			if (_sceneContext.DecisionToggle)
+			{
+				_sceneContext.DecisionToggle.SetDecision(_selectedDecision);
+			}
+
+			InvalidateHintState();
 		}
 
 		private bool CanInteractWithCase()
@@ -407,90 +441,135 @@ namespace Project.Gameplay.Station.Controllers
 			{
 				_sceneContext.DecisionToggle.SetDecision(_selectedDecision);
 			}
-
-			RefreshInteractableHints();
 		}
 
 		private void OnRuntimeScenarioChanged(TrainScenario _)
 		{
-			RefreshInteractableHints();
+			InvalidateHintState();
 		}
 
 		private void OnFlowStateChanged(StationFlowState _)
 		{
-			RefreshInteractableHints();
+			InvalidateHintState();
 		}
 
 		private void OnTrainTransitStateChanged(TrainTransitState _)
 		{
-			RefreshInteractableHints();
+			InvalidateHintState();
 		}
 
 		private void OnInspectionStateChanged(bool _)
 		{
-			RefreshInteractableHints();
+			InvalidateHintState();
 		}
 
-		private void RefreshInteractableHints()
+		private void InvalidateHintState()
 		{
-			RefreshActionButtonHint();
-			RefreshDoorHint();
-			RefreshDecisionToggleHint();
+			ClearTemporaryHint();
+			RefreshHint();
 		}
 
-		private void RefreshActionButtonHint()
+		private void UpdateHoveredInteractable(IPlayerInteractable hoveredInteractable)
 		{
-			if (!_sceneContext.ActionButton)
+			if (ReferenceEquals(_hoveredInteractable, hoveredInteractable))
 			{
+				RefreshHint();
 				return;
 			}
 
+			_hoveredInteractable = hoveredInteractable;
+			RefreshHint();
+		}
+
+		private void RefreshHint()
+		{
+			if (_isActive == false)
+			{
+				SetCurrentHint(string.Empty);
+				return;
+			}
+
+			if (TryGetTemporaryHint(out var temporaryHint))
+			{
+				SetCurrentHint(temporaryHint);
+				return;
+			}
+
+			SetCurrentHint(ResolveHint(_hoveredInteractable));
+		}
+
+		private string ResolveHint(IPlayerInteractable interactable)
+		{
+			if (interactable == null)
+			{
+				return string.Empty;
+			}
+
+			if (ReferenceEquals(interactable, _sceneContext.ActionButton))
+			{
+				return ResolveActionButtonHint();
+			}
+
+			if (ReferenceEquals(interactable, _sceneContext.DecisionToggle))
+			{
+				return ResolveDecisionToggleHint();
+			}
+
+			if (ReferenceEquals(interactable, _currentDoorInteractable))
+			{
+				return ResolveDoorHint();
+			}
+
+			return string.Empty;
+		}
+
+		private string ResolveActionButtonHint()
+		{
 			if (_runtimeModel.IsTrainInTransit)
 			{
-				_sceneContext.ActionButton.SetDisplay("Train in motion", StationActionButtonInteractableView.DisplayState.Blocked);
-				return;
+				return HintTrainInMotion;
 			}
 
 			if (_stationFlowController.IsAwaitingDecision)
 			{
-				var needsInspection = _runtimeModel.HasInspectedCurrentWagon == false;
-				_sceneContext.ActionButton.SetDisplay(
-					needsInspection ? "Open wagon first" : "Dispatch Train",
-					needsInspection
-						? StationActionButtonInteractableView.DisplayState.Blocked
-						: StationActionButtonInteractableView.DisplayState.Ready);
-				return;
+				return _runtimeModel.HasInspectedCurrentWagon
+					? HintDispatchTrain
+					: HintOpenWagonFirst;
 			}
 
 			if (_stationFlowController.IsAwaitingTrainCall)
 			{
-				_sceneContext.ActionButton.SetDisplay("Call Train", StationActionButtonInteractableView.DisplayState.Ready);
-				return;
+				return HintCallTrain;
 			}
 
 			if (_runtimeModel.FlowState == StationFlowState.FinishDay)
 			{
-				_sceneContext.ActionButton.SetDisplay("Day complete", StationActionButtonInteractableView.DisplayState.Neutral);
-				return;
+				return HintDayComplete;
 			}
 
-			_sceneContext.ActionButton.SetDisplay("Stand by", StationActionButtonInteractableView.DisplayState.Neutral);
+			return HintStandBy;
 		}
 
-		private void RefreshDoorHint()
+		private string ResolveDecisionToggleHint()
 		{
-			if (_currentDoorInteractable)
+			if (_stationFlowController.IsAwaitingDecision == false || _runtimeModel.IsTrainInTransit)
 			{
-				_currentDoorInteractable.SetHintVisible(CanInspectCurrentWagon());
+				return string.Empty;
 			}
+
+			return _selectedDecision == PlayerDecision.AllowPassage
+				? HintVerdictAllow
+				: HintVerdictSendBack;
 		}
 
-		private void RefreshDecisionToggleHint()
+		private string ResolveDoorHint()
 		{
-			if (_sceneContext.DecisionToggle)
+			if (CanInspectCurrentWagon() == false)
 			{
-				_sceneContext.DecisionToggle.SetDecision(_selectedDecision);
+				return string.Empty;
 			}
+
+			return _isDoorOpened ? HintCloseWagon : HintOpenWagon;
 		}
 
 		private bool CanInspectCurrentWagon()
@@ -503,12 +582,51 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void ShowActionFeedback(string message)
 		{
-			if (_sceneContext.ActionButton)
+			if (string.IsNullOrWhiteSpace(message))
 			{
-				_sceneContext.ActionButton.ShowTemporaryFeedback(
-					message,
-					StationActionButtonInteractableView.DisplayState.Blocked);
+				return;
 			}
+
+			_temporaryHint = message;
+			_temporaryHintUntil = Time.unscaledTime + FeedbackDuration;
+			RefreshHint();
+		}
+
+		private bool TryGetTemporaryHint(out string hint)
+		{
+			if (string.IsNullOrEmpty(_temporaryHint))
+			{
+				hint = string.Empty;
+				return false;
+			}
+
+			if (Time.unscaledTime >= _temporaryHintUntil)
+			{
+				ClearTemporaryHint();
+				hint = string.Empty;
+				return false;
+			}
+
+			hint = _temporaryHint;
+			return true;
+		}
+
+		private void ClearTemporaryHint()
+		{
+			_temporaryHint = string.Empty;
+			_temporaryHintUntil = 0f;
+		}
+
+		private void SetCurrentHint(string hint)
+		{
+			var normalizedHint = string.IsNullOrWhiteSpace(hint) ? string.Empty : hint;
+			if (string.Equals(_currentHint, normalizedHint, StringComparison.Ordinal))
+			{
+				return;
+			}
+
+			_currentHint = normalizedHint;
+			HintChanged?.Invoke(_currentHint);
 		}
 	}
 }

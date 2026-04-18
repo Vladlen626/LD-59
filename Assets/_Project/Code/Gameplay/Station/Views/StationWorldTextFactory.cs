@@ -23,7 +23,7 @@ namespace Project.Gameplay.Station.Views
 			var text = labelObject.AddComponent<TextMeshPro>();
 			text.fontSize = fontSize;
 			text.alignment = alignment;
-			text.enableWordWrapping = false;
+			text.textWrappingMode = TextWrappingModes.NoWrap;
 			text.overflowMode = TextOverflowModes.Overflow;
 			text.text = string.Empty;
 

@@ -22,7 +22,6 @@ namespace Project.Gameplay.Station.Views
 		[SerializeField] private string _emptyForbiddenCargoText = "No bans today";
 		[SerializeField] private string _emptyManifestCargoText = "No papers";
 		[SerializeField] private string _emptyManifestDescriptionText = "-";
-		[SerializeField] private string _emptyDispatchStatusText = "Waiting for train";
 
 		private static readonly Color HeadingColor = new(0.93f, 0.84f, 0.55f);
 		private static readonly Color ValueColor = new(0.9f, 0.88f, 0.8f);
