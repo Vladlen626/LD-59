@@ -34,6 +34,7 @@ Transform:
   - {fileID: 4795732462098813433}
   - {fileID: 6056806122617932853}
   - {fileID: 7838078081341054022}
+  - {fileID: 1633236653817852210}
   - {fileID: 8400210622418247991}
   - {fileID: 6552159384464726541}
   - {fileID: 2811776120490298084}
@@ -215,6 +216,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 8033762511617079788}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2628740838103271566
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1633236653817852210}
+  m_Layer: 0
+  m_Name: DoorTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1633236653817852210
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2628740838103271566}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 2.49, y: 2.15, z: -7.41}
+  m_LocalScale: {x: 0.5, y: 5, z: 8}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8033762511617079788}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3665170676676553849
 GameObject:
   m_ObjectHideFlags: 0
@@ -292,6 +324,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: _Project.Gameplay::Project.Gameplay.Train.TrainView
   _door: {fileID: 7838078081341054022}
+  _doorInteractable: {fileID: 3078994622612496754}
   _cargoRoot: {fileID: 8033762511617079788}
   _supportPoints:
   - {fileID: 8400210622418247991}
@@ -709,6 +742,7 @@ GameObject:
   - component: {fileID: 4609954828057068016}
   - component: {fileID: 827145556855720005}
   - component: {fileID: 1454248940114782976}
+  - component: {fileID: 3078994622612496754}
   m_Layer: 0
   m_Name: Door
   m_TagString: Untagged
@@ -809,3 +843,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3078994622612496754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8439550292420855055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fec305cdf6b36994682ca21ec67881cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Gameplay::Project.Gameplay.Station.Views.WagonDoorInteractableView
+  _interactionCollider: {fileID: 1454248940114782976}
+  _priority: 0
+  _doorTarget: {fileID: 1633236653817852210}

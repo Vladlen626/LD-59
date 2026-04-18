@@ -1,4 +1,5 @@
 using System;
+using PlatformCore.Infrastructure.SimpleTweens;
 using Project.Gameplay.Interaction;
 using UnityEngine;
 
@@ -6,23 +7,17 @@ namespace Project.Gameplay.Station.Views
 {
 	public sealed class WagonDoorInteractableView : PlayerInteractableView
 	{
-		[SerializeField] private Transform _doorPivot;
-		[SerializeField] private Vector3 _openedLocalEuler = new Vector3(0f, 110f, 0f);
+		[SerializeField] private Transform _doorTarget;
+		[SerializeField] private float _moveDuration = 0.65f;
 
-		private Quaternion _closedLocalRotation;
+		private Vector3 _closedLocalPosition;
 
 		public event Action Interacted;
 
 		protected override void Awake()
 		{
 			base.Awake();
-
-			if (!_doorPivot)
-			{
-				_doorPivot = transform;
-			}
-
-			_closedLocalRotation = _doorPivot.localRotation;
+			_closedLocalPosition = transform.localPosition;
 		}
 
 		public override void Interact()
@@ -32,14 +27,17 @@ namespace Project.Gameplay.Station.Views
 
 		public void SetOpenState(bool isOpened)
 		{
-			if (!_doorPivot)
-			{
-				return;
-			}
+			var targetPosition = isOpened && _doorTarget
+				? GetTargetLocalPosition()
+				: _closedLocalPosition;
 
-			_doorPivot.localRotation = isOpened
-				? _closedLocalRotation * Quaternion.Euler(_openedLocalEuler)
-				: _closedLocalRotation;
+			SimpleTweensTransform.MoveToLocalPosition(transform, targetPosition, _moveDuration);
+		}
+
+		private Vector3 GetTargetLocalPosition()
+		{
+			var parent = transform.parent;
+			return parent ? parent.InverseTransformPoint(_doorTarget.position) : _doorTarget.position;
 		}
 	}
 }
