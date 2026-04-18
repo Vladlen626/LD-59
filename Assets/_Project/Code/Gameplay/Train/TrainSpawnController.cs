@@ -1,3 +1,4 @@
+using System;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
@@ -18,6 +19,8 @@ namespace Project.Gameplay.Train
 		private TrainView _currentTrain;
 		private bool _isActive;
 		private int _spawnRevision;
+
+		public event Action<TrainView> CurrentTrainChanged;
 
 		public TrainSpawnController(
 			IObjectFactory objectFactory,
@@ -87,6 +90,7 @@ namespace Project.Gameplay.Train
 			}
 
 			_currentTrain = trainView;
+			CurrentTrainChanged?.Invoke(_currentTrain);
 			return _currentTrain;
 		}
 
@@ -105,6 +109,7 @@ namespace Project.Gameplay.Train
 
 			_objectFactory.Destroy(_currentTrain.gameObject);
 			_currentTrain = null;
+			CurrentTrainChanged?.Invoke(null);
 		}
 	}
 }

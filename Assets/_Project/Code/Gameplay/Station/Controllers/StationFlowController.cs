@@ -20,6 +20,10 @@ namespace Project.Gameplay.Station.Controllers
 		private bool _isActive;
 		private bool _isTrainCallInProgress;
 
+		public bool IsAwaitingDecision => _isActive &&
+			_runtimeModel.FlowState == StationFlowState.AwaitingDecision &&
+			_runtimeModel.HasActiveScenario;
+
 		public StationFlowController(
 			StationRuntimeModel runtimeModel,
 			InspectionJudge inspectionJudge,

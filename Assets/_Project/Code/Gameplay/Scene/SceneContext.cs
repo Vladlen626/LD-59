@@ -3,6 +3,7 @@ using PlatformCore.Services;
 using Project.Gameplay.Station.Configs;
 using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Station.Runtime;
+using Project.Gameplay.Station.Views;
 using UnityEngine;
 using UnityScene = UnityEngine.SceneManagement.Scene;
 
@@ -13,9 +14,21 @@ namespace Project.Gameplay.Scene
 		[SerializeField] [Min(0)] private int _initialDebt = 1_000;
 		[SerializeField] private Transform _trainSpawnPoint;
 		[SerializeField] private Transform _trainSpawnParent;
+		[SerializeField] private DecisionLeverInteractableView _allowDecisionLever;
+		[SerializeField] private DecisionLeverInteractableView _rejectDecisionLever;
+		[SerializeField] private DispatchButtonInteractableView _dispatchButton;
+		[SerializeField] private Transform _interactionRayOrigin;
+		[SerializeField] [Min(0.5f)] private float _interactionDistance = 4f;
+		[SerializeField] private LayerMask _interactionMask = ~0;
 		[SerializeField] private StationDayConfig _dayConfig = new StationDayConfig();
 
 		public UnityScene Scene { get; private set; }
+		public DecisionLeverInteractableView AllowDecisionLever => _allowDecisionLever;
+		public DecisionLeverInteractableView RejectDecisionLever => _rejectDecisionLever;
+		public DispatchButtonInteractableView DispatchButton => _dispatchButton;
+		public Transform InteractionRayOrigin => _interactionRayOrigin;
+		public float InteractionDistance => _interactionDistance;
+		public LayerMask InteractionMask => _interactionMask;
 
 		public DayRuleSet BuildRuleSet()
 		{

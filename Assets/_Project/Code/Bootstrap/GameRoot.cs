@@ -125,9 +125,17 @@ namespace Project.Bootstrap
 					trainSpawnController,
 					stationSetup.Scenarios,
 					loggerService);
+				var stationInteractionController = new StationInteractionController(
+					sceneContext,
+					trainSpawnController,
+					stationFlowController,
+					inputService,
+					cursorService,
+					loggerService);
 
 				await _lifecycle.RegisterAsync(trainSpawnController);
 				await _lifecycle.RegisterAsync(stationFlowController);
+				await _lifecycle.RegisterAsync(stationInteractionController);
 			}
 		}
 	}
