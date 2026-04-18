@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Infrastructure;
@@ -7,7 +8,11 @@ using PlatformCore.Services.Factory;
 using PlatformCore.Services.Input;
 using PlatformCore.Services.UI;
 using Project.Gameplay.Player;
+using Project.Gameplay.Station.Authoring;
+using Project.Gameplay.Station.Controllers;
+using Project.Gameplay.Station.Domain;
 using Project.Infrastructure;
+using UnityEngine;
 
 namespace Project.Bootstrap
 {
@@ -90,12 +95,35 @@ namespace Project.Bootstrap
 
 			cursorService.LockCursor();
 
-			var playerControllers = new IBaseController[]
+			var singleplayerControllers = new List<IBaseController>
 			{
 				new SamplePlayerMovementController(playerView, inputService, cursorService),
 			};
 
-			await _lifecycle.RegisterControllersGroupAsync(playerControllers);
+			var stationProvider = Object.FindObjectOfType<StationDaySerializedProvider>();
+			if (!stationProvider)
+			{
+				loggerService?.LogWarning(
+					"[GameRoot] StationDaySerializedProvider is missing in loaded scenes. Station gameplay flow is disabled.");
+			}
+			else
+			{
+				var stationSetup = stationProvider.BuildRuntimeSetup();
+				if (stationSetup.Scenarios.Count == 0)
+				{
+					loggerService?.LogWarning(
+						"[GameRoot] Station day scenarios list is empty. Flow controller will finish day immediately.");
+				}
+
+				var stationFlowController = new StationFlowController(
+					stationSetup.RuntimeModel,
+					new InspectionJudge(),
+					stationSetup.Scenarios,
+					loggerService);
+				singleplayerControllers.Add(stationFlowController);
+			}
+
+			await _lifecycle.RegisterControllersGroupAsync(singleplayerControllers.ToArray());
 		}
 	}
 }

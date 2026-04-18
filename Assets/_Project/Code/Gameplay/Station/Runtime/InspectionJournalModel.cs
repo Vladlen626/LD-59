@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Project.Gameplay.Station.Domain;
 
@@ -15,7 +14,7 @@ namespace Project.Gameplay.Station.Runtime
 		{
 			if (record == null)
 			{
-				throw new ArgumentNullException(nameof(record));
+				return;
 			}
 
 			_records.Add(record);

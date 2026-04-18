@@ -10,14 +10,6 @@ namespace Project.Gameplay.Station.Domain
 			TrainScenario scenario,
 			InspectionResult result)
 		{
-			if (dayIndex < 1)
-			{
-				throw new ArgumentOutOfRangeException(nameof(dayIndex), "Day index must be greater than zero.");
-			}
-			if (caseIndex < 1)
-			{
-				throw new ArgumentOutOfRangeException(nameof(caseIndex), "Case index must be greater than zero.");
-			}
 			if (scenario == null)
 			{
 				throw new ArgumentNullException(nameof(scenario));

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Project.Gameplay.Station.Domain
 {
@@ -15,20 +14,11 @@ namespace Project.Gameplay.Station.Domain
 			int penalty,
 			IReadOnlyList<InspectionErrorReason> errorReasons)
 		{
-			if (penalty < 0)
-			{
-				throw new ArgumentOutOfRangeException(nameof(penalty), "Penalty cannot be negative.");
-			}
-			if (errorReasons == null)
-			{
-				throw new ArgumentNullException(nameof(errorReasons));
-			}
-
 			Verdict = verdict;
 			PlayerDecision = playerDecision;
 			ExpectedDecision = expectedDecision;
-			Penalty = penalty;
-			_errorReasons = errorReasons.ToArray();
+			Penalty = Math.Max(0, penalty);
+			_errorReasons = errorReasons ?? Array.Empty<InspectionErrorReason>();
 		}
 
 		public InspectionVerdict Verdict { get; }

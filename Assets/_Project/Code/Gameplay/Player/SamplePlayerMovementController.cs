@@ -119,7 +119,13 @@ namespace Project.Gameplay.Player
 				_playerView.transform.right * moveInput.x +
 				_playerView.transform.forward * moveInput.y;
 
-			var velocity = moveDirection * _playerView.MoveSpeed;
+			var moveSpeed = _playerView.MoveSpeed;
+			if (hasControl && _inputService.IsSprintPressed)
+			{
+				moveSpeed *= _playerView.SprintSpeedMultiplier;
+			}
+
+			var velocity = moveDirection * moveSpeed;
 			velocity.y = _verticalVelocity;
 
 			_characterController.Move(velocity * deltaTime);

@@ -11,6 +11,7 @@ namespace Project.Gameplay.Player
 
 		[Header("Movement")]
 		[SerializeField] [Min(0f)] private float _moveSpeed = 5f;
+		[SerializeField] [Min(1f)] private float _sprintSpeedMultiplier = 1.7f;
 		[SerializeField] private float _gravity = -20f;
 		[SerializeField] [Min(0f)] private float _jumpHeight = 1.2f;
 		[SerializeField] private bool _enableJump = true;
@@ -30,6 +31,7 @@ namespace Project.Gameplay.Player
 		public Transform CameraRoot => _cameraRoot;
 		public Transform Head => _head;
 		public float MoveSpeed => _moveSpeed;
+		public float SprintSpeedMultiplier => _sprintSpeedMultiplier;
 		public float Gravity => _gravity;
 		public float JumpHeight => _jumpHeight;
 		public bool EnableJump => _enableJump;

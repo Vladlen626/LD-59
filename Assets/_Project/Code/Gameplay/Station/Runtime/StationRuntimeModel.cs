@@ -19,13 +19,15 @@ namespace Project.Gameplay.Station.Runtime
 		public DebtModel Debt { get; }
 		public InspectionJournalModel InspectionJournal { get; }
 		public TrainScenario ActiveScenario { get; private set; }
+		public StationFlowState FlowState { get; private set; } = StationFlowState.Inactive;
+		public int ActiveCaseIndex { get; private set; } = -1;
 		public bool HasActiveScenario => ActiveScenario != null;
 
 		public void SetActiveScenario(TrainScenario scenario)
 		{
 			if (scenario == null)
 			{
-				throw new ArgumentNullException(nameof(scenario));
+				return;
 			}
 
 			ActiveScenario = scenario;
@@ -34,6 +36,16 @@ namespace Project.Gameplay.Station.Runtime
 		public void ClearActiveScenario()
 		{
 			ActiveScenario = null;
+		}
+
+		public void SetFlowState(StationFlowState flowState)
+		{
+			FlowState = flowState;
+		}
+
+		public void SetActiveCaseIndex(int caseIndex)
+		{
+			ActiveCaseIndex = Math.Max(-1, caseIndex);
 		}
 	}
 }

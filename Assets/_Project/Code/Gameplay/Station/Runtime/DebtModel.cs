@@ -7,13 +7,9 @@ namespace Project.Gameplay.Station.Runtime
 	{
 		public DebtModel(int initialDebt)
 		{
-			if (initialDebt < 0)
-			{
-				throw new ArgumentOutOfRangeException(nameof(initialDebt), "Debt cannot be negative.");
-			}
-
-			InitialDebt = initialDebt;
-			RemainingDebt = initialDebt;
+			var normalizedInitialDebt = Math.Max(0, initialDebt);
+			InitialDebt = normalizedInitialDebt;
+			RemainingDebt = normalizedInitialDebt;
 		}
 
 		public int InitialDebt { get; }
@@ -25,11 +21,7 @@ namespace Project.Gameplay.Station.Runtime
 		{
 			if (result == null)
 			{
-				throw new ArgumentNullException(nameof(result));
-			}
-			if (rewardOnCorrectDecision < 0)
-			{
-				throw new ArgumentOutOfRangeException(nameof(rewardOnCorrectDecision), "Reward cannot be negative.");
+				return;
 			}
 
 			if (result.IsCorrect)
@@ -43,9 +35,9 @@ namespace Project.Gameplay.Station.Runtime
 
 		public void ApplyFine(int fine)
 		{
-			if (fine < 0)
+			if (fine <= 0)
 			{
-				throw new ArgumentOutOfRangeException(nameof(fine), "Fine cannot be negative.");
+				return;
 			}
 
 			TotalFines += fine;
@@ -54,9 +46,9 @@ namespace Project.Gameplay.Station.Runtime
 
 		public void ApplyEarnings(int earnings)
 		{
-			if (earnings < 0)
+			if (earnings <= 0)
 			{
-				throw new ArgumentOutOfRangeException(nameof(earnings), "Earnings cannot be negative.");
+				return;
 			}
 
 			TotalEarnings += earnings;
