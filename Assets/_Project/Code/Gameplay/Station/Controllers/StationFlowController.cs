@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
+using PlatformCore.Services.Notifications;
 using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Train;
@@ -18,6 +19,7 @@ namespace Project.Gameplay.Station.Controllers
 		private readonly TrainMovementController _trainMovementController;
 		private readonly TrainCargoPresentationController _trainCargoPresentationController;
 		private readonly IReadOnlyList<TrainScenario> _dayScenarios;
+		private readonly IGlobalNotificationService _globalNotificationService;
 		private readonly ILoggerService _loggerService;
 		private bool _isActive;
 		private bool _isTrainCallInProgress;
@@ -42,6 +44,7 @@ namespace Project.Gameplay.Station.Controllers
 			TrainCargoPresentationController trainCargoPresentationController,
 			TrainMovementController trainMovementController,
 			IReadOnlyList<TrainScenario> dayScenarios,
+			IGlobalNotificationService globalNotificationService,
 			ILoggerService loggerService)
 		{
 			_runtimeModel = runtimeContext.RuntimeModel;
@@ -50,6 +53,7 @@ namespace Project.Gameplay.Station.Controllers
 			_trainCargoPresentationController = trainCargoPresentationController;
 			_trainMovementController = trainMovementController;
 			_dayScenarios = dayScenarios ?? Array.Empty<TrainScenario>();
+			_globalNotificationService = globalNotificationService;
 			_loggerService = loggerService;
 		}
 
@@ -242,6 +246,7 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.InspectionJournal.AddRecord(caseRecord);
 			_runtimeModel.StationDay.RegisterCompletedCase();
 			LogResolveResult(result, scenario);
+			ShowMistakeNotification(result);
 
 			_runtimeModel.ClearActiveScenario();
 			CompleteResolvedCaseAsync().Forget();
@@ -342,6 +347,41 @@ namespace Project.Gameplay.Station.Controllers
 				$"Player={result.PlayerDecision}, Expected={result.ExpectedDecision}, Verdict={result.Verdict}, " +
 				$"Penalty={result.Penalty}, Reward={reward}, Reasons=[{reasons}], " +
 				$"Debt={_runtimeModel.Debt.RemainingDebt}, JournalCount={_runtimeModel.InspectionJournal.Count}.");
+		}
+
+		private void ShowMistakeNotification(InspectionResult result)
+		{
+			if (result == null || result.IsCorrect || _globalNotificationService == null)
+			{
+				return;
+			}
+
+			_globalNotificationService.EnqueueToast(BuildMistakeNotificationMessage(result), true);
+		}
+
+		private static string BuildMistakeNotificationMessage(InspectionResult result)
+		{
+			if (result.PlayerDecision == PlayerDecision.SendBack)
+			{
+				return "Wrong reject. This train was clean.";
+			}
+
+			for (var i = 0; i < result.ErrorReasons.Count; i++)
+			{
+				switch (result.ErrorReasons[i])
+				{
+					case InspectionErrorReason.AllowedForbiddenCargo:
+						return "Wrong allow. Banned cargo got through.";
+					case InspectionErrorReason.AllowedManifestMismatch:
+						return "Wrong allow. Papers did not match the cargo.";
+					case InspectionErrorReason.AllowedHiddenContraband:
+						return "Wrong allow. Hidden contraband got through.";
+					case InspectionErrorReason.AllowedIllegalMarker:
+						return "Wrong allow. Illegal cargo got through.";
+				}
+			}
+
+			return "Wrong allow. This train should have been rejected.";
 		}
 
 		private void UpdateForbiddenCargoLogValue()

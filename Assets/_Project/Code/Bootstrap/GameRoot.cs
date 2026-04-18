@@ -5,6 +5,7 @@ using PlatformCore.Services;
 using PlatformCore.Services.Audio;
 using PlatformCore.Services.Factory;
 using PlatformCore.Services.Input;
+using PlatformCore.Services.Notifications;
 using PlatformCore.Services.UI;
 using Project.Gameplay.Player;
 using Project.Gameplay.Scene;
@@ -33,6 +34,7 @@ namespace Project.Bootstrap
 			var audioService = _serviceLocator.Get<IAudioService>();
 			var cursorService = _serviceLocator.Get<ICursorService>();
 			var inputService = _serviceLocator.Get<IInputService>();
+			var globalNotificationService = _serviceLocator.Get<IGlobalNotificationService>();
 			var loggerService = _serviceLocator.Get<ILoggerService>();
 			var objectFactory = _serviceLocator.Get<IObjectFactory>();
 			var cameraService = _serviceLocator.Get<ICameraService>();
@@ -54,6 +56,16 @@ namespace Project.Bootstrap
 				await sceneService.LoadAndSetActiveSceneAsync(SceneNames.SampleScene, ApplicationCancellationToken);
 			}
 
+			cameraService.SetActiveCamera(CameraIds.MainMenu, CameraTransitions.Instant);
+
+			var gameStartModel = new GameStartModel();
+			await _lifecycle.RegisterControllersGroupAsync(
+				new IBaseController[]
+				{
+					new UIMainMenuController(uiService, cursorService, gameStartModel),
+				});
+			await gameStartModel.WaitUntilStartedAsync();
+
 			if (launchSettings.IsMultiplayer)
 			{
 				LaunchMultiplayer(launchSettings, loggerService);
@@ -66,6 +78,7 @@ namespace Project.Bootstrap
 					uiService,
 					cursorService,
 					inputService,
+					globalNotificationService,
 					configService,
 					loggerService);
 			}
@@ -90,6 +103,7 @@ namespace Project.Bootstrap
 			IUIService uiService,
 			ICursorService cursorService,
 			IInputService inputService,
+			IGlobalNotificationService globalNotificationService,
 			ConfigService configService,
 			ILoggerService loggerService)
 		{
@@ -104,6 +118,7 @@ namespace Project.Bootstrap
 			{
 				cameraService.AttachPrimaryCameraTo(playerView.CameraRoot);
 			}
+			cameraService.SetActiveCamera(CameraIds.Primary, CameraTransitions.Instant);
 
 			cursorService.LockCursor();
 			var playerMovementController = new SamplePlayerMovementController(playerView, inputService, cursorService);
@@ -164,6 +179,7 @@ namespace Project.Bootstrap
 						trainCargoPresentationController,
 						trainMovementController,
 						dayScenarios,
+						globalNotificationService,
 						loggerService);
 					var stationInspectionInfoController = new StationInspectionInfoController(
 						sceneContext,
