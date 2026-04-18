@@ -93,8 +93,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 112000002, guid: c482561641a25514791bf19c84125d92,
-    type: 2}
+  m_LightingDataAsset: {fileID: 112000002, guid: c482561641a25514791bf19c84125d92, type: 2}
   m_LightingSettings: {fileID: 258774537}
 --- !u!196 &4
 NavMeshSettings:
@@ -122,14 +121,12 @@ NavMeshSettings:
   m_NavMeshData: {fileID: 0}
 --- !u!4 &133599303 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 4000011175361746, guid: 7ca96822084510147adb2aea03d45e3b,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 4000011175361746, guid: 7ca96822084510147adb2aea03d45e3b, type: 3}
   m_PrefabInstance: {fileID: 1689786812}
   m_PrefabAsset: {fileID: 0}
 --- !u!198 &133599305 stripped
 ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 198000010131513902, guid: 7ca96822084510147adb2aea03d45e3b,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 198000010131513902, guid: 7ca96822084510147adb2aea03d45e3b, type: 3}
   m_PrefabInstance: {fileID: 1689786812}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &190732354
@@ -480,8 +477,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &381972496 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 100000, guid: f4527c479041fc040b53171204c086a5,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 100000, guid: f4527c479041fc040b53171204c086a5, type: 3}
   m_PrefabInstance: {fileID: 1908232631}
   m_PrefabAsset: {fileID: 0}
 --- !u!64 &381972497
@@ -759,7 +755,7 @@ PrefabInstance:
     - target: {fileID: 2300002, guid: 47509307932d1e140a2b4d9024d228e4, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 10302, guid: 0000000000000000f000000000000000, type: 0}
+      objectReference: {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -887,8 +883,7 @@ MonoBehaviour:
       the colour and opacity based on particle colour and opacity which you can\u2019t
       do with the standard shader."
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000011797152326, guid: acf39d9f4addf294d93fa56fa373961b,
-      type: 3}
+    particleSystemGO: {fileID: 1000011797152326, guid: acf39d9f4addf294d93fa56fa373961b, type: 3}
     particlePosition: {x: 0, y: 2, z: 0}
     particleRotation: {x: -90, y: 0, z: 0}
   - title: Small Explosion
@@ -899,8 +894,7 @@ MonoBehaviour:
       and normal map. You are also able to control the colour and opacity based on
       particle colour and opacity which you can\u2019t do with the standard shader."
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000013462590818, guid: ecdd96beb7f93494880c052dfccf9dc1,
-      type: 3}
+    particleSystemGO: {fileID: 1000013462590818, guid: ecdd96beb7f93494880c052dfccf9dc1, type: 3}
     particlePosition: {x: 0, y: 2, z: 0}
     particleRotation: {x: -90, y: 0, z: 0}
   - title: Plasma Explosion
@@ -910,8 +904,7 @@ MonoBehaviour:
       also is a shock wave particle using a mesh for the expanding sphere which helps
       to add a extra little punch to the explosion.\r"
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000011128802252, guid: 96730f8640590934eacb6f860058e7f9,
-      type: 3}
+    particleSystemGO: {fileID: 1000011128802252, guid: 96730f8640590934eacb6f860058e7f9, type: 3}
     particlePosition: {x: 0, y: 1, z: 0}
     particleRotation: {x: -90, y: 0, z: 0}
   - title: Fire
@@ -921,8 +914,7 @@ MonoBehaviour:
       is a \u2018Curl\u2019 noise, it is used to add some turbulence to the movement
       of the particles."
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1126461894715624, guid: b9e167e31f640b34f87caab122fca598,
-      type: 3}
+    particleSystemGO: {fileID: 1126461894715624, guid: b9e167e31f640b34f87caab122fca598, type: 3}
     particlePosition: {x: 0, y: 0, z: 0}
     particleRotation: {x: 0, y: 0, z: 0}
   - title: Flame Thrower
@@ -932,16 +924,14 @@ MonoBehaviour:
       giving a more pleasing trail of flames leaving the emission point while it
       is moving."
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000012118400646, guid: 3123da49cb81147489b444f2749aba47,
-      type: 3}
+    particleSystemGO: {fileID: 1000012118400646, guid: 3123da49cb81147489b444f2749aba47, type: 3}
     particlePosition: {x: -4, y: 2, z: -5}
     particleRotation: {x: 0, y: 45, z: 0}
   - title: Torch
     description: "The Torch has \u2018Inherit Velocity\u2019 enabled and uses a curve
       to give the flames a bit of a lag when the torch is moved around."
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000010545572958, guid: 3cdf614b79009ca49a2a5c117fb49c35,
-      type: 3}
+    particleSystemGO: {fileID: 1000010545572958, guid: 3cdf614b79009ca49a2a5c117fb49c35, type: 3}
     particlePosition: {x: -1.5, y: 2, z: -6}
     particleRotation: {x: 0, y: 0, z: 0}
   - title: Smoke
@@ -949,8 +939,7 @@ MonoBehaviour:
       how you look at them, they always receive light from the front even though
       the light is at 0,0,0 of the particle parent node.
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000012560919920, guid: 85a8865d1bf4a63478038fae23776de8,
-      type: 3}
+    particleSystemGO: {fileID: 1000012560919920, guid: 85a8865d1bf4a63478038fae23776de8, type: 3}
     particlePosition: {x: 0, y: 0, z: 0}
     particleRotation: {x: -90, y: 0, z: 0}
   - title: Sparks
@@ -959,8 +948,7 @@ MonoBehaviour:
       \u2018none\u2019 and it uses the trails feature (new to Unity 5.5) for the
       spark lines, this gives a much better look than a stretched billboard would."
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000011945391522, guid: 78b71003e8b357d4bbf89c8b5e5e4f0e,
-      type: 3}
+    particleSystemGO: {fileID: 1000011945391522, guid: 78b71003e8b357d4bbf89c8b5e5e4f0e, type: 3}
     particlePosition: {x: -3, y: 3.5, z: -6}
     particleRotation: {x: 0, y: 120, z: 0}
   - title: Electrical Sparks
@@ -970,8 +958,7 @@ MonoBehaviour:
       better look than a stretched billboard would. It uses collision and gravity
       to make the particles bounce and lose some momentum when they hit the ground.\r"
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000011396044746, guid: 96b2ec0239d11fa4b9792311efceb8ed,
-      type: 3}
+    particleSystemGO: {fileID: 1000011396044746, guid: 96b2ec0239d11fa4b9792311efceb8ed, type: 3}
     particlePosition: {x: -3, y: 3.5, z: -6}
     particleRotation: {x: 0, y: 120, z: 0}
   - title: RainEffect
@@ -982,8 +969,7 @@ MonoBehaviour:
       a water ripple. \nAt the same time as the ripple a small impact splash is created
       which uses a mesh in a cone shape to simulate a circular splash."
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000010302070858, guid: d0c0b49979d372942ae5a964d9364111,
-      type: 3}
+    particleSystemGO: {fileID: 1000010302070858, guid: d0c0b49979d372942ae5a964d9364111, type: 3}
     particlePosition: {x: 0, y: 0, z: 0}
     particleRotation: {x: 0, y: 0, z: 0}
   - title: Storm Clouds
@@ -992,8 +978,7 @@ MonoBehaviour:
       used for randomly spawning lights within the effect to simulate lightning going
       on in the clouds. The clouds use a custom surface-shader.
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000014264868206, guid: ca55dd9d7d291014a8b13aaf95318a3a,
-      type: 3}
+    particleSystemGO: {fileID: 1000014264868206, guid: ca55dd9d7d291014a8b13aaf95318a3a, type: 3}
     particlePosition: {x: -1, y: 5, z: -4}
     particleRotation: {x: 0, y: 0, z: 0}
   - title: Water Drip
@@ -1006,8 +991,7 @@ MonoBehaviour:
       the ripple a small impact splash is created which uses a mesh in a cone shape
       to simulate a circular splash.'
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000010923668584, guid: 3e8bbc11ff0ac7f4eb91aa277bc85c30,
-      type: 3}
+    particleSystemGO: {fileID: 1000010923668584, guid: 3e8bbc11ff0ac7f4eb91aa277bc85c30, type: 3}
     particlePosition: {x: -2, y: 2.5, z: -7.5}
     particleRotation: {x: 0, y: 0, z: 0}
   - title: Waterfall
@@ -1018,8 +1002,7 @@ MonoBehaviour:
       also some particle systems to simulate the water mist and spray which would
       be churned up where the waterfall hits the water surface below.
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000014033464604, guid: e0ea35e989dfcd043b42d7053b546abc,
-      type: 3}
+    particleSystemGO: {fileID: 1000014033464604, guid: e0ea35e989dfcd043b42d7053b546abc, type: 3}
     particlePosition: {x: 0, y: -0.5, z: 5}
     particleRotation: {x: 0, y: 180, z: 0}
   - title: 'Hit Effect: Metal'
@@ -1028,8 +1011,7 @@ MonoBehaviour:
       also has a small dust puff effect. There is a decal left behind of a bullet
       impacting and penetrating a metal plate."
     isWeaponEffect: 1
-    particleSystemGO: {fileID: 1149210485932568, guid: 560a71b792ff85a4ba8f839081f9a379,
-      type: 3}
+    particleSystemGO: {fileID: 1149210485932568, guid: 560a71b792ff85a4ba8f839081f9a379, type: 3}
     particlePosition: {x: -1.5, y: 2.5, z: -5}
     particleRotation: {x: -20, y: 0, z: 0}
   - title: 'Hit Effect: Wood'
@@ -1037,8 +1019,7 @@ MonoBehaviour:
       is a small dust puff on impact as well as wood splinters which are spawned
       and spin away from the center of impact.\r"
     isWeaponEffect: 1
-    particleSystemGO: {fileID: 1350958554473458, guid: b6d38b5165f9b6e49a8402118b5237a1,
-      type: 3}
+    particleSystemGO: {fileID: 1350958554473458, guid: b6d38b5165f9b6e49a8402118b5237a1, type: 3}
     particlePosition: {x: -1.5, y: 2.5, z: -5}
     particleRotation: {x: -20, y: 0, z: 0}
   - title: 'Hit Effect: Stone'
@@ -1047,16 +1028,14 @@ MonoBehaviour:
       quickly and then dissipating. There are also some small stone debris which
       fall down.
     isWeaponEffect: 1
-    particleSystemGO: {fileID: 1884375188966482, guid: 6b4eed762f985a04bbc740b9da12e38d,
-      type: 3}
+    particleSystemGO: {fileID: 1884375188966482, guid: 6b4eed762f985a04bbc740b9da12e38d, type: 3}
     particlePosition: {x: -1.5, y: 2.5, z: -5}
     particleRotation: {x: -20, y: 0, z: 0}
   - title: 'Hit Effect: Sand'
     description: 'This uses a system with a stretched billboard to make it look like
       dust or sand is shot out quickly and then dissipates. '
     isWeaponEffect: 1
-    particleSystemGO: {fileID: 1010471655720034, guid: ba43211ecc156be458125732de23ddb6,
-      type: 3}
+    particleSystemGO: {fileID: 1010471655720034, guid: ba43211ecc156be458125732de23ddb6, type: 3}
     particlePosition: {x: -1.5, y: 2.5, z: -5}
     particleRotation: {x: -20, y: 0, z: 0}
   - title: 'Hit Effect: Container'
@@ -1066,8 +1045,7 @@ MonoBehaviour:
       together so it looks like they are connected, it uses the noise module to give
       the stream some waviness."
     isWeaponEffect: 1
-    particleSystemGO: {fileID: 1139284636289806, guid: b3310980331fa134d82770127f640471,
-      type: 3}
+    particleSystemGO: {fileID: 1139284636289806, guid: b3310980331fa134d82770127f640471, type: 3}
     particlePosition: {x: -1.5, y: 2.5, z: -5}
     particleRotation: {x: -20, y: 0, z: 0}
   - title: 'Hit Effect: Extinguish'
@@ -1077,8 +1055,7 @@ MonoBehaviour:
       Shoot the ball to create
       a water stream. If it touches the burning plank it will extinguish it.'
     isWeaponEffect: 1
-    particleSystemGO: {fileID: 1462754386875696, guid: ec68cf3d27ad1bf48a4b4d3af84e4ded,
-      type: 3}
+    particleSystemGO: {fileID: 1462754386875696, guid: ec68cf3d27ad1bf48a4b4d3af84e4ded, type: 3}
     particlePosition: {x: -1.5, y: 2.5, z: -5}
     particleRotation: {x: -20, y: 0, z: 0}
   - title: 'Hit Effect: Flesh'
@@ -1087,8 +1064,7 @@ MonoBehaviour:
       on it which are for blood streaks. Another is a random image of some blood
       blobs and another is a blood mist effect.
     isWeaponEffect: 1
-    particleSystemGO: {fileID: 1556622962352786, guid: a7034287e2bd6a141ab896f71d0b1357,
-      type: 3}
+    particleSystemGO: {fileID: 1556622962352786, guid: a7034287e2bd6a141ab896f71d0b1357, type: 3}
     particlePosition: {x: -1.5, y: 2.5, z: -5}
     particleRotation: {x: -20, y: 0, z: 0}
   - title: Rocket Trail
@@ -1098,8 +1074,7 @@ MonoBehaviour:
       lifetime. \r\nThe particles are emitted using rate over distance, this spawns
       a number of particles per unit of distance the particle system has moved.\r"
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000012600307132, guid: 20c0f7e297297fc468f9740f6bb08cb1,
-      type: 3}
+    particleSystemGO: {fileID: 1000012600307132, guid: 20c0f7e297297fc468f9740f6bb08cb1, type: 3}
     particlePosition: {x: -15, y: 3.5, z: 0}
     particleRotation: {x: 0, y: 90, z: 0}
   - title: Dust Motes
@@ -1107,16 +1082,14 @@ MonoBehaviour:
       you would like dust motes to be. They use use the noise module to make them
       float around with some turbulence.
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000012882023006, guid: 5ca4c580b3888314581688fa46fb142d,
-      type: 3}
+    particleSystemGO: {fileID: 1000012882023006, guid: 5ca4c580b3888314581688fa46fb142d, type: 3}
     particlePosition: {x: 0, y: 3.5, z: 0}
     particleRotation: {x: 0, y: 90, z: 0}
   - title: Sand Swirls
     description: This uses a billboard with scale over lifetime and the noise module
       to simulate a windy sand effect.
     isWeaponEffect: 0
-    particleSystemGO: {fileID: 1000010715882420, guid: 14d81e2c407975245973a11cdfbeb902,
-      type: 3}
+    particleSystemGO: {fileID: 1000010715882420, guid: 14d81e2c407975245973a11cdfbeb902, type: 3}
     particlePosition: {x: -5, y: 1, z: -2}
     particleRotation: {x: 0, y: 90, z: 0}
   gunGameObject: {fileID: 1547811597}
@@ -1182,6 +1155,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -1218,6 +1192,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1015100563}
   - component: {fileID: 1015100562}
+  - component: {fileID: 1015100564}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -1233,7 +1208,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1015100561}
   m_Enabled: 1
-  serializedVersion: 12
+  serializedVersion: 13
   m_Type: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
@@ -1285,7 +1260,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -1305,6 +1280,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1607826290}
   m_LocalEulerAnglesHint: {x: 49.848003, y: 22.246, z: 181.226}
+--- !u!114 &1015100564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1015100561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &1033700476
 GameObject:
   m_ObjectHideFlags: 0
@@ -1317,8 +1321,8 @@ GameObject:
   - component: {fileID: 1033700480}
   - component: {fileID: 1033700477}
   - component: {fileID: 1033700486}
-  - component: {fileID: 1033700479}
-  - component: {fileID: 1033700478}
+  - component: {fileID: 1033700488}
+  - component: {fileID: 1033700487}
   m_Layer: 0
   m_Name: MainCamera
   m_TagString: MainCamera
@@ -1334,83 +1338,6 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1033700476}
   m_Enabled: 1
---- !u!114 &1033700478
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1033700476}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b9a305e18de0c04dbd257a21cd47087, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sharedProfile: {fileID: 11400000, guid: 85740bd933b0aa54d9ff099ab8a88064, type: 2}
-  isGlobal: 1
-  blendDistance: 0
-  weight: 1
-  priority: 0
---- !u!114 &1033700479
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1033700476}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 948f4100a11a5c24981795d21301da5c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  volumeTrigger: {fileID: 1033700481}
-  volumeLayer:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  stopNaNPropagation: 1
-  finalBlitToCameraTarget: 0
-  antialiasingMode: 3
-  temporalAntialiasing:
-    jitterSpread: 0.75
-    sharpness: 0.25
-    stationaryBlending: 0.95
-    motionBlending: 0.85
-  subpixelMorphologicalAntialiasing:
-    quality: 2
-  fastApproximateAntialiasing:
-    fastMode: 0
-    keepAlpha: 0
-  fog:
-    enabled: 1
-    excludeSkybox: 1
-  debugLayer:
-    lightMeter:
-      width: 512
-      height: 256
-      showCurves: 1
-    histogram:
-      width: 512
-      height: 256
-      channel: 3
-    waveform:
-      exposure: 0.12
-      height: 256
-    vectorscope:
-      size: 256
-      exposure: 0.12
-    overlaySettings:
-      linearDepth: 0
-      motionColorIntensity: 4
-      motionGridSize: 64
-      colorBlindnessType: 0
-      colorBlindnessStrength: 1
-  m_Resources: {fileID: 11400000, guid: d82512f9c8e5d4a4d938b575d47f88d4, type: 2}
-  m_ShowToolkit: 0
-  m_ShowCustomSorter: 0
-  breakBeforeColorGrading: 0
-  m_BeforeTransparentBundles: []
-  m_BeforeStackBundles: []
-  m_AfterStackBundles: []
 --- !u!20 &1033700480
 Camera:
   m_ObjectHideFlags: 0
@@ -1575,6 +1502,67 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 0
+--- !u!114 &1033700487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1033700476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_VolumeTrigger: {fileID: 1033700481}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 1
+  m_Antialiasing: 1
+  m_AntialiasingQuality: 2
+  m_StopNaN: 1
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
+--- !u!114 &1033700488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1033700476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 0}
 --- !u!1 &1077734313
 GameObject:
   m_ObjectHideFlags: 0
@@ -1654,14 +1642,12 @@ CanvasRenderer:
   m_CullTransparentMesh: 1
 --- !u!4 &1087667250 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 4000011227296186, guid: 9defeac88977c0d448aa4541073ee9e4,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 4000011227296186, guid: 9defeac88977c0d448aa4541073ee9e4, type: 3}
   m_PrefabInstance: {fileID: 2047192111}
   m_PrefabAsset: {fileID: 0}
 --- !u!198 &1087667252 stripped
 ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 198000012944515248, guid: 9defeac88977c0d448aa4541073ee9e4,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 198000012944515248, guid: 9defeac88977c0d448aa4541073ee9e4, type: 3}
   m_PrefabInstance: {fileID: 2047192111}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1185268623
@@ -1932,21 +1918,15 @@ MonoBehaviour:
   gunEnd: {fileID: 1678112879}
   muzzleFlash: {fileID: 1087667252}
   cartridgeEjection: {fileID: 133599305}
-  metalHitEffect: {fileID: 1000010355441670, guid: 02a509a7fa70ed740ba4197e20c5d32d,
-    type: 3}
-  sandHitEffect: {fileID: 1000012142692022, guid: a475880e7da0e9548aa05cb7933752cd,
-    type: 3}
-  stoneHitEffect: {fileID: 1000010844420130, guid: 4edabb1c0dde62743b137378c7d22980,
-    type: 3}
-  waterLeakEffect: {fileID: 1000011439201316, guid: a60a75fdadab5de428529a5b8ef0426a,
-    type: 3}
-  waterLeakExtinguishEffect: {fileID: 1277954026192068, guid: 8c0568c457f38824d8649f26f2363927,
-    type: 3}
+  metalHitEffect: {fileID: 1000010355441670, guid: 02a509a7fa70ed740ba4197e20c5d32d, type: 3}
+  sandHitEffect: {fileID: 1000012142692022, guid: a475880e7da0e9548aa05cb7933752cd, type: 3}
+  stoneHitEffect: {fileID: 1000010844420130, guid: 4edabb1c0dde62743b137378c7d22980, type: 3}
+  waterLeakEffect: {fileID: 1000011439201316, guid: a60a75fdadab5de428529a5b8ef0426a, type: 3}
+  waterLeakExtinguishEffect: {fileID: 1277954026192068, guid: 8c0568c457f38824d8649f26f2363927, type: 3}
   fleshHitEffects:
   - {fileID: 1000013169864706, guid: e5a3d6da48298a0458c1990f58c27069, type: 3}
   - {fileID: 1000010191825552, guid: 83e55d3418297934fab882559d009285, type: 3}
-  woodHitEffect: {fileID: 1000011190285628, guid: beb3acff7ab73944fb8f470f24d74ed3,
-    type: 3}
+  woodHitEffect: {fileID: 1000011190285628, guid: beb3acff7ab73944fb8f470f24d74ed3, type: 3}
 --- !u!1 &1385382692
 GameObject:
   m_ObjectHideFlags: 0
@@ -2238,8 +2218,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1679839614 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 400004, guid: 47509307932d1e140a2b4d9024d228e4,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 400004, guid: 47509307932d1e140a2b4d9024d228e4, type: 3}
   m_PrefabInstance: {fileID: 939503414}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1689786812
@@ -2553,15 +2532,13 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 100000, guid: f4527c479041fc040b53171204c086a5,
-        type: 3}
+    - targetCorrespondingSourceObject: {fileID: 100000, guid: f4527c479041fc040b53171204c086a5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 381972497}
   m_SourcePrefab: {fileID: 100100000, guid: f4527c479041fc040b53171204c086a5, type: 3}
 --- !u!4 &1908232632 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 400000, guid: f4527c479041fc040b53171204c086a5,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 400000, guid: f4527c479041fc040b53171204c086a5, type: 3}
   m_PrefabInstance: {fileID: 1908232631}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &2002168960
@@ -2628,28 +2605,17 @@ MonoBehaviour:
   m_MoveRepeatDelay: 0.5
   m_MoveRepeatRate: 0.1
   m_XRTrackingOrigin: {fileID: 0}
-  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
-  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018,
-    type: 3}
+  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
   m_DeselectOnBackgroundClick: 1
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0

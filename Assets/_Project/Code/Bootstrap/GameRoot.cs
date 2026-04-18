@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Infrastructure;
@@ -11,6 +10,7 @@ using Project.Gameplay.Player;
 using Project.Gameplay.Station.Authoring;
 using Project.Gameplay.Station.Controllers;
 using Project.Gameplay.Station.Domain;
+using Project.Gameplay.Train;
 using Project.Infrastructure;
 using UnityEngine;
 
@@ -95,10 +95,7 @@ namespace Project.Bootstrap
 
 			cursorService.LockCursor();
 
-			var singleplayerControllers = new List<IBaseController>
-			{
-				new SamplePlayerMovementController(playerView, inputService, cursorService),
-			};
+			await _lifecycle.RegisterAsync(new SamplePlayerMovementController(playerView, inputService, cursorService));
 
 			var stationProvider = Object.FindObjectOfType<StationDaySerializedProvider>();
 			if (!stationProvider)
@@ -115,15 +112,23 @@ namespace Project.Bootstrap
 						"[GameRoot] Station day scenarios list is empty. Flow controller will finish day immediately.");
 				}
 
+				var trainSpawnController = new TrainSpawnController(
+					objectFactory,
+					loggerService,
+					ProjectGameplayResourcePaths.Trains_CargoWagon,
+					stationSetup.TrainSpawnPoint,
+					stationSetup.TrainSpawnParent);
+
 				var stationFlowController = new StationFlowController(
 					stationSetup.RuntimeModel,
 					new InspectionJudge(),
+					trainSpawnController,
 					stationSetup.Scenarios,
 					loggerService);
-				singleplayerControllers.Add(stationFlowController);
-			}
 
-			await _lifecycle.RegisterControllersGroupAsync(singleplayerControllers.ToArray());
+				await _lifecycle.RegisterAsync(trainSpawnController);
+				await _lifecycle.RegisterAsync(stationFlowController);
+			}
 		}
 	}
 }

@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
 using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Station.Runtime;
+using Project.Gameplay.Train;
 
 namespace Project.Gameplay.Station.Controllers
 {
@@ -12,18 +14,22 @@ namespace Project.Gameplay.Station.Controllers
 	{
 		private readonly StationRuntimeModel _runtimeModel;
 		private readonly InspectionJudge _inspectionJudge;
+		private readonly TrainSpawnController _trainSpawnController;
 		private readonly IReadOnlyList<TrainScenario> _dayScenarios;
 		private readonly ILoggerService _loggerService;
 		private bool _isActive;
+		private bool _isTrainCallInProgress;
 
 		public StationFlowController(
 			StationRuntimeModel runtimeModel,
 			InspectionJudge inspectionJudge,
+			TrainSpawnController trainSpawnController,
 			IReadOnlyList<TrainScenario> dayScenarios,
 			ILoggerService loggerService)
 		{
 			_runtimeModel = runtimeModel ?? throw new ArgumentNullException(nameof(runtimeModel));
 			_inspectionJudge = inspectionJudge ?? throw new ArgumentNullException(nameof(inspectionJudge));
+			_trainSpawnController = trainSpawnController ?? throw new ArgumentNullException(nameof(trainSpawnController));
 			_dayScenarios = dayScenarios ?? Array.Empty<TrainScenario>();
 			_loggerService = loggerService;
 		}
@@ -47,6 +53,8 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			_isActive = false;
+			_isTrainCallInProgress = false;
+			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetActiveCaseIndex(-1);
 			_runtimeModel.SetFlowState(StationFlowState.Inactive);
@@ -61,6 +69,7 @@ namespace Project.Gameplay.Station.Controllers
 
 			_runtimeModel.StationDay.SetDay(_runtimeModel.StationDay.CurrentRuleSet);
 			_runtimeModel.InspectionJournal.Clear();
+			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetActiveCaseIndex(-1);
 			_runtimeModel.SetFlowState(StationFlowState.StartDay);
@@ -68,35 +77,68 @@ namespace Project.Gameplay.Station.Controllers
 			CallNextTrain();
 		}
 
-		public bool CallNextTrain()
+		public void CallNextTrain()
 		{
-			if (_isActive == false)
+			if (_isActive == false || _isTrainCallInProgress)
 			{
-				return false;
+				return;
 			}
 
-			_runtimeModel.SetFlowState(StationFlowState.CallNextTrain);
+			CallNextTrainAsync().Forget();
+		}
 
-			var nextIndex = _runtimeModel.ActiveCaseIndex;
-			while (true)
+		private async UniTaskVoid CallNextTrainAsync()
+		{
+			_isTrainCallInProgress = true;
+
+			try
 			{
-				nextIndex++;
-				if (nextIndex >= _dayScenarios.Count)
+				if (_isActive == false)
 				{
-					FinishDay();
-					return false;
+					return;
 				}
 
-				var nextScenario = _dayScenarios[nextIndex];
-				if (nextScenario == null)
-				{
-					continue;
-				}
+				_runtimeModel.SetFlowState(StationFlowState.CallNextTrain);
 
-				_runtimeModel.SetActiveCaseIndex(nextIndex);
-				_runtimeModel.SetActiveScenario(nextScenario);
-				BeginInspection();
-				return true;
+				var nextIndex = _runtimeModel.ActiveCaseIndex;
+				while (_isActive)
+				{
+					nextIndex++;
+					if (nextIndex >= _dayScenarios.Count)
+					{
+						FinishDay();
+						return;
+					}
+
+					var nextScenario = _dayScenarios[nextIndex];
+					if (nextScenario == null)
+					{
+						continue;
+					}
+
+					_runtimeModel.SetActiveCaseIndex(nextIndex);
+					_runtimeModel.SetActiveScenario(nextScenario);
+
+					var trainView = await _trainSpawnController.SpawnCurrentTrainAsync();
+					if (_isActive == false)
+					{
+						return;
+					}
+					if (!trainView)
+					{
+						_loggerService?.LogWarning(
+							$"[StationFlow] Failed to spawn train for case index {nextIndex}. Skipping case.");
+						_runtimeModel.ClearActiveScenario();
+						continue;
+					}
+
+					BeginInspection();
+					return;
+				}
+			}
+			finally
+			{
+				_isTrainCallInProgress = false;
 			}
 		}
 
@@ -136,6 +178,7 @@ namespace Project.Gameplay.Station.Controllers
 				result);
 			_runtimeModel.InspectionJournal.AddRecord(caseRecord);
 			_runtimeModel.StationDay.RegisterCompletedCase();
+			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 
 			CallNextTrain();
@@ -149,6 +192,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void FinishDay()
 		{
+			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetFlowState(StationFlowState.FinishDay);
 			_loggerService?.Log(

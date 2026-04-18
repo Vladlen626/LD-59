@@ -9,6 +9,8 @@ namespace Project.Gameplay.Station.Authoring
 	public sealed class StationDaySerializedProvider : MonoBehaviour
 	{
 		[SerializeField] [Min(0)] private int _initialDebt = 1_000;
+		[SerializeField] private Transform _trainSpawnPoint;
+		[SerializeField] private Transform _trainSpawnParent;
 		[SerializeField] private StationDayConfig _dayConfig = new StationDayConfig();
 
 		public DayRuleSet BuildRuleSet()
@@ -43,7 +45,11 @@ namespace Project.Gameplay.Station.Authoring
 				new DebtModel(_initialDebt),
 				new InspectionJournalModel());
 
-			return new StationDayRuntimeSetup(runtimeModel, scenarios);
+			return new StationDayRuntimeSetup(
+				runtimeModel,
+				scenarios,
+				_trainSpawnPoint,
+				_trainSpawnParent);
 		}
 
 		private void OnValidate()
@@ -71,13 +77,19 @@ namespace Project.Gameplay.Station.Authoring
 	{
 		public StationDayRuntimeSetup(
 			StationRuntimeModel runtimeModel,
-			List<TrainScenario> scenarios)
+			List<TrainScenario> scenarios,
+			Transform trainSpawnPoint,
+			Transform trainSpawnParent)
 		{
 			RuntimeModel = runtimeModel;
 			Scenarios = scenarios ?? new List<TrainScenario>();
+			TrainSpawnPoint = trainSpawnPoint;
+			TrainSpawnParent = trainSpawnParent;
 		}
 
 		public StationRuntimeModel RuntimeModel { get; }
 		public List<TrainScenario> Scenarios { get; }
+		public Transform TrainSpawnPoint { get; }
+		public Transform TrainSpawnParent { get; }
 	}
 }

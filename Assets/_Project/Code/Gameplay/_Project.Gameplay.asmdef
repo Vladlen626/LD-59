@@ -5,6 +5,7 @@
     "_Project.Core",
     "_Project.Infrastructure",
     "PlatformCore.Core",
-    "PlatformCore.Infrastructure"
+    "PlatformCore.Infrastructure",
+    "UniTask"
   ]
 }
