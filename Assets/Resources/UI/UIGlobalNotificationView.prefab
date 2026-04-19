@@ -69,9 +69,9 @@ MonoBehaviour:
   backgroundSizer: {fileID: 5406243328197906621}
   backgroundImage: {fileID: 7932804597206096880}
   positiveColor:
-    id: GreenLight
+    id: Green_west
   negativeColor:
-    id: Red
+    id: Red_west
   fadeInDuration: 0.18
   fadeOutDuration: 0.18
   scaleIn: 0.96
@@ -145,8 +145,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: ' efefsefsefe fesfse'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: cf26052a0d074a04baf69b944a16398d, type: 2}
-  m_sharedMaterial: {fileID: -5374591420838769158, guid: cf26052a0d074a04baf69b944a16398d, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: dbe5c661be6ceaa458a180ec65e488fe, type: 2}
+  m_sharedMaterial: {fileID: 987294954448057830, guid: dbe5c661be6ceaa458a180ec65e488fe, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -181,6 +181,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -279,7 +280,6 @@ MonoBehaviour:
   _maxWidth: 750
   _wrap: 1
   _useLayoutElement: 0
-  _autoAddLayoutElement: 0
   _applyToRootRect: 1
 --- !u!1001 &3394864828638927803
 PrefabInstance:
@@ -339,7 +339,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5822313901381269349, guid: e40a9656e1cfcd940b4952d52d46a12a, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 10
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5822313901381269349, guid: e40a9656e1cfcd940b4952d52d46a12a, type: 3}
       propertyPath: m_LocalPosition.x
@@ -375,7 +375,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5822313901381269349, guid: e40a9656e1cfcd940b4952d52d46a12a, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -2.5
       objectReference: {fileID: 0}
     - target: {fileID: 5822313901381269349, guid: e40a9656e1cfcd940b4952d52d46a12a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

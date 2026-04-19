@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
@@ -18,6 +19,7 @@ using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Train;
 using Project.Infrastructure;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Project.Bootstrap
 {
@@ -62,12 +64,29 @@ namespace Project.Bootstrap
 			cameraService.SetActiveCamera(CameraIds.MainMenu, CameraTransitions.Instant);
 
 			var gameStartModel = new GameStartModel();
-			await _lifecycle.RegisterControllersGroupAsync(
-				new IBaseController[]
+			MainMenuStartInteractableView startButton = null;
+			Action onStartClicked = null;
+			if (menuSceneContext && menuSceneContext.MainMenuStartButton)
+			{
+				startButton = menuSceneContext.MainMenuStartButton;
+				onStartClicked = () =>
 				{
-					new UIMainMenuController(uiService, cursorService, inputService, menuSceneContext, gameStartModel),
-				});
+					menuSceneContext.MainMenuStartVisualRoot?.Hide();
+					gameStartModel.Start();
+				};
+				startButton.Clicked += onStartClicked;
+			}
+
+			if (cursorService.IsCursorLocked)
+			{
+				cursorService.UnlockCursor();
+			}
+
 			await gameStartModel.WaitUntilStartedAsync();
+			if (startButton && onStartClicked != null)
+			{
+				startButton.Clicked -= onStartClicked;
+			}
 			await splashScreenService.FadeInAsync(ProjectSplashScreenSettings.MainMenuToGameFadeInSeconds);
 
 			if (launchSettings.IsMultiplayer)
@@ -338,7 +357,7 @@ namespace Project.Bootstrap
 				audioService.PrewarmEventAsync(SoundNames.WoodFootSteps));
 
 			audioService.PlaySoundParallel(SoundNames.DesertAmbience);
-			audioService.PlaySoundParallel(SoundNames.Ost_2);
+			audioService.PlaySoundParallel(SoundNames.Ost_1);
 		}
 
 		private async UniTask<List<StationDayContent>> LoadStationDayContentsAsync(

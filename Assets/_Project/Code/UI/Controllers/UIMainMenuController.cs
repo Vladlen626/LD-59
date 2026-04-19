@@ -101,10 +101,10 @@ public sealed class UIMainMenuController : BaseContextController<UIMainMenu>, IU
 			return;
 		}
 
-		var configuredStart = _sceneContext ? _sceneContext.MainMenuStartInteractable : null;
-		if (configuredStart)
+		var configuredStartButton = _sceneContext ? _sceneContext.MainMenuStartButton : null;
+		if (configuredStartButton)
 		{
-			if (hit.collider.GetComponentInParent<MainMenuStartInteractableView>() == configuredStart)
+			if (hit.collider.GetComponentInParent<MainMenuStartInteractableView>() == configuredStartButton)
 			{
 				OnStartRequestedHandler();
 			}
@@ -126,6 +126,7 @@ public sealed class UIMainMenuController : BaseContextController<UIMainMenu>, IU
 		}
 
 		_isStartRequested = true;
+		_sceneContext?.MainMenuStartVisualRoot?.Hide();
 		_gameStartModel?.Start();
 
 		if (_context != null && _context.IsShown())
