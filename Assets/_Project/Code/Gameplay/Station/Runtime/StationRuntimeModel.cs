@@ -9,6 +9,7 @@ namespace Project.Gameplay.Station.Runtime
 		public event Action<StationFlowState> FlowStateChanged;
 		public event Action<TrainTransitState> TrainTransitStateChanged;
 		public event Action<bool> CurrentWagonInspectionChanged;
+		public event Action<bool> CurrentWagonDoorStateChanged;
 
 		public StationRuntimeModel(
 			StationDayModel stationDay,
@@ -28,6 +29,7 @@ namespace Project.Gameplay.Station.Runtime
 		public TrainTransitState TrainTransitState { get; private set; } = TrainTransitState.None;
 		public int ActiveCaseIndex { get; private set; } = -1;
 		public bool HasInspectedCurrentWagon { get; private set; }
+		public bool IsCurrentWagonDoorOpen { get; private set; }
 		public bool HasActiveScenario => ActiveScenario != null;
 		public bool IsTrainInTransit =>
 			TrainTransitState == TrainTransitState.Arriving ||
@@ -35,14 +37,14 @@ namespace Project.Gameplay.Station.Runtime
 
 		public void SetActiveScenario(TrainScenario scenario)
 		{
-			ResetCurrentWagonInspection();
+			ResetCurrentWagonState();
 			ActiveScenario = scenario;
 			ActiveScenarioChanged?.Invoke(ActiveScenario);
 		}
 
 		public void ClearActiveScenario()
 		{
-			ResetCurrentWagonInspection();
+			ResetCurrentWagonState();
 			ActiveScenario = null;
 			ActiveScenarioChanged?.Invoke(null);
 		}
@@ -85,6 +87,17 @@ namespace Project.Gameplay.Station.Runtime
 			CurrentWagonInspectionChanged?.Invoke(true);
 		}
 
+		public void SetCurrentWagonDoorOpen(bool isOpen)
+		{
+			if (IsCurrentWagonDoorOpen == isOpen)
+			{
+				return;
+			}
+
+			IsCurrentWagonDoorOpen = isOpen;
+			CurrentWagonDoorStateChanged?.Invoke(IsCurrentWagonDoorOpen);
+		}
+
 		public void ResetCurrentWagonInspection()
 		{
 			if (HasInspectedCurrentWagon == false)
@@ -94,6 +107,12 @@ namespace Project.Gameplay.Station.Runtime
 
 			HasInspectedCurrentWagon = false;
 			CurrentWagonInspectionChanged?.Invoke(false);
+		}
+
+		private void ResetCurrentWagonState()
+		{
+			SetCurrentWagonDoorOpen(false);
+			ResetCurrentWagonInspection();
 		}
 	}
 }

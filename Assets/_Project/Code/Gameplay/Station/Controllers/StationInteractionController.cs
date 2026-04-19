@@ -25,6 +25,7 @@ namespace Project.Gameplay.Station.Controllers
 		private const string HintCallTrain = "Call Train";
 		private const string HintDispatchTrain = "Dispatch Train";
 		private const string HintOpenWagonFirst = "Open wagon first";
+		private const string HintCloseWagonFirst = "Close wagon first";
 		private const string HintOpenWagon = "Open Wagon";
 		private const string HintCloseWagon = "Close Wagon";
 		private const string HintTrainInMotion = "Train in motion";
@@ -51,7 +52,6 @@ namespace Project.Gameplay.Station.Controllers
 		private string _temporaryHint = string.Empty;
 		private float _temporaryHintUntil;
 		private bool _isActive;
-		private bool _isDoorOpened;
 		private PlayerDecision _selectedDecision = PlayerDecision.AllowPassage;
 
 		public event Action<string> HintChanged;
@@ -95,6 +95,7 @@ namespace Project.Gameplay.Station.Controllers
 				_runtimeModel.FlowStateChanged += OnFlowStateChanged;
 				_runtimeModel.TrainTransitStateChanged += OnTrainTransitStateChanged;
 				_runtimeModel.CurrentWagonInspectionChanged += OnInspectionStateChanged;
+				_runtimeModel.CurrentWagonDoorStateChanged += OnDoorStateChanged;
 			}
 
 			_trainSpawnController.CurrentTrainChanged += OnCurrentTrainChanged;
@@ -115,6 +116,7 @@ namespace Project.Gameplay.Station.Controllers
 				_runtimeModel.FlowStateChanged -= OnFlowStateChanged;
 				_runtimeModel.TrainTransitStateChanged -= OnTrainTransitStateChanged;
 				_runtimeModel.CurrentWagonInspectionChanged -= OnInspectionStateChanged;
+				_runtimeModel.CurrentWagonDoorStateChanged -= OnDoorStateChanged;
 			}
 
 			_trainSpawnController.CurrentTrainChanged -= OnCurrentTrainChanged;
@@ -342,8 +344,7 @@ namespace Project.Gameplay.Station.Controllers
 
 			_currentDoorInteractable = doorInteractable;
 			_currentDoorInteractable.Interacted += OnDoorInteracted;
-			_currentDoorInteractable.SetOpenState(false);
-			_isDoorOpened = false;
+			_currentDoorInteractable.SetOpenState(_runtimeModel != null && _runtimeModel.IsCurrentWagonDoorOpen);
 			InvalidateHintState();
 		}
 
@@ -357,7 +358,7 @@ namespace Project.Gameplay.Station.Controllers
 			_currentDoorInteractable.Interacted -= OnDoorInteracted;
 			_currentDoorInteractable.SetOpenState(false);
 			_currentDoorInteractable = null;
-			_isDoorOpened = false;
+			_runtimeModel?.SetCurrentWagonDoorOpen(false);
 		}
 
 		private void OnDoorInteracted()
@@ -367,15 +368,13 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
-			_isDoorOpened = !_isDoorOpened;
-			_currentDoorInteractable.SetOpenState(_isDoorOpened);
+			var shouldOpenDoor = _runtimeModel.IsCurrentWagonDoorOpen == false;
+			_runtimeModel.SetCurrentWagonDoorOpen(shouldOpenDoor);
 
-			if (_isDoorOpened)
+			if (shouldOpenDoor)
 			{
 				_runtimeModel.MarkCurrentWagonInspected();
 			}
-
-			InvalidateHintState();
 		}
 
 		private void OnActionButtonInteracted()
@@ -391,6 +390,12 @@ namespace Project.Gameplay.Station.Controllers
 				if (_runtimeModel.HasInspectedCurrentWagon == false)
 				{
 					ShowActionFeedback(HintOpenWagonFirst);
+					return;
+				}
+
+				if (_runtimeModel.IsCurrentWagonDoorOpen)
+				{
+					ShowActionFeedback(HintCloseWagonFirst);
 					return;
 				}
 
@@ -463,6 +468,16 @@ namespace Project.Gameplay.Station.Controllers
 			InvalidateHintState();
 		}
 
+		private void OnDoorStateChanged(bool isOpen)
+		{
+			if (_currentDoorInteractable)
+			{
+				_currentDoorInteractable.SetOpenState(isOpen);
+			}
+
+			InvalidateHintState();
+		}
+
 		private void InvalidateHintState()
 		{
 			ClearTemporaryHint();
@@ -532,9 +547,14 @@ namespace Project.Gameplay.Station.Controllers
 
 			if (_stationFlowController.IsAwaitingDecision)
 			{
-				return _runtimeModel.HasInspectedCurrentWagon
-					? HintDispatchTrain
-					: HintOpenWagonFirst;
+				if (_runtimeModel.HasInspectedCurrentWagon == false)
+				{
+					return HintOpenWagonFirst;
+				}
+
+				return _runtimeModel.IsCurrentWagonDoorOpen
+					? HintCloseWagonFirst
+					: HintDispatchTrain;
 			}
 
 			if (_stationFlowController.IsAwaitingTrainCall)
@@ -569,7 +589,7 @@ namespace Project.Gameplay.Station.Controllers
 				return string.Empty;
 			}
 
-			return _isDoorOpened ? HintCloseWagon : HintOpenWagon;
+			return _runtimeModel.IsCurrentWagonDoorOpen ? HintCloseWagon : HintOpenWagon;
 		}
 
 		private bool CanInspectCurrentWagon()

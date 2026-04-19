@@ -268,6 +268,13 @@ namespace Project.Gameplay.Station.Controllers
 				return false;
 			}
 
+			if (_runtimeModel.IsCurrentWagonDoorOpen)
+			{
+				_loggerService?.LogWarning(
+					$"[StationFlow] Dispatch blocked for case {_runtimeModel.ActiveCaseIndex + 1}. Close the wagon door first.");
+				return false;
+			}
+
 			_runtimeModel.SetFlowState(StationFlowState.ResolveCase);
 
 			var scenario = _runtimeModel.ActiveScenario;
