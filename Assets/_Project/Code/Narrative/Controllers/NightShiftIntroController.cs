@@ -77,15 +77,8 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			_isActive = true;
-			if (_stationFlowController != null)
-			{
-				_stationFlowController.DayStarted += OnDayStarted;
-			}
-
-			if (_uiLetterController != null)
-			{
-				_uiLetterController.LetterClosed += OnLetterClosed;
-			}
+			_stationFlowController.DayStarted += OnDayStarted;
+			_uiLetterController.LetterClosed += OnLetterClosed;
 		}
 
 		public void Deactivate()
@@ -96,15 +89,8 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			_isActive = false;
-			if (_stationFlowController != null)
-			{
-				_stationFlowController.DayStarted -= OnDayStarted;
-			}
-
-			if (_uiLetterController != null)
-			{
-				_uiLetterController.LetterClosed -= OnLetterClosed;
-			}
+			_stationFlowController.DayStarted -= OnDayStarted;
+			_uiLetterController.LetterClosed -= OnLetterClosed;
 
 			_letterReadSource?.TrySetResult();
 			_letterReadSource = null;
@@ -140,10 +126,7 @@ namespace Project.Gameplay.Station.Controllers
 				TeleportPlayerToWakePoint(roomTargets);
 				SuspendPlayerControl();
 
-				if (_wakeTransitionController != null)
-				{
-					await _wakeTransitionController.PlayWakeUpAsync(2, cancellationToken);
-				}
+				await _wakeTransitionController.PlayWakeUpAsync(2, cancellationToken);
 
 				await PlayDoorKnockAsync(roomTargets, cancellationToken);
 				SpawnLetter(roomTargets);
@@ -163,7 +146,7 @@ namespace Project.Gameplay.Station.Controllers
 
 				RestorePlayerControl();
 				await _letterReadSource.Task.AttachExternalCancellation(cancellationToken);
-				_stationFlowController?.TryCompleteDayIntro();
+				_stationFlowController.TryCompleteDayIntro();
 				return true;
 			}
 			catch (OperationCanceledException)
@@ -191,7 +174,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void OnLetterInteracted()
 		{
-			if (_uiLetterController == null || _uiLetterController.IsOpen)
+			if (_uiLetterController.IsOpen)
 			{
 				return;
 			}
@@ -211,12 +194,12 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void ApplyInteractionRestriction()
 		{
-			_stationInteractionController?.SetInteractionRestriction(IsLetterInteractionAllowed);
+			_stationInteractionController.SetInteractionRestriction(IsLetterInteractionAllowed);
 		}
 
 		private void ClearInteractionRestriction()
 		{
-			_stationInteractionController?.ClearInteractionRestriction();
+			_stationInteractionController.ClearInteractionRestriction();
 		}
 
 		private bool IsLetterInteractionAllowed(IPlayerInteractable interactable)
@@ -226,11 +209,8 @@ namespace Project.Gameplay.Station.Controllers
 
 		private async UniTask PlayDoorKnockAsync(NightShiftRoomTargets roomTargets, CancellationToken cancellationToken)
 		{
-			_audioService?.PlaySoundAt(ProjectAudioEventPaths.DayStart, roomTargets.DoorPosition);
-			if (_cameraShakeService != null)
-			{
-				await _cameraShakeService.ShakeAsync(KnockShakeIntensity, KnockShakeDuration);
-			}
+			_audioService.PlaySoundAt(ProjectAudioEventPaths.DayStart, roomTargets.DoorPosition);
+			await _cameraShakeService.ShakeAsync(KnockShakeIntensity, KnockShakeDuration);
 
 			await UniTask.Delay(TimeSpan.FromSeconds(0.1f), cancellationToken: cancellationToken);
 		}
@@ -371,7 +351,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		private NightShiftLetterData ResolveIntroLetter(StationDayContent dayContent)
 		{
-			if (_stationFlowController != null && _stationFlowController.IsCurrentDayLastAuthored)
+			if (_stationFlowController.IsCurrentDayLastAuthored)
 			{
 				var finalNotice = dayContent?.FinalNotice;
 				if (finalNotice != null && finalNotice.HasContent)

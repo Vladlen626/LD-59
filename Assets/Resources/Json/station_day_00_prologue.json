@@ -9,12 +9,14 @@
   ],
   "shift_letter": {
     "title": "Night Orders",
-    "body": "You were assigned to this station to work off your debt. Three trains tonight. Check the papers, inspect the wagon, and do not let dynamite through."
+    "body": "You were assigned to this station to work off your debt. Three trains tonight. Read the manifest, inspect the wagon, and keep dynamite off this line.",
+    "hint": "Start simple: papers first, then cargo."
   },
   "living_cost": {
     "label": "Meals and lamp oil",
     "amount": 12
   },
+  "end_day_note": "First night survived. The debt is still heavy, but it moved.",
   "train_scenarios": [
     {
       "id": "prologue_case_001",

@@ -11,16 +11,19 @@
   ],
   "shift_letter": {
     "title": "Night Orders",
-    "body": "Weapons are banned tonight. The loads will look cleaner than they are. Stay precise. A rushed decision will cost you more than the train is worth."
+    "body": "Weapons are banned tonight. Loads will look cleaner than they are. Stay precise. A rushed decision will cost more than any single train pays.",
+    "hint": "Final shift pressure is the trap. Keep procedure."
   },
   "final_notice": {
     "title": "Final Notice",
-    "body": "This is your last shift. Be careful tonight. The debt must be cleared before dawn. If you fail to settle it, you stay here."
+    "body": "This is your last shift. The debt must be cleared before dawn. No allowances will be made after this report is filed.",
+    "hint": "One bad call can keep you here."
   },
   "living_cost": {
     "label": "Food, lamp oil, and room rent",
     "amount": 28
   },
+  "end_day_note": "Last report filed. The account is either closed, or it owns your name.",
   "train_scenarios": [
     {
       "id": "day04_case_001",

@@ -7,23 +7,23 @@ using UnityEngine.UI;
 public sealed class UIWakeTransitionView : UIBaseElement
 {
 	[Header("References")]
-	[SerializeField] private Image _backdropImage;
-	[SerializeField] private RectTransform _upperLid;
-	[SerializeField] private RectTransform _lowerLid;
+	[SerializeField] private Image _backdrop;
+	[SerializeField] private RectTransform _upperLidRect;
+	[SerializeField] private RectTransform _lowerLidRect;
 
 	[Header("Runtime Layout")]
-	[SerializeField] private bool _autoCreateRuntimeLayout = true;
-	[SerializeField] private Color _backdropColor = new(0.02f, 0.02f, 0.02f, 0.12f);
-	[SerializeField] private Color _lidColor = new(0f, 0f, 0f, 1f);
+	[SerializeField] private bool _buildRuntimeLayout = true;
+	[SerializeField] private Color _backdropTint = new(0.02f, 0.02f, 0.02f, 0.12f);
+	[SerializeField] private Color _lidTint = new(0f, 0f, 0f, 1f);
 
 	[Header("Timing")]
-	[SerializeField] private float _initialClosedHold = 0.16f;
-	[SerializeField] private float _initialOpenDuration = 0.24f;
+	[SerializeField] private float _closedHoldSeconds = 0.16f;
+	[SerializeField] private float _initialOpenSeconds = 0.24f;
 	[SerializeField] private float _blinkInterval = 0.08f;
-	[SerializeField] private float _blinkCloseDuration = 0.06f;
-	[SerializeField] private float _blinkHoldDuration = 0.03f;
-	[SerializeField] private float _blinkOpenDuration = 0.12f;
-	[SerializeField] private float _settleDelay = 0.08f;
+	[SerializeField] private float _blinkCloseSeconds = 0.06f;
+	[SerializeField] private float _blinkHoldSeconds = 0.03f;
+	[SerializeField] private float _blinkOpenSeconds = 0.12f;
+	[SerializeField] private float _settleSeconds = 0.08f;
 
 	private float _closedAmount = 1f;
 
@@ -50,12 +50,12 @@ public sealed class UIWakeTransitionView : UIBaseElement
 		EnsureRuntimeLayout();
 		SetClosedAmount(1f);
 
-		if (_initialClosedHold > 0f)
+		if (_closedHoldSeconds > 0f)
 		{
-			await UniTask.Delay((int)(_initialClosedHold * 1000f), cancellationToken: cancellationToken);
+			await UniTask.Delay((int)(_closedHoldSeconds * 1000f), cancellationToken: cancellationToken);
 		}
 
-		await AnimateClosedAmountAsync(0f, _initialOpenDuration, cancellationToken);
+		await AnimateClosedAmountAsync(0f, _initialOpenSeconds, cancellationToken);
 
 		for (var i = 1; i < blinkCount; i++)
 		{
@@ -64,19 +64,19 @@ public sealed class UIWakeTransitionView : UIBaseElement
 				await UniTask.Delay((int)(_blinkInterval * 1000f), cancellationToken: cancellationToken);
 			}
 
-			await AnimateClosedAmountAsync(1f, _blinkCloseDuration, cancellationToken);
+			await AnimateClosedAmountAsync(1f, _blinkCloseSeconds, cancellationToken);
 
-			if (_blinkHoldDuration > 0f)
+			if (_blinkHoldSeconds > 0f)
 			{
-				await UniTask.Delay((int)(_blinkHoldDuration * 1000f), cancellationToken: cancellationToken);
+				await UniTask.Delay((int)(_blinkHoldSeconds * 1000f), cancellationToken: cancellationToken);
 			}
 
-			await AnimateClosedAmountAsync(0f, _blinkOpenDuration, cancellationToken);
+			await AnimateClosedAmountAsync(0f, _blinkOpenSeconds, cancellationToken);
 		}
 
-		if (_settleDelay > 0f)
+		if (_settleSeconds > 0f)
 		{
-			await UniTask.Delay((int)(_settleDelay * 1000f), cancellationToken: cancellationToken);
+			await UniTask.Delay((int)(_settleSeconds * 1000f), cancellationToken: cancellationToken);
 		}
 	}
 
@@ -104,7 +104,7 @@ public sealed class UIWakeTransitionView : UIBaseElement
 
 	private void EnsureRuntimeLayout()
 	{
-		if (!_autoCreateRuntimeLayout)
+		if (!_buildRuntimeLayout)
 		{
 			return;
 		}
@@ -118,25 +118,25 @@ public sealed class UIWakeTransitionView : UIBaseElement
 			rootRect.offsetMax = Vector2.zero;
 		}
 
-		if (!_backdropImage)
+		if (!_backdrop)
 		{
-			_backdropImage = CreateFullscreenImage("Backdrop", transform, _backdropColor);
+			_backdrop = CreateFullscreenImage("Backdrop", transform, _backdropTint);
 		}
 
-		if (!_upperLid)
+		if (!_upperLidRect)
 		{
-			_upperLid = CreateLid("UpperLid", new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(0.5f, 1f));
+			_upperLidRect = CreateLid("UpperLid", new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(0.5f, 1f));
 		}
 
-		if (!_lowerLid)
+		if (!_lowerLidRect)
 		{
-			_lowerLid = CreateLid("LowerLid", new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0f));
+			_lowerLidRect = CreateLid("LowerLid", new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0f));
 		}
 	}
 
 	private RectTransform CreateLid(string objectName, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot)
 	{
-		var image = CreateFullscreenImage(objectName, transform, _lidColor);
+		var image = CreateFullscreenImage(objectName, transform, _lidTint);
 		var rect = (RectTransform)image.transform;
 		rect.anchorMin = anchorMin;
 		rect.anchorMax = anchorMax;
@@ -166,24 +166,19 @@ public sealed class UIWakeTransitionView : UIBaseElement
 	{
 		_closedAmount = Mathf.Clamp01(amount);
 
-		if (_upperLid)
+		if (_upperLidRect)
 		{
-			_upperLid.localScale = new Vector3(1f, _closedAmount, 1f);
+			_upperLidRect.localScale = new Vector3(1f, _closedAmount, 1f);
 		}
 
-		if (_lowerLid)
+		if (_lowerLidRect)
 		{
-			_lowerLid.localScale = new Vector3(1f, _closedAmount, 1f);
+			_lowerLidRect.localScale = new Vector3(1f, _closedAmount, 1f);
 		}
 	}
 
 	private void ApplyCanvasGroupState()
 	{
-		if (!_group)
-		{
-			return;
-		}
-
 		_group.interactable = false;
 		_group.blocksRaycasts = true;
 	}

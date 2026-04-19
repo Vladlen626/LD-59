@@ -300,7 +300,8 @@ namespace Project.Bootstrap
 				audioService.PrewarmEventAsync(SoundNames.JumpSample),
 				audioService.PrewarmEventAsync(SoundNames.Lever),
 				audioService.PrewarmEventAsync(SoundNames.Notification),
-				audioService.PrewarmEventAsync(SoundNames.TrainDoor),
+				audioService.PrewarmEventAsync(SoundNames.TrainDoorOpen),
+				audioService.PrewarmEventAsync(SoundNames.TrainDoorClose),
 				audioService.PrewarmEventAsync(SoundNames.TrainSounds),
 				audioService.PrewarmEventAsync(SoundNames.TrainStopping),
 				audioService.PrewarmEventAsync(SoundNames.WoodFootSteps));
@@ -387,7 +388,8 @@ namespace Project.Bootstrap
 				cappedScenarios,
 				stationDayConfig.BuildShiftLetterData(),
 				stationDayConfig.BuildFinalNoticeData(),
-				stationDayConfig.BuildLivingCostData());
+				stationDayConfig.BuildLivingCostData(),
+				stationDayConfig.BuildEndDayNote());
 		}
 
 		private static List<TrainScenario> CapDayScenarios(List<TrainScenario> scenarios, int maxCasesPerDay)

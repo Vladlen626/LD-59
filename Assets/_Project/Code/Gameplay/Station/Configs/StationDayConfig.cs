@@ -40,6 +40,9 @@ namespace Project.Gameplay.Station.Configs
 		[Tooltip("Basic cost of living deducted in the end-of-shift settlement.")]
 		public DayLivingCostConfig living_cost = new DayLivingCostConfig();
 
+		[Tooltip("Optional one-line end-of-shift narrative shown on summary.")]
+		public string end_day_note = string.Empty;
+
 		[Tooltip("Ordered inspection cases for the day.")]
 		public List<TrainScenarioConfig> train_scenarios = new List<TrainScenarioConfig>();
 
@@ -84,6 +87,7 @@ namespace Project.Gameplay.Station.Configs
 
 			living_cost ??= new DayLivingCostConfig();
 			living_cost.ParseConfig();
+			end_day_note = StationConfigText.Normalize(end_day_note);
 
 			if (train_scenarios == null)
 			{
@@ -127,6 +131,12 @@ namespace Project.Gameplay.Station.Configs
 		{
 			ParseConfig();
 			return living_cost.ToRuntimeData();
+		}
+
+		public string BuildEndDayNote()
+		{
+			ParseConfig();
+			return end_day_note;
 		}
 
 		private DayRuleSet BuildRuleSetFromParsed()

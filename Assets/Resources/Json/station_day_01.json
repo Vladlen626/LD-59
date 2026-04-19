@@ -9,12 +9,14 @@
   ],
   "shift_letter": {
     "title": "Night Orders",
-    "body": "Mixed manifests start tonight. Count what is inside the wagon. If the listed cargo and the real load do not match, reject the train and move on."
+    "body": "Mixed manifests start tonight. Count every listed cargo type. If quantity or type is off, reject the wagon and clear the line.",
+    "hint": "Manifest and load must match exactly."
   },
   "living_cost": {
     "label": "Meals and lamp oil",
     "amount": 16
   },
+  "end_day_note": "You learned the rhythm. Mistakes now come from rushing, not confusion.",
   "train_scenarios": [
     {
       "id": "day01_case_001",

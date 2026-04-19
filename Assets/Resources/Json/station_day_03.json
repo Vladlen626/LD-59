@@ -10,12 +10,14 @@
   ],
   "shift_letter": {
     "title": "Night Orders",
-    "body": "Moonshine is banned tonight along with dynamite. Expect mixed loads meant to look routine. Read every manifest twice before you approve a wagon."
+    "body": "Moonshine is banned tonight along with dynamite. Expect mixed loads made to look routine. Verify both prohibited cargo and manifest accuracy before approval.",
+    "hint": "A wagon can fail in more than one way."
   },
   "living_cost": {
     "label": "Food and stove coal",
     "amount": 24
   },
+  "end_day_note": "Pressure is climbing. The trains look ordinary, the penalties do not.",
   "train_scenarios": [
     {
       "id": "day03_case_001",

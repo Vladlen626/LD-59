@@ -80,7 +80,8 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 			livingCost?.Label,
 			debt.TotalLivingCosts,
 			debt.NetResult,
-			debt.RemainingDebt);
+			debt.RemainingDebt,
+			_stationFlowController.CurrentDayContent?.EndDayNote);
 
 		ShowContext();
 		_audioService?.PlaySound(ProjectAudioEventPaths.DayEnd);
@@ -102,7 +103,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		if (_stationFlowController.HasNextDay == false)
 		{
 			var isWin = _runtimeContext.Debt.RemainingDebt <= 0;
-			_campaignEndingController?.ShowEnding(isWin, _runtimeContext.Debt.RemainingDebt);
+			_campaignEndingController.ShowEnding(isWin, _runtimeContext.Debt.RemainingDebt);
 			_loggerService?.Log(
 				$"[DaySummary] Campaign ended. Result={(isWin ? "Win" : "Lose")}, RemainingDebt={_runtimeContext.Debt.RemainingDebt}.");
 		}

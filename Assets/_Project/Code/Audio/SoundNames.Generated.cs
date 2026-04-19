@@ -15,7 +15,8 @@ namespace PlatformCore.Services.Audio
 		public const string Notification = "event:/Notification";
 		public const string WoodFootSteps = "event:/WoodFootSteps";
 		public const string TrainStopping = "event:/TrainStopping";
-		public const string TrainDoor = "event:/TrainDoor";
 		public const string DayStart = "event:/DayStart";
+		public const string TrainDoorClose = "event:/TrainDoorClose";
+		public const string TrainDoorOpen = "event:/TrainDoorOpen";
 	}
 }

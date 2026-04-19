@@ -43,9 +43,9 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.FlowState == StationFlowState.DayIntroPending &&
 			_runtimeModel.HasActiveScenario == false;
 
-		public bool HasNextDay => _campaignProgress?.HasNextDay == true;
-		public bool IsCurrentDayLastAuthored => _campaignProgress?.IsCurrentDayLastAuthored == true;
-		public StationDayContent CurrentDayContent => _campaignProgress?.CurrentDay;
+		public bool HasNextDay => _campaignProgress.HasNextDay;
+		public bool IsCurrentDayLastAuthored => _campaignProgress.IsCurrentDayLastAuthored;
+		public StationDayContent CurrentDayContent => _campaignProgress.CurrentDay;
 
 		public StationFlowController(
 			StationSharedRuntimeContext runtimeContext,

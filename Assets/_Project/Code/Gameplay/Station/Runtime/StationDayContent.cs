@@ -13,7 +13,8 @@ namespace Project.Gameplay.Station.Runtime
 			IReadOnlyList<TrainScenario> scenarios,
 			NightShiftLetterData shiftLetter,
 			NightShiftLetterData finalNotice,
-			DayLivingCostData livingCost)
+			DayLivingCostData livingCost,
+			string endDayNote)
 		{
 			ResourcePath = string.IsNullOrWhiteSpace(resourcePath) ? string.Empty : resourcePath.Trim();
 			InitialDebt = Math.Max(0, initialDebt);
@@ -22,6 +23,7 @@ namespace Project.Gameplay.Station.Runtime
 			ShiftLetter = shiftLetter ?? new NightShiftLetterData(string.Empty, string.Empty, string.Empty);
 			FinalNotice = finalNotice ?? new NightShiftLetterData(string.Empty, string.Empty, string.Empty);
 			LivingCost = livingCost ?? new DayLivingCostData(string.Empty, 0);
+			EndDayNote = string.IsNullOrWhiteSpace(endDayNote) ? string.Empty : endDayNote.Trim();
 		}
 
 		public string ResourcePath { get; }
@@ -31,5 +33,6 @@ namespace Project.Gameplay.Station.Runtime
 		public NightShiftLetterData ShiftLetter { get; }
 		public NightShiftLetterData FinalNotice { get; }
 		public DayLivingCostData LivingCost { get; }
+		public string EndDayNote { get; }
 	}
 }

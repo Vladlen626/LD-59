@@ -70,11 +70,6 @@ namespace Project.Gameplay.Station.Controllers
 
 		public void ClearInteractionRestriction()
 		{
-			if (_interactionRestriction == null)
-			{
-				return;
-			}
-
 			_interactionRestriction = null;
 			InvalidateHintState();
 		}
@@ -111,15 +106,11 @@ namespace Project.Gameplay.Station.Controllers
 			_isActive = true;
 			_rayOrigin = ResolveRayOrigin();
 			SubscribeSceneInteractables();
-
-			if (_runtimeModel != null)
-			{
-				_runtimeModel.ActiveScenarioChanged += OnRuntimeScenarioChanged;
-				_runtimeModel.FlowStateChanged += OnFlowStateChanged;
-				_runtimeModel.TrainTransitStateChanged += OnTrainTransitStateChanged;
-				_runtimeModel.CurrentWagonInspectionChanged += OnInspectionStateChanged;
-				_runtimeModel.CurrentWagonDoorStateChanged += OnDoorStateChanged;
-			}
+			_runtimeModel.ActiveScenarioChanged += OnRuntimeScenarioChanged;
+			_runtimeModel.FlowStateChanged += OnFlowStateChanged;
+			_runtimeModel.TrainTransitStateChanged += OnTrainTransitStateChanged;
+			_runtimeModel.CurrentWagonInspectionChanged += OnInspectionStateChanged;
+			_runtimeModel.CurrentWagonDoorStateChanged += OnDoorStateChanged;
 
 			_trainSpawnController.CurrentTrainChanged += OnCurrentTrainChanged;
 			OnCurrentTrainChanged(_trainSpawnController.CurrentTrain);
@@ -133,14 +124,11 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
-			if (_runtimeModel != null)
-			{
-				_runtimeModel.ActiveScenarioChanged -= OnRuntimeScenarioChanged;
-				_runtimeModel.FlowStateChanged -= OnFlowStateChanged;
-				_runtimeModel.TrainTransitStateChanged -= OnTrainTransitStateChanged;
-				_runtimeModel.CurrentWagonInspectionChanged -= OnInspectionStateChanged;
-				_runtimeModel.CurrentWagonDoorStateChanged -= OnDoorStateChanged;
-			}
+			_runtimeModel.ActiveScenarioChanged -= OnRuntimeScenarioChanged;
+			_runtimeModel.FlowStateChanged -= OnFlowStateChanged;
+			_runtimeModel.TrainTransitStateChanged -= OnTrainTransitStateChanged;
+			_runtimeModel.CurrentWagonInspectionChanged -= OnInspectionStateChanged;
+			_runtimeModel.CurrentWagonDoorStateChanged -= OnDoorStateChanged;
 
 			_trainSpawnController.CurrentTrainChanged -= OnCurrentTrainChanged;
 			UnsubscribeSceneInteractables();
@@ -384,7 +372,7 @@ namespace Project.Gameplay.Station.Controllers
 
 			_currentDoorInteractable = doorInteractable;
 			_currentDoorInteractable.Interacted += OnDoorInteracted;
-			_currentDoorInteractable.SetOpenState(_runtimeModel != null && _runtimeModel.IsCurrentWagonDoorOpen);
+			_currentDoorInteractable.SetOpenState(_runtimeModel.IsCurrentWagonDoorOpen);
 			InvalidateHintState();
 		}
 
@@ -398,7 +386,7 @@ namespace Project.Gameplay.Station.Controllers
 			_currentDoorInteractable.Interacted -= OnDoorInteracted;
 			_currentDoorInteractable.SetOpenState(false);
 			_currentDoorInteractable = null;
-			_runtimeModel?.SetCurrentWagonDoorOpen(false);
+			_runtimeModel.SetCurrentWagonDoorOpen(false);
 		}
 
 		private void OnDoorInteracted()
@@ -410,7 +398,9 @@ namespace Project.Gameplay.Station.Controllers
 
 			var shouldOpenDoor = _runtimeModel.IsCurrentWagonDoorOpen == false;
 			_runtimeModel.SetCurrentWagonDoorOpen(shouldOpenDoor);
-			PlaySoundAt(ProjectAudioEventPaths.TrainDoor, _currentDoorInteractable.transform.position);
+			PlaySoundAt(
+				shouldOpenDoor ? ProjectAudioEventPaths.TrainDoorOpen : ProjectAudioEventPaths.TrainDoorClose,
+				_currentDoorInteractable.transform.position);
 
 			if (shouldOpenDoor)
 			{

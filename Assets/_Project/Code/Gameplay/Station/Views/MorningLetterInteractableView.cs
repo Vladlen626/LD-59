@@ -2,22 +2,22 @@ using System;
 using Project.Gameplay.Interaction;
 using UnityEngine;
 
-	namespace Project.Gameplay.Station.Views
-	{
+namespace Project.Gameplay.Station.Views
+{
 	public sealed class MorningLetterInteractableView : PlayerInteractableView, IPlayerInteractableHintProvider
 	{
-		[SerializeField] private bool _autoCreateRuntimeVisual = true;
-		[SerializeField] private bool _availableOnStart;
-		[SerializeField] private string _interactionHint = "Read Letter";
-		[SerializeField] private Vector3 _paperSize = new(0.24f, 0.015f, 0.34f);
-		[SerializeField] private Vector3 _interactionBoxSize = new(0.32f, 0.08f, 0.42f);
-		[SerializeField] private Color _paperColor = new(0.92f, 0.87f, 0.73f, 1f);
+		[SerializeField] private bool _createRuntimeVisual = true;
+		[SerializeField] private bool _startAvailable;
+		[SerializeField] private string _hint = "Read Letter";
+		[SerializeField] private Vector3 _paperVisualSize = new(0.24f, 0.015f, 0.34f);
+		[SerializeField] private Vector3 _interactionColliderSize = new(0.32f, 0.08f, 0.42f);
+		[SerializeField] private Color _paperVisualColor = new(0.92f, 0.87f, 0.73f, 1f);
 
-		private Collider _interactionCollider;
+		private Collider _cachedInteractionCollider;
 		private bool _isAvailable;
 
 		public event Action Interacted;
-		public string InteractionHint => _interactionHint;
+		public string InteractionHint => _hint;
 
 		public override bool CanInteract => base.CanInteract && _isAvailable;
 
@@ -26,8 +26,8 @@ using UnityEngine;
 			EnsureRuntimeVisual();
 			EnsureInteractionCollider();
 			base.Awake();
-			_interactionCollider = InteractionCollider;
-			SetAvailable(_availableOnStart);
+			_cachedInteractionCollider = InteractionCollider;
+			SetAvailable(_startAvailable);
 		}
 
 		public override void Interact()
@@ -44,9 +44,9 @@ using UnityEngine;
 		{
 			_isAvailable = isAvailable;
 
-			if (_interactionCollider)
+			if (_cachedInteractionCollider)
 			{
-				_interactionCollider.enabled = isAvailable;
+				_cachedInteractionCollider.enabled = isAvailable;
 			}
 		}
 
@@ -57,7 +57,7 @@ using UnityEngine;
 
 		private void EnsureRuntimeVisual()
 		{
-			if (!_autoCreateRuntimeVisual || GetComponentInChildren<Renderer>())
+			if (!_createRuntimeVisual || GetComponentInChildren<Renderer>())
 			{
 				return;
 			}
@@ -67,7 +67,7 @@ using UnityEngine;
 			visual.transform.SetParent(transform, false);
 			visual.transform.localPosition = Vector3.zero;
 			visual.transform.localRotation = Quaternion.identity;
-			visual.transform.localScale = _paperSize;
+			visual.transform.localScale = _paperVisualSize;
 			visual.layer = gameObject.layer;
 
 			var visualCollider = visual.GetComponent<Collider>();
@@ -86,7 +86,7 @@ using UnityEngine;
 			renderer.receiveShadows = false;
 			if (renderer.material)
 			{
-				renderer.material.color = _paperColor;
+				renderer.material.color = _paperVisualColor;
 			}
 		}
 
@@ -99,7 +99,7 @@ using UnityEngine;
 
 			var boxCollider = gameObject.AddComponent<BoxCollider>();
 			boxCollider.isTrigger = true;
-			boxCollider.size = _interactionBoxSize;
+			boxCollider.size = _interactionColliderSize;
 		}
 	}
 }

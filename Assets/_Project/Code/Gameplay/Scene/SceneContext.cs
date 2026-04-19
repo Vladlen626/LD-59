@@ -8,54 +8,54 @@ namespace Project.Gameplay.Scene
 	public sealed class SceneContext : MonoBehaviour, ISceneContext
 	{
 		[SerializeField] [Tooltip("World point where train prefab is spawned.")]
-		private Transform _trainSpawnPoint;
+		private Transform _spawnPoint;
 		[SerializeField] [Tooltip("Optional parent for spawned train instance.")]
-		private Transform _trainSpawnParent;
+		private Transform _spawnParent;
 		[SerializeField] [Tooltip("How far behind the station the train starts before arrival.")]
-		private float _trainArrivalDistance = 30f;
+		private float _arrivalDistance = 30f;
 		[SerializeField] [Tooltip("How far forward the train leaves the station before cleanup.")]
-		private float _trainDepartureDistance = 30f;
+		private float _departureDistance = 30f;
 		[SerializeField] [Tooltip("Arrival duration in seconds. Uses smooth braking near the station.")]
-		private float _trainArrivalDuration = 2.4f;
+		private float _arrivalDurationSeconds = 2.4f;
 		[SerializeField] [Tooltip("Departure duration in seconds. Uses smooth acceleration from the station.")]
-		private float _trainDepartureDuration = 1.8f;
+		private float _departureDurationSeconds = 1.8f;
 		[SerializeField] [Tooltip("Single world button: call train if none, send case if train is present.")]
-		private StationActionButtonInteractableView _actionButton;
+		private StationActionButtonInteractableView _stationActionButton;
 		[SerializeField] [Tooltip("Single world toggle: switches player verdict Allow/SendBack.")]
-		private StationDecisionToggleInteractableView _decisionToggle;
+		private StationDecisionToggleInteractableView _stationDecisionToggle;
 		[SerializeField] [Tooltip("World-space inspection info view for forbidden cargo, manifest and dispatch state.")]
-		private StationInspectionInfoView _inspectionInfoView;
+		private StationInspectionInfoView _stationInspectionInfo;
 		[SerializeField] [Tooltip("Where the player wakes up at the start of a shift.")]
-		private Transform _nightShiftWakePoint;
+		private Transform _wakePoint;
 		[SerializeField] [Tooltip("Door transform used as the source of the wake-up knock.")]
-		private Transform _nightShiftDoorPoint;
+		private Transform _doorPoint;
 		[SerializeField] [Tooltip("Start point for the letter slide under the door.")]
-		private Transform _nightShiftLetterThrowStartPoint;
+		private Transform _letterThrowStartPoint;
 		[SerializeField] [Tooltip("End point where the letter comes to rest on the floor.")]
-		private Transform _nightShiftLetterLandingPoint;
+		private Transform _letterLandingPoint;
 		[SerializeField] [Tooltip("Optional parent for the spawned night letter object.")]
-		private Transform _nightShiftLetterParent;
+		private Transform _letterParent;
 
 		public UnityScene Scene { get; private set; }
-		public StationActionButtonInteractableView ActionButton => _actionButton;
-		public StationDecisionToggleInteractableView DecisionToggle => _decisionToggle;
-		public StationInspectionInfoView InspectionInfoView => _inspectionInfoView;
+		public StationActionButtonInteractableView ActionButton => _stationActionButton;
+		public StationDecisionToggleInteractableView DecisionToggle => _stationDecisionToggle;
+		public StationInspectionInfoView InspectionInfoView => _stationInspectionInfo;
 
 		public SceneRuntimeSetup BuildRuntimeSetup()
 		{
 			return new SceneRuntimeSetup(
-				_trainSpawnPoint,
-				_trainSpawnParent,
-				_trainArrivalDistance,
-				_trainDepartureDistance,
-				_trainArrivalDuration,
-				_trainDepartureDuration,
+				_spawnPoint,
+				_spawnParent,
+				_arrivalDistance,
+				_departureDistance,
+				_arrivalDurationSeconds,
+				_departureDurationSeconds,
 				new NightShiftRoomSetup(
-					_nightShiftWakePoint,
-					_nightShiftDoorPoint,
-					_nightShiftLetterThrowStartPoint,
-					_nightShiftLetterLandingPoint,
-					_nightShiftLetterParent));
+					_wakePoint,
+					_doorPoint,
+					_letterThrowStartPoint,
+					_letterLandingPoint,
+					_letterParent));
 		}
 
 		private void Awake()

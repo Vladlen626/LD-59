@@ -6,20 +6,20 @@ using UnityEngine.UI;
 public sealed class UICampaignEndingView : UIBaseElement
 {
 	[Header("References")]
-	[SerializeField] private Image _overlayImage;
-	[SerializeField] private Image _panelImage;
-	[SerializeField] private TMP_Text _titleText;
-	[SerializeField] private TMP_Text _bodyText;
-	[SerializeField] private TMP_Text _promptText;
+	[SerializeField] private Image _overlay;
+	[SerializeField] private Image _panel;
+	[SerializeField] private TMP_Text _titleLabel;
+	[SerializeField] private TMP_Text _bodyLabel;
+	[SerializeField] private TMP_Text _promptLabel;
 
 	[Header("Runtime Layout")]
-	[SerializeField] private bool _autoCreateRuntimeLayout = true;
+	[SerializeField] private bool _buildRuntimeLayout = true;
 	[SerializeField] private Vector2 _panelSize = new(1040f, 620f);
-	[SerializeField] private Color _overlayColor = new(0.02f, 0.015f, 0.015f, 0.82f);
-	[SerializeField] private Color _panelColor = new(0.12f, 0.09f, 0.07f, 0.98f);
-	[SerializeField] private Color _titleColor = new(0.95f, 0.86f, 0.67f, 1f);
-	[SerializeField] private Color _bodyColor = new(0.88f, 0.82f, 0.72f, 1f);
-	[SerializeField] private Color _promptColor = new(0.72f, 0.64f, 0.52f, 1f);
+	[SerializeField] private Color _overlayTint = new(0.02f, 0.015f, 0.015f, 0.82f);
+	[SerializeField] private Color _panelTint = new(0.12f, 0.09f, 0.07f, 0.98f);
+	[SerializeField] private Color _titleTint = new(0.95f, 0.86f, 0.67f, 1f);
+	[SerializeField] private Color _bodyTint = new(0.88f, 0.82f, 0.72f, 1f);
+	[SerializeField] private Color _promptTint = new(0.72f, 0.64f, 0.52f, 1f);
 
 	protected override void OnAwake()
 	{
@@ -38,43 +38,43 @@ public sealed class UICampaignEndingView : UIBaseElement
 	{
 		EnsureRuntimeLayout();
 
-		if (_titleText)
+		if (_titleLabel)
 		{
-			_titleText.text = string.IsNullOrWhiteSpace(title) ? string.Empty : title.Trim();
+			_titleLabel.text = string.IsNullOrWhiteSpace(title) ? string.Empty : title.Trim();
 		}
 
-		if (_bodyText)
+		if (_bodyLabel)
 		{
-			_bodyText.text = string.IsNullOrWhiteSpace(body) ? string.Empty : body.Trim();
+			_bodyLabel.text = string.IsNullOrWhiteSpace(body) ? string.Empty : body.Trim();
 		}
 
-		if (_promptText)
+		if (_promptLabel)
 		{
-			_promptText.text = string.IsNullOrWhiteSpace(prompt) ? string.Empty : prompt.Trim();
+			_promptLabel.text = string.IsNullOrWhiteSpace(prompt) ? string.Empty : prompt.Trim();
 		}
 	}
 
 	public void ClearContent()
 	{
-		if (_titleText)
+		if (_titleLabel)
 		{
-			_titleText.text = string.Empty;
+			_titleLabel.text = string.Empty;
 		}
 
-		if (_bodyText)
+		if (_bodyLabel)
 		{
-			_bodyText.text = string.Empty;
+			_bodyLabel.text = string.Empty;
 		}
 
-		if (_promptText)
+		if (_promptLabel)
 		{
-			_promptText.text = string.Empty;
+			_promptLabel.text = string.Empty;
 		}
 	}
 
 	private void EnsureRuntimeLayout()
 	{
-		if (_autoCreateRuntimeLayout == false)
+		if (_buildRuntimeLayout == false)
 		{
 			return;
 		}
@@ -88,15 +88,15 @@ public sealed class UICampaignEndingView : UIBaseElement
 			rootRect.offsetMax = Vector2.zero;
 		}
 
-		if (!_overlayImage)
+		if (!_overlay)
 		{
-			_overlayImage = CreateImage("Overlay", transform, _overlayColor);
+			_overlay = CreateImage("Overlay", transform, _overlayTint);
 		}
 
-		if (!_panelImage)
+		if (!_panel)
 		{
-			_panelImage = CreateImage("Panel", transform, _panelColor);
-			var panelRect = (RectTransform)_panelImage.transform;
+			_panel = CreateImage("Panel", transform, _panelTint);
+			var panelRect = (RectTransform)_panel.transform;
 			panelRect.anchorMin = new Vector2(0.5f, 0.5f);
 			panelRect.anchorMax = new Vector2(0.5f, 0.5f);
 			panelRect.pivot = new Vector2(0.5f, 0.5f);
@@ -104,33 +104,33 @@ public sealed class UICampaignEndingView : UIBaseElement
 			panelRect.anchoredPosition = Vector2.zero;
 		}
 
-		_titleText ??= CreateText(
+		_titleLabel ??= CreateText(
 			"Title",
-			_panelImage.transform,
+			_panel.transform,
 			new Vector2(64f, -84f),
 			new Vector2(-64f, -190f),
 			54f,
-			_titleColor,
+			_titleTint,
 			TextAlignmentOptions.TopLeft,
 			FontStyles.Bold);
 
-		_bodyText ??= CreateText(
+		_bodyLabel ??= CreateText(
 			"Body",
-			_panelImage.transform,
+			_panel.transform,
 			new Vector2(64f, -208f),
 			new Vector2(-64f, 116f),
 			30f,
-			_bodyColor,
+			_bodyTint,
 			TextAlignmentOptions.TopLeft,
 			FontStyles.Normal);
 
-		_promptText ??= CreateText(
+		_promptLabel ??= CreateText(
 			"Prompt",
-			_panelImage.transform,
+			_panel.transform,
 			new Vector2(64f, 84f),
 			new Vector2(-64f, 40f),
 			22f,
-			_promptColor,
+			_promptTint,
 			TextAlignmentOptions.BottomRight,
 			FontStyles.Bold);
 	}
@@ -187,11 +187,6 @@ public sealed class UICampaignEndingView : UIBaseElement
 
 	private void ApplyCanvasGroupState()
 	{
-		if (!_group)
-		{
-			return;
-		}
-
 		_group.interactable = false;
 		_group.blocksRaycasts = true;
 	}

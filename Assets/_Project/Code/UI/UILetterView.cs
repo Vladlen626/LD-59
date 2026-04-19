@@ -7,25 +7,25 @@ using UnityEngine.UI;
 public sealed class UILetterView : UIBaseElement
 {
 	[Header("References")]
-	[SerializeField] private Image _overlayImage;
-	[SerializeField] private Image _paperImage;
-	[SerializeField] private TMP_Text _titleText;
-	[SerializeField] private TMP_Text _bodyText;
-	[SerializeField] private TMP_Text _hintText;
-	[SerializeField] private TMP_Text _closePromptText;
+	[SerializeField] private Image _overlay;
+	[SerializeField] private Image _paper;
+	[SerializeField] private TMP_Text _titleLabel;
+	[SerializeField] private TMP_Text _bodyLabel;
+	[SerializeField] private TMP_Text _hintLabel;
+	[SerializeField] private TMP_Text _closePromptLabel;
 
 	[Header("Runtime Layout")]
-	[SerializeField] private bool _autoCreateRuntimeLayout = true;
+	[SerializeField] private bool _buildRuntimeLayout = true;
 	[SerializeField] private Vector2 _paperSize = new(980f, 620f);
-	[SerializeField] private Color _overlayColor = new(0.03f, 0.02f, 0.02f, 0.68f);
-	[SerializeField] private Color _paperColor = new(0.94f, 0.88f, 0.74f, 1f);
-	[SerializeField] private Color _titleColor = new(0.18f, 0.11f, 0.05f, 1f);
-	[SerializeField] private Color _bodyColor = new(0.17f, 0.1f, 0.06f, 1f);
-	[SerializeField] private Color _hintColor = new(0.3f, 0.2f, 0.12f, 0.95f);
-	[SerializeField] private Color _promptColor = new(0.24f, 0.15f, 0.09f, 0.95f);
-	[SerializeField] private string _defaultTitle = "Night Orders";
-	[SerializeField] private string _defaultBody = "The station expects results. Read the papers, inspect the wagon, and clear your debt one train at a time.";
-	[SerializeField] private string _defaultHint = "Authority does not repeat itself.";
+	[SerializeField] private Color _overlayTint = new(0.03f, 0.02f, 0.02f, 0.68f);
+	[SerializeField] private Color _paperTint = new(0.94f, 0.88f, 0.74f, 1f);
+	[SerializeField] private Color _titleTint = new(0.18f, 0.11f, 0.05f, 1f);
+	[SerializeField] private Color _bodyTint = new(0.17f, 0.1f, 0.06f, 1f);
+	[SerializeField] private Color _hintTint = new(0.3f, 0.2f, 0.12f, 0.95f);
+	[SerializeField] private Color _promptTint = new(0.24f, 0.15f, 0.09f, 0.95f);
+	[SerializeField] private string _fallbackTitle = "Night Orders";
+	[SerializeField] private string _fallbackBody = "The station expects results. Read the papers, inspect the wagon, and clear your debt one train at a time.";
+	[SerializeField] private string _fallbackHint = "Authority does not repeat itself.";
 	[SerializeField] private string _closePrompt = "E / Esc - Fold Letter";
 
 	protected override void OnAwake()
@@ -45,57 +45,57 @@ public sealed class UILetterView : UIBaseElement
 	{
 		EnsureRuntimeLayout();
 
-		var title = string.IsNullOrWhiteSpace(letterData?.Title) ? _defaultTitle : letterData.Title;
-		var body = string.IsNullOrWhiteSpace(letterData?.Body) ? _defaultBody : letterData.Body;
-		var hint = string.IsNullOrWhiteSpace(letterData?.Hint) ? _defaultHint : letterData.Hint;
+		var title = string.IsNullOrWhiteSpace(letterData?.Title) ? _fallbackTitle : letterData.Title;
+		var body = string.IsNullOrWhiteSpace(letterData?.Body) ? _fallbackBody : letterData.Body;
+		var hint = string.IsNullOrWhiteSpace(letterData?.Hint) ? _fallbackHint : letterData.Hint;
 
-		if (_titleText)
+		if (_titleLabel)
 		{
-			_titleText.text = title;
+			_titleLabel.text = title;
 		}
 
-		if (_bodyText)
+		if (_bodyLabel)
 		{
-			_bodyText.text = body;
+			_bodyLabel.text = body;
 		}
 
-		if (_hintText)
+		if (_hintLabel)
 		{
-			_hintText.text = hint;
+			_hintLabel.text = hint;
 		}
 
-		if (_closePromptText)
+		if (_closePromptLabel)
 		{
-			_closePromptText.text = _closePrompt;
+			_closePromptLabel.text = _closePrompt;
 		}
 	}
 
 	public void ClearLetter()
 	{
-		if (_titleText)
+		if (_titleLabel)
 		{
-			_titleText.text = string.Empty;
+			_titleLabel.text = string.Empty;
 		}
 
-		if (_bodyText)
+		if (_bodyLabel)
 		{
-			_bodyText.text = string.Empty;
+			_bodyLabel.text = string.Empty;
 		}
 
-		if (_hintText)
+		if (_hintLabel)
 		{
-			_hintText.text = string.Empty;
+			_hintLabel.text = string.Empty;
 		}
 
-		if (_closePromptText)
+		if (_closePromptLabel)
 		{
-			_closePromptText.text = string.Empty;
+			_closePromptLabel.text = string.Empty;
 		}
 	}
 
 	private void EnsureRuntimeLayout()
 	{
-		if (_autoCreateRuntimeLayout == false)
+		if (_buildRuntimeLayout == false)
 		{
 			return;
 		}
@@ -109,15 +109,15 @@ public sealed class UILetterView : UIBaseElement
 			rootRect.offsetMax = Vector2.zero;
 		}
 
-		if (!_overlayImage)
+		if (!_overlay)
 		{
-			_overlayImage = CreateImage("Overlay", transform, _overlayColor);
+			_overlay = CreateImage("Overlay", transform, _overlayTint);
 		}
 
-		if (!_paperImage)
+		if (!_paper)
 		{
-			_paperImage = CreateImage("Paper", transform, _paperColor);
-			var paperRect = (RectTransform)_paperImage.transform;
+			_paper = CreateImage("Paper", transform, _paperTint);
+			var paperRect = (RectTransform)_paper.transform;
 			paperRect.anchorMin = new Vector2(0.5f, 0.5f);
 			paperRect.anchorMax = new Vector2(0.5f, 0.5f);
 			paperRect.pivot = new Vector2(0.5f, 0.5f);
@@ -125,43 +125,43 @@ public sealed class UILetterView : UIBaseElement
 			paperRect.anchoredPosition = Vector2.zero;
 		}
 
-		_titleText ??= CreateText(
+		_titleLabel ??= CreateText(
 			"Title",
-			_paperImage.transform,
+			_paper.transform,
 			new Vector2(36f, -36f),
 			new Vector2(-36f, -132f),
 			42f,
-			_titleColor,
+			_titleTint,
 			TextAlignmentOptions.TopLeft,
 			FontStyles.Bold);
 
-		_bodyText ??= CreateText(
+		_bodyLabel ??= CreateText(
 			"Body",
-			_paperImage.transform,
+			_paper.transform,
 			new Vector2(40f, -120f),
 			new Vector2(-40f, 118f),
 			30f,
-			_bodyColor,
+			_bodyTint,
 			TextAlignmentOptions.TopLeft,
 			FontStyles.Normal);
 
-		_hintText ??= CreateText(
+		_hintLabel ??= CreateText(
 			"Hint",
-			_paperImage.transform,
+			_paper.transform,
 			new Vector2(40f, 92f),
 			new Vector2(-320f, 42f),
 			22f,
-			_hintColor,
+			_hintTint,
 			TextAlignmentOptions.BottomLeft,
 			FontStyles.Italic);
 
-		_closePromptText ??= CreateText(
+		_closePromptLabel ??= CreateText(
 			"ClosePrompt",
-			_paperImage.transform,
+			_paper.transform,
 			new Vector2(320f, 92f),
 			new Vector2(-40f, 42f),
 			22f,
-			_promptColor,
+			_promptTint,
 			TextAlignmentOptions.BottomRight,
 			FontStyles.Bold);
 	}
@@ -218,11 +218,6 @@ public sealed class UILetterView : UIBaseElement
 
 	private void ApplyCanvasGroupState()
 	{
-		if (!_group)
-		{
-			return;
-		}
-
 		_group.interactable = false;
 		_group.blocksRaycasts = true;
 	}

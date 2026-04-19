@@ -15,23 +15,25 @@ public sealed class UIDaySummary : UIBaseElement
 	private const string NetNeutralFormat = "NET {0:0}";
 	private const string DebtAfterSettlementFormat = "DEBT AFTER SETTLEMENT {0:0}";
 	private const string DefaultLivingCostLabel = "LIVING COSTS";
+	private const string DefaultEndDayNote = "Night ledger closed. Report filed.";
 
 	[Header("Labels")]
-	[SerializeField] private TMP_Text _title;
-	[SerializeField] private TMP_Text _checked;
-	[SerializeField] private TMP_Text _correct;
-	[SerializeField] private TMP_Text _mistakes;
-	[SerializeField] private TMP_Text _fines;
-	[SerializeField] private TMP_Text _pay;
-	[SerializeField] private TMP_Text _debtLeft;
+	[SerializeField] private TMP_Text _titleLabel;
+	[SerializeField] private TMP_Text _inspectedLabel;
+	[SerializeField] private TMP_Text _incomeLabel;
+	[SerializeField] private TMP_Text _mistakeFinesLabel;
+	[SerializeField] private TMP_Text _livingCostLabel;
+	[SerializeField] private TMP_Text _netLabel;
+	[SerializeField] private TMP_Text _debtAfterSettlementLabel;
+	[SerializeField] private TMP_Text _noteLabel;
 
 	[Header("Tween")]
-	[SerializeField] private float _numberWriteDuration = 0.45f;
+	[SerializeField] private float _numberTweenDuration = 0.45f;
 
 	[Header("Colors")]
-	[SerializeField] private ColorStyleRef _defaultColor;
-	[SerializeField] private ColorStyleRef _positiveColor;
-	[SerializeField] private ColorStyleRef _negativeColor;
+	[SerializeField] private ColorStyleRef _neutralColorRef;
+	[SerializeField] private ColorStyleRef _positiveColorRef;
+	[SerializeField] private ColorStyleRef _negativeColorRef;
 
 	public event Action OnCloseClicked;
 
@@ -43,31 +45,35 @@ public sealed class UIDaySummary : UIBaseElement
 		string livingCostLabel,
 		int totalLivingCosts,
 		int netResult,
-		int remainingDebt)
+		int remainingDebt,
+		string endDayNote)
 	{
-		if (_title)
+		if (_titleLabel)
 		{
-			_title.SetText(TitleFormat, dayIndex);
+			_titleLabel.SetText(TitleFormat, dayIndex);
 		}
+
+		EnsureRuntimeEndDayNoteLabel();
+		ApplyEndDayNote(endDayNote);
 
 		ApplyColors(totalIncome, totalFines, totalLivingCosts, netResult, remainingDebt);
 
-		UINumberTweenUtils.Animate(_checked, InspectedFormat, inspectedCount, _numberWriteDuration);
-		UINumberTweenUtils.Animate(_correct, IncomeFormat, totalIncome, _numberWriteDuration);
-		UINumberTweenUtils.Animate(_mistakes, FinesFormat, totalFines, _numberWriteDuration);
-		UINumberTweenUtils.Animate(_fines, BuildLivingCostFormat(livingCostLabel), totalLivingCosts, _numberWriteDuration);
-		UINumberTweenUtils.Animate(_pay, ResolveNetFormat(netResult), Mathf.Abs(netResult), _numberWriteDuration);
-		UINumberTweenUtils.Animate(_debtLeft, DebtAfterSettlementFormat, remainingDebt, _numberWriteDuration);
+		UINumberTweenUtils.Animate(_inspectedLabel, InspectedFormat, inspectedCount, _numberTweenDuration);
+		UINumberTweenUtils.Animate(_incomeLabel, IncomeFormat, totalIncome, _numberTweenDuration);
+		UINumberTweenUtils.Animate(_mistakeFinesLabel, FinesFormat, totalFines, _numberTweenDuration);
+		UINumberTweenUtils.Animate(_livingCostLabel, BuildLivingCostFormat(livingCostLabel), totalLivingCosts, _numberTweenDuration);
+		UINumberTweenUtils.Animate(_netLabel, ResolveNetFormat(netResult), Mathf.Abs(netResult), _numberTweenDuration);
+		UINumberTweenUtils.Animate(_debtAfterSettlementLabel, DebtAfterSettlementFormat, remainingDebt, _numberTweenDuration);
 	}
 
 	public void StopTweens()
 	{
-		UINumberTweenUtils.Stop(_checked);
-		UINumberTweenUtils.Stop(_correct);
-		UINumberTweenUtils.Stop(_mistakes);
-		UINumberTweenUtils.Stop(_fines);
-		UINumberTweenUtils.Stop(_pay);
-		UINumberTweenUtils.Stop(_debtLeft);
+		UINumberTweenUtils.Stop(_inspectedLabel);
+		UINumberTweenUtils.Stop(_incomeLabel);
+		UINumberTweenUtils.Stop(_mistakeFinesLabel);
+		UINumberTweenUtils.Stop(_livingCostLabel);
+		UINumberTweenUtils.Stop(_netLabel);
+		UINumberTweenUtils.Stop(_debtAfterSettlementLabel);
 	}
 
 	private void ApplyColors(
@@ -77,12 +83,12 @@ public sealed class UIDaySummary : UIBaseElement
 		int netResult,
 		int remainingDebt)
 	{
-		SetColor(_checked, _defaultColor);
-		SetColor(_correct, totalIncome > 0 ? _positiveColor : _defaultColor);
-		SetColor(_mistakes, totalFines > 0 ? _negativeColor : _defaultColor);
-		SetColor(_fines, totalLivingCosts > 0 ? _negativeColor : _defaultColor);
-		SetColor(_pay, netResult > 0 ? _positiveColor : netResult < 0 ? _negativeColor : _defaultColor);
-		SetColor(_debtLeft, remainingDebt <= 0 ? _positiveColor : _negativeColor);
+		SetColor(_inspectedLabel, _neutralColorRef);
+		SetColor(_incomeLabel, totalIncome > 0 ? _positiveColorRef : _neutralColorRef);
+		SetColor(_mistakeFinesLabel, totalFines > 0 ? _negativeColorRef : _neutralColorRef);
+		SetColor(_livingCostLabel, totalLivingCosts > 0 ? _negativeColorRef : _neutralColorRef);
+		SetColor(_netLabel, netResult > 0 ? _positiveColorRef : netResult < 0 ? _negativeColorRef : _neutralColorRef);
+		SetColor(_debtAfterSettlementLabel, remainingDebt <= 0 ? _positiveColorRef : _negativeColorRef);
 	}
 
 	private static string BuildLivingCostFormat(string livingCostLabel)
@@ -116,6 +122,52 @@ public sealed class UIDaySummary : UIBaseElement
 		}
 
 		text.color = colorRef.Value;
+	}
+
+	private void EnsureRuntimeEndDayNoteLabel()
+	{
+		if (_noteLabel || !_debtAfterSettlementLabel)
+		{
+			return;
+		}
+
+		var noteObject = new GameObject(
+			"EndDayNote",
+			typeof(RectTransform),
+			typeof(CanvasRenderer),
+			typeof(TextMeshProUGUI));
+		var noteRect = noteObject.GetComponent<RectTransform>();
+		noteRect.SetParent(_debtAfterSettlementLabel.transform.parent, false);
+		noteRect.anchorMin = new Vector2(0f, 0f);
+		noteRect.anchorMax = new Vector2(1f, 0f);
+		noteRect.pivot = new Vector2(0.5f, 0f);
+		noteRect.sizeDelta = new Vector2(0f, 56f);
+		noteRect.anchoredPosition = new Vector2(0f, 16f);
+
+		_noteLabel = noteObject.GetComponent<TextMeshProUGUI>();
+		_noteLabel.fontSize = 24f;
+		_noteLabel.alignment = TextAlignmentOptions.Center;
+		_noteLabel.fontStyle = FontStyles.Italic;
+		_noteLabel.textWrappingMode = TextWrappingModes.Normal;
+		_noteLabel.overflowMode = TextOverflowModes.Overflow;
+		_noteLabel.raycastTarget = false;
+		if (TMP_Settings.defaultFontAsset)
+		{
+			_noteLabel.font = TMP_Settings.defaultFontAsset;
+		}
+	}
+
+	private void ApplyEndDayNote(string endDayNote)
+	{
+		if (!_noteLabel)
+		{
+			return;
+		}
+
+		_noteLabel.text = string.IsNullOrWhiteSpace(endDayNote)
+			? DefaultEndDayNote
+			: endDayNote.Trim();
+		SetColor(_noteLabel, _neutralColorRef);
 	}
 
 	public void Close()

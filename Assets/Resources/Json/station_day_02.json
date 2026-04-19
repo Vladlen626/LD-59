@@ -9,12 +9,14 @@
   ],
   "shift_letter": {
     "title": "Night Orders",
-    "body": "Do not trust sealed crates. Contraband is being hidden inside otherwise legal shipments. If something feels wrong, check again before you touch the lever."
+    "body": "Do not trust sealed crates. Contraband is being hidden inside legal loads. If the manifest looks clean but the wagon feels wrong, inspect twice before you pull the lever.",
+    "hint": "A legal manifest can still hide an illegal load."
   },
   "living_cost": {
     "label": "Food and kerosene",
     "amount": 20
   },
+  "end_day_note": "Quiet paperwork, dirty cargo. The station books never mention what you turned back.",
   "train_scenarios": [
     {
       "id": "day02_case_001",
