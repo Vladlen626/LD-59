@@ -41,6 +41,8 @@ namespace Project.Bootstrap
 			var cameraService = _serviceLocator.Get<ICameraService>();
 			var configService = _serviceLocator.Get<ConfigService>();
 
+			await StartBackgroundAudioAsync(audioService);
+
 			var baseControllers = new IBaseController[]
 			{
 				new UISettingsController(uiService, audioService, cursorService, inputService),
@@ -236,6 +238,21 @@ namespace Project.Bootstrap
 				}
 			}
 			await _lifecycle.RegisterControllersGroupAsync(controllers);
+		}
+
+		private static async UniTask StartBackgroundAudioAsync(IAudioService audioService)
+		{
+			if (audioService == null)
+			{
+				return;
+			}
+
+			await UniTask.WhenAll(
+				audioService.PrewarmEventAsync(SoundNames.DesertAmbience),
+				audioService.PrewarmEventAsync(SoundNames.Ost_1));
+
+			audioService.PlaySoundParallel(SoundNames.DesertAmbience);
+			audioService.PlaySoundParallel(SoundNames.Ost_1);
 		}
 
 		private async UniTask<List<StationDayContent>> LoadStationDayContentsAsync(

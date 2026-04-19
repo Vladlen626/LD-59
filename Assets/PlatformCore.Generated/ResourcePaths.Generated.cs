@@ -5,10 +5,33 @@ namespace Project.Infrastructure
 {
 	public static class ProjectResourcePaths
 	{
+		public const string Cargo_CannedFood = "Cargo/CannedFood";
+		public const string Cargo_CheeseWheels = "Cargo/CheeseWheels";
+		public const string Cargo_DynamiteCrates = "Cargo/DynamiteCrates";
+		public const string Cargo_GrainSacks = "Cargo/GrainSacks";
+		public const string Cargo_ItemBase = "Cargo/ItemBase";
+		public const string Cargo_MedicalSupplies = "Cargo/MedicalSupplies";
+		public const string Cargo_MoonshineBarrels = "Cargo/MoonshineBarrels";
+		public const string Cargo_PrisonerTransport = "Cargo/PrisonerTransport";
+		public const string Cargo_Timber = "Cargo/Timber";
+		public const string Cargo_WeaponCrates = "Cargo/WeaponCrates";
+		public const string CargoClues_HiddenContrabandClue = "CargoClues/HiddenContrabandClue";
+		public const string CargoClues_IllegalMarkerClue = "CargoClues/IllegalMarkerClue";
 		public const string Characters_NetworkPlayer = "Characters/NetworkPlayer";
 		public const string Characters_Player = "Characters/Player";
 		public const string CinemachineCamera = "CinemachineCamera";
-		public const string Objects_Train = "Objects/Train";
+		public const string Json_cargo_types = "Json/cargo_types";
+		public const string Json_station_campaign = "Json/station_campaign";
+		public const string Json_station_day = "Json/station_day";
+		public const string Json_station_day_00_prologue = "Json/station_day_00_prologue";
+		public const string Json_station_day_01 = "Json/station_day_01";
+		public const string Json_station_day_02 = "Json/station_day_02";
+		public const string Json_station_day_03 = "Json/station_day_03";
+		public const string Json_station_day_04 = "Json/station_day_04";
+		public const string Trains_CargoWagon = "Trains/CargoWagon";
+		public const string UI_UIDaySummary = "UI/UIDaySummary";
+		public const string UI_UIHintView = "UI/UIHintView";
+		public const string UI_UIMainMenu = "UI/UIMainMenu";
 		public const string UI_UISettings = "UI/UISettings";
 	}
 }

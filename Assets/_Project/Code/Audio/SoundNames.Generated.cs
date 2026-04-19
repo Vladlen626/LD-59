@@ -5,5 +5,7 @@ namespace PlatformCore.Services.Audio
 	public static class SoundNames
 	{
 		public const string JumpSample = "event:/JumpSample";
+		public const string Ost_1 = "event:/Ost_1";
+		public const string DesertAmbience = "event:/DesertAmbience";
 	}
 }
