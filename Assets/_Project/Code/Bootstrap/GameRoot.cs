@@ -82,6 +82,7 @@ namespace Project.Bootstrap
 					cursorService,
 					inputService,
 					globalNotificationService,
+					audioService,
 					configService,
 					loggerService);
 			}
@@ -107,6 +108,7 @@ namespace Project.Bootstrap
 			ICursorService cursorService,
 			IInputService inputService,
 			IGlobalNotificationService globalNotificationService,
+			IAudioService audioService,
 			ConfigService configService,
 			ILoggerService loggerService)
 		{
@@ -124,7 +126,15 @@ namespace Project.Bootstrap
 			cameraService.SetActiveCamera(CameraIds.Primary, CameraTransitions.Instant);
 
 			cursorService.LockCursor();
-			var playerMovementController = new SamplePlayerMovementController(playerView, inputService, cursorService);
+			var playerMovementController = new SamplePlayerMovementController(
+				playerView,
+				inputService,
+				cursorService,
+				audioService);
+			CampaignEndingController campaignEndingController = null;
+			UILetterController uiLetterController = null;
+			UIWakeTransitionController uiWakeTransitionController = null;
+			NightShiftIntroController nightShiftIntroController = null;
 			IBaseController[] controllers = new IBaseController[]
 			{
 				playerMovementController,
@@ -190,6 +200,11 @@ namespace Project.Bootstrap
 						stationRuntimeContext,
 						stationSetup,
 						cameraService,
+						audioService,
+						loggerService);
+					var trainAudioController = new TrainAudioController(
+						trainSpawnController,
+						stationRuntimeContext,
 						loggerService);
 					var stationFlowController = new StationFlowController(
 						stationRuntimeContext,
@@ -205,11 +220,17 @@ namespace Project.Bootstrap
 						stationRuntimeContext,
 						cargoCatalogLoader,
 						loggerService);
+					campaignEndingController = new CampaignEndingController(
+						inputService,
+						cursorService,
+						loggerService);
 					var daySummaryController = new DaySummaryController(
 						uiService,
 						cursorService,
 						stationFlowController,
 						stationRuntimeContext,
+						campaignEndingController,
+						audioService,
 						loggerService);
 					var stationInteractionController = new StationInteractionController(
 						playerView,
@@ -219,7 +240,24 @@ namespace Project.Bootstrap
 						stationFlowController,
 						inputService,
 						cursorService,
+						audioService,
 						loggerService);
+					uiLetterController = new UILetterController(
+						inputService,
+						cursorService,
+						loggerService);
+					uiWakeTransitionController = new UIWakeTransitionController(loggerService);
+					nightShiftIntroController = new NightShiftIntroController(
+						playerView,
+						playerMovementController,
+						stationSetup,
+						stationFlowController,
+						stationInteractionController,
+						uiWakeTransitionController,
+						uiLetterController,
+						cursorService,
+						cameraService,
+						audioService);
 					var uiHintViewController = new UIHintViewController(
 						uiService,
 						stationInteractionController);
@@ -230,11 +268,16 @@ namespace Project.Bootstrap
 						trainSpawnController,
 						trainCargoPresentationController,
 						trainMovementController,
-						daySummaryController,
+						trainAudioController,
 						stationInspectionInfoController,
-						stationFlowController,
 						stationInteractionController,
 						uiHintViewController,
+						campaignEndingController,
+						uiWakeTransitionController,
+						uiLetterController,
+						nightShiftIntroController,
+						daySummaryController,
+						stationFlowController,
 					};
 				}
 			}
@@ -250,7 +293,17 @@ namespace Project.Bootstrap
 
 			await UniTask.WhenAll(
 				audioService.PrewarmEventAsync(SoundNames.DesertAmbience),
-				audioService.PrewarmEventAsync(SoundNames.Ost_2));
+				audioService.PrewarmEventAsync(SoundNames.Ost_2),
+				audioService.PrewarmEventAsync(SoundNames.Bell),
+				audioService.PrewarmEventAsync(SoundNames.DayStart),
+				audioService.PrewarmEventAsync(SoundNames.DayEnd),
+				audioService.PrewarmEventAsync(SoundNames.JumpSample),
+				audioService.PrewarmEventAsync(SoundNames.Lever),
+				audioService.PrewarmEventAsync(SoundNames.Notification),
+				audioService.PrewarmEventAsync(SoundNames.TrainDoor),
+				audioService.PrewarmEventAsync(SoundNames.TrainSounds),
+				audioService.PrewarmEventAsync(SoundNames.TrainStopping),
+				audioService.PrewarmEventAsync(SoundNames.WoodFootSteps));
 
 			audioService.PlaySoundParallel(SoundNames.DesertAmbience);
 			audioService.PlaySoundParallel(SoundNames.Ost_2);
@@ -327,7 +380,14 @@ namespace Project.Bootstrap
 
 			stationDayConfig.BuildRuntimeData(out var dayRuleSet, out var dayScenarios);
 			var cappedScenarios = CapDayScenarios(dayScenarios, maxCasesPerDay);
-			return new StationDayContent(resourcePath, stationDayConfig.initial_debt, dayRuleSet, cappedScenarios);
+			return new StationDayContent(
+				resourcePath,
+				stationDayConfig.initial_debt,
+				dayRuleSet,
+				cappedScenarios,
+				stationDayConfig.BuildShiftLetterData(),
+				stationDayConfig.BuildFinalNoticeData(),
+				stationDayConfig.BuildLivingCostData());
 		}
 
 		private static List<TrainScenario> CapDayScenarios(List<TrainScenario> scenarios, int maxCasesPerDay)

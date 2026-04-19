@@ -4,11 +4,12 @@ namespace Project.Gameplay.Station.Runtime
 	{
 		Inactive = 0,
 		StartDay = 1,
-		CallNextTrain = 2,
-		BeginInspection = 3,
-		AwaitingDecision = 4,
-		ResolveCase = 5,
-		FinishDay = 6,
-		AwaitingTrainCall = 7,
+		DayIntroPending = 2,
+		CallNextTrain = 3,
+		BeginInspection = 4,
+		AwaitingDecision = 5,
+		ResolveCase = 6,
+		FinishDay = 7,
+		AwaitingTrainCall = 8,
 	}
 }

@@ -7,6 +7,14 @@
   "forbidden_cargo_ids": [
     "dynamite_crates"
   ],
+  "shift_letter": {
+    "title": "Night Orders",
+    "body": "Mixed manifests start tonight. Count what is inside the wagon. If the listed cargo and the real load do not match, reject the train and move on."
+  },
+  "living_cost": {
+    "label": "Meals and lamp oil",
+    "amount": 16
+  },
   "train_scenarios": [
     {
       "id": "day01_case_001",

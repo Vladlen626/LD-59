@@ -34,6 +34,7 @@ namespace Project.Gameplay.Station.Runtime
 				: null;
 
 		public bool HasNextDay => CurrentDayIndex + 1 < _days.Count;
+		public bool IsCurrentDayLastAuthored => _days.Count > 0 && CurrentDayIndex == _days.Count - 1;
 
 		public bool TryAdvanceToNextDay()
 		{

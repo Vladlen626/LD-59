@@ -1,3 +1,4 @@
+using System;
 using PlatformCore.Services.Audio;
 using PlatformCore.Infrastructure;
 using UnityEngine;
@@ -8,7 +9,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Button))]
 public class UIButtonClickSound : MonoBehaviour, IPointerClickHandler, ISubmitHandler
 {
-	[SerializeField] private string clickSoundEvent = SoundNames.JumpSample;
+	[SerializeField] private string clickSoundEvent = "";
 
 	private IAudioService audioService;
 	private Button button;
@@ -41,6 +42,11 @@ public class UIButtonClickSound : MonoBehaviour, IPointerClickHandler, ISubmitHa
 		}
 
 		if (!button || !button.IsInteractable())
+		{
+			return;
+		}
+
+		if (string.IsNullOrWhiteSpace(clickSoundEvent))
 		{
 			return;
 		}

@@ -1,13 +1,17 @@
 using PlatformCore.Services;
+using PlatformCore.Services.Audio;
 using PlatformCore.Services.UI;
 using Project.Gameplay.Station.Controllers;
 using Project.Gameplay.Station.Runtime;
+using Project.Infrastructure;
 
 public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 {
 	private readonly ICursorService _cursorService;
 	private readonly StationFlowController _stationFlowController;
 	private readonly StationSharedRuntimeContext _runtimeContext;
+	private readonly CampaignEndingController _campaignEndingController;
+	private readonly IAudioService _audioService;
 	private readonly ILoggerService _loggerService;
 
 	private bool _cursorUnlockedBySummary;
@@ -17,12 +21,16 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		ICursorService cursorService,
 		StationFlowController stationFlowController,
 		StationSharedRuntimeContext runtimeContext,
+		CampaignEndingController campaignEndingController,
+		IAudioService audioService,
 		ILoggerService loggerService)
 		: base(uiService)
 	{
 		_cursorService = cursorService;
 		_stationFlowController = stationFlowController;
 		_runtimeContext = runtimeContext;
+		_campaignEndingController = campaignEndingController;
+		_audioService = audioService;
 		_loggerService = loggerService;
 	}
 
@@ -61,43 +69,24 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		}
 
 		var journal = _runtimeContext.InspectionJournal;
-		var records = journal.Records;
-
-		var checkedCount = records.Count;
-		var correctCount = 0;
-		var mistakesCount = 0;
-		var totalFines = 0;
-		var totalPayout = 0;
-
-		for (var i = 0; i < records.Count; i++)
-		{
-			var record = records[i];
-			var result = record.Result;
-			var scenario = record.Scenario;
-
-			if (result.IsCorrect)
-			{
-				correctCount++;
-				totalPayout += scenario.RewardOnCorrectDecision;
-				continue;
-			}
-
-			mistakesCount++;
-			totalFines += result.Penalty;
-		}
+		var debt = _runtimeContext.Debt;
+		var livingCost = _stationFlowController.CurrentDayContent?.LivingCost;
 
 		_context.SetSummary(
 			_runtimeContext.StationDay.DayIndex,
-			checkedCount,
-			correctCount,
-			mistakesCount,
-			totalFines,
-			totalPayout,
-			_runtimeContext.Debt.RemainingDebt);
+			journal.Count,
+			debt.TotalEarnings,
+			debt.TotalFines,
+			livingCost?.Label,
+			debt.TotalLivingCosts,
+			debt.NetResult,
+			debt.RemainingDebt);
 
 		ShowContext();
+		_audioService?.PlaySound(ProjectAudioEventPaths.DayEnd);
 		_loggerService?.Log(
-			$"[DaySummary] Shown. Checked={checkedCount}, Correct={correctCount}, Mistakes={mistakesCount}, Pay={totalPayout}, Fines={totalFines}, RemainingDebt={_runtimeContext.Debt.RemainingDebt}.");
+			$"[DaySummary] Shown. Checked={journal.Count}, Income={debt.TotalEarnings}, Fines={debt.TotalFines}, " +
+			$"LivingCosts={debt.TotalLivingCosts}, Net={debt.NetResult}, RemainingDebt={debt.RemainingDebt}.");
 	}
 
 	private void OnCloseClickedHandler()
@@ -107,6 +96,15 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		if (_stationFlowController.TryAdvanceToNextDay())
 		{
 			_loggerService?.Log("[DaySummary] Continue requested. Advancing to next authored day.");
+			return;
+		}
+
+		if (_stationFlowController.HasNextDay == false)
+		{
+			var isWin = _runtimeContext.Debt.RemainingDebt <= 0;
+			_campaignEndingController?.ShowEnding(isWin, _runtimeContext.Debt.RemainingDebt);
+			_loggerService?.Log(
+				$"[DaySummary] Campaign ended. Result={(isWin ? "Win" : "Lose")}, RemainingDebt={_runtimeContext.Debt.RemainingDebt}.");
 		}
 	}
 

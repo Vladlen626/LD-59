@@ -10,7 +10,8 @@ namespace Project.Gameplay.Scene
 			float trainArrivalDistance,
 			float trainDepartureDistance,
 			float trainArrivalDuration,
-			float trainDepartureDuration)
+			float trainDepartureDuration,
+			NightShiftRoomSetup roomSetup)
 		{
 			TrainSpawnPoint = trainSpawnPoint;
 			TrainSpawnParent = trainSpawnParent;
@@ -18,6 +19,7 @@ namespace Project.Gameplay.Scene
 			TrainDepartureDistance = trainDepartureDistance;
 			TrainArrivalDuration = trainArrivalDuration;
 			TrainDepartureDuration = trainDepartureDuration;
+			RoomSetup = roomSetup;
 		}
 
 		public Transform TrainSpawnPoint { get; }
@@ -26,5 +28,6 @@ namespace Project.Gameplay.Scene
 		public float TrainDepartureDistance { get; }
 		public float TrainArrivalDuration { get; }
 		public float TrainDepartureDuration { get; }
+		public NightShiftRoomSetup RoomSetup { get; }
 	}
 }

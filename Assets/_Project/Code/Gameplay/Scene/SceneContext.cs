@@ -25,6 +25,16 @@ namespace Project.Gameplay.Scene
 		private StationDecisionToggleInteractableView _decisionToggle;
 		[SerializeField] [Tooltip("World-space inspection info view for forbidden cargo, manifest and dispatch state.")]
 		private StationInspectionInfoView _inspectionInfoView;
+		[SerializeField] [Tooltip("Where the player wakes up at the start of a shift.")]
+		private Transform _nightShiftWakePoint;
+		[SerializeField] [Tooltip("Door transform used as the source of the wake-up knock.")]
+		private Transform _nightShiftDoorPoint;
+		[SerializeField] [Tooltip("Start point for the letter slide under the door.")]
+		private Transform _nightShiftLetterThrowStartPoint;
+		[SerializeField] [Tooltip("End point where the letter comes to rest on the floor.")]
+		private Transform _nightShiftLetterLandingPoint;
+		[SerializeField] [Tooltip("Optional parent for the spawned night letter object.")]
+		private Transform _nightShiftLetterParent;
 
 		public UnityScene Scene { get; private set; }
 		public StationActionButtonInteractableView ActionButton => _actionButton;
@@ -39,7 +49,13 @@ namespace Project.Gameplay.Scene
 				_trainArrivalDistance,
 				_trainDepartureDistance,
 				_trainArrivalDuration,
-				_trainDepartureDuration);
+				_trainDepartureDuration,
+				new NightShiftRoomSetup(
+					_nightShiftWakePoint,
+					_nightShiftDoorPoint,
+					_nightShiftLetterThrowStartPoint,
+					_nightShiftLetterLandingPoint,
+					_nightShiftLetterParent));
 		}
 
 		private void Awake()

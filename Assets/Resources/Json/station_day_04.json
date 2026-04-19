@@ -9,6 +9,18 @@
     "moonshine_barrels",
     "weapon_crates"
   ],
+  "shift_letter": {
+    "title": "Night Orders",
+    "body": "Weapons are banned tonight. The loads will look cleaner than they are. Stay precise. A rushed decision will cost you more than the train is worth."
+  },
+  "final_notice": {
+    "title": "Final Notice",
+    "body": "This is your last shift. Be careful tonight. The debt must be cleared before dawn. If you fail to settle it, you stay here."
+  },
+  "living_cost": {
+    "label": "Food, lamp oil, and room rent",
+    "amount": 28
+  },
   "train_scenarios": [
     {
       "id": "day04_case_001",

@@ -14,6 +14,8 @@ namespace Project.Gameplay.Station.Runtime
 		public int RemainingDebt { get; private set; }
 		public int TotalFines { get; private set; }
 		public int TotalEarnings { get; private set; }
+		public int TotalLivingCosts { get; private set; }
+		public int NetResult => TotalEarnings - TotalFines - TotalLivingCosts;
 
 		public void Reset(int initialDebt)
 		{
@@ -22,6 +24,7 @@ namespace Project.Gameplay.Station.Runtime
 			RemainingDebt = normalizedInitialDebt;
 			TotalFines = 0;
 			TotalEarnings = 0;
+			TotalLivingCosts = 0;
 		}
 
 		public void ApplyInspectionOutcome(InspectionResult result, int rewardOnCorrectDecision)
@@ -60,6 +63,17 @@ namespace Project.Gameplay.Station.Runtime
 
 			TotalEarnings += earnings;
 			RemainingDebt = Math.Max(0, RemainingDebt - earnings);
+		}
+
+		public void ApplyLivingCost(int livingCost)
+		{
+			if (livingCost <= 0)
+			{
+				return;
+			}
+
+			TotalLivingCosts += livingCost;
+			RemainingDebt += livingCost;
 		}
 	}
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Project.Gameplay.Station.Domain;
+using Project.Gameplay.Station.Runtime;
 using UnityEngine;
 
 namespace Project.Gameplay.Station.Configs
@@ -28,6 +29,16 @@ namespace Project.Gameplay.Station.Configs
 
 		[Tooltip("Cargo IDs that are forbidden for this day even if declared in manifest.")]
 		public List<string> forbidden_cargo_ids = new List<string>();
+
+		[Header("Narrative")]
+		[Tooltip("Shift-start letter shown before gameplay begins.")]
+		public NightShiftLetterConfig shift_letter = new NightShiftLetterConfig();
+
+		[Tooltip("Optional override used on the last authored day as a final warning.")]
+		public NightShiftLetterConfig final_notice = new NightShiftLetterConfig();
+
+		[Tooltip("Basic cost of living deducted in the end-of-shift settlement.")]
+		public DayLivingCostConfig living_cost = new DayLivingCostConfig();
 
 		[Tooltip("Ordered inspection cases for the day.")]
 		public List<TrainScenarioConfig> train_scenarios = new List<TrainScenarioConfig>();
@@ -65,6 +76,15 @@ namespace Project.Gameplay.Station.Configs
 				forbidden_cargo_ids[i] = string.IsNullOrWhiteSpace(cargoId) ? string.Empty : cargoId.Trim();
 			}
 
+			shift_letter ??= new NightShiftLetterConfig();
+			shift_letter.ParseConfig();
+
+			final_notice ??= new NightShiftLetterConfig();
+			final_notice.ParseConfig();
+
+			living_cost ??= new DayLivingCostConfig();
+			living_cost.ParseConfig();
+
 			if (train_scenarios == null)
 			{
 				train_scenarios = new List<TrainScenarioConfig>();
@@ -89,6 +109,24 @@ namespace Project.Gameplay.Station.Configs
 			ParseConfig();
 			ruleSet = BuildRuleSetFromParsed();
 			scenarios = BuildTrainScenariosFromParsed();
+		}
+
+		public NightShiftLetterData BuildShiftLetterData()
+		{
+			ParseConfig();
+			return shift_letter.ToRuntimeData();
+		}
+
+		public NightShiftLetterData BuildFinalNoticeData()
+		{
+			ParseConfig();
+			return final_notice.ToRuntimeData();
+		}
+
+		public DayLivingCostData BuildLivingCostData()
+		{
+			ParseConfig();
+			return living_cost.ToRuntimeData();
 		}
 
 		private DayRuleSet BuildRuleSetFromParsed()

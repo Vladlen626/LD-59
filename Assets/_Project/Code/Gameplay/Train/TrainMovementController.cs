@@ -4,8 +4,10 @@ using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Infrastructure.SimpleTweens;
 using PlatformCore.Services;
+using PlatformCore.Services.Audio;
 using Project.Gameplay.Scene;
 using Project.Gameplay.Station.Runtime;
+using Project.Infrastructure;
 using UnityEngine;
 
 namespace Project.Gameplay.Train
@@ -18,13 +20,14 @@ namespace Project.Gameplay.Train
 		private const float ArrivalShakeRampEnd = 0.5f;
 		private const float DepartureShakeRampEnd = 0.25f;
 		private const float DepartureShakeFadeStart = 0.5f;
-		private const float ArrivalShakeMaxIntensity = 1.1f;
+		private const float ArrivalShakeMaxIntensity = 0.55f;
 		private const float ArrivalShakeStepDuration = 0.12f;
 
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly StationRuntimeModel _runtimeModel;
 		private readonly SceneRuntimeSetup _sceneSetup;
 		private readonly ICameraShakeService _cameraShakeService;
+		private readonly IAudioService _audioService;
 		private readonly ILoggerService _loggerService;
 
 		private bool _isActive;
@@ -35,12 +38,14 @@ namespace Project.Gameplay.Train
 			StationSharedRuntimeContext runtimeContext,
 			SceneRuntimeSetup sceneSetup,
 			ICameraShakeService cameraShakeService,
+			IAudioService audioService,
 			ILoggerService loggerService)
 		{
 			_trainSpawnController = trainSpawnController;
 			_runtimeModel = runtimeContext.RuntimeModel;
 			_sceneSetup = sceneSetup;
 			_cameraShakeService = cameraShakeService;
+			_audioService = audioService;
 			_loggerService = loggerService;
 		}
 
@@ -96,7 +101,8 @@ namespace Project.Gameplay.Train
 				SimpleTweensTransform.MoveToLocalPositionSmoothStop(trainView.transform, stopLocalPosition, duration);
 				await UniTask.WhenAll(
 					UniTask.Delay(TimeSpan.FromSeconds(duration)),
-					PlayMovementShakeAsync(duration, revision, trainView, EvaluateArrivalShakeIntensity));
+					PlayMovementShakeAsync(duration, revision, trainView, EvaluateArrivalShakeIntensity),
+					PlayArrivalStoppingSoundAsync(duration, revision, trainView));
 			}
 
 			if (IsMoveValid(revision, trainView) == false)
@@ -201,6 +207,27 @@ namespace Project.Gameplay.Train
 			}
 
 			_cameraShakeService.StopShake();
+		}
+
+		private async UniTask PlayArrivalStoppingSoundAsync(float duration, int revision, TrainView trainView)
+		{
+			if (_audioService == null || duration <= 0f)
+			{
+				return;
+			}
+
+			var brakeDelay = duration * ArrivalShakeBrakeFadeStart;
+			if (brakeDelay > 0f)
+			{
+				await UniTask.Delay(TimeSpan.FromSeconds(brakeDelay));
+			}
+
+			if (IsMoveValid(revision, trainView) == false)
+			{
+				return;
+			}
+
+			_audioService.PlaySoundAt(ProjectAudioEventPaths.TrainStopping, trainView.transform.position);
 		}
 
 		private static float EvaluateArrivalShakeIntensity(float arrivalProgress)

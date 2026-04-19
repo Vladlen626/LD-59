@@ -6,6 +6,16 @@ using UnityEngine;
 
 public sealed class UIDaySummary : UIBaseElement
 {
+	private const string TitleFormat = "SHIFT {0:0} REPORT";
+	private const string InspectedFormat = "INSPECTED {0:0}";
+	private const string IncomeFormat = "INCOME +{0:0}";
+	private const string FinesFormat = "FINES -{0:0}";
+	private const string NetPositiveFormat = "NET +{0:0}";
+	private const string NetNegativeFormat = "NET -{0:0}";
+	private const string NetNeutralFormat = "NET {0:0}";
+	private const string DebtAfterSettlementFormat = "DEBT AFTER SETTLEMENT {0:0}";
+	private const string DefaultLivingCostLabel = "LIVING COSTS";
+
 	[Header("Labels")]
 	[SerializeField] private TMP_Text _title;
 	[SerializeField] private TMP_Text _checked;
@@ -14,15 +24,6 @@ public sealed class UIDaySummary : UIBaseElement
 	[SerializeField] private TMP_Text _fines;
 	[SerializeField] private TMP_Text _pay;
 	[SerializeField] private TMP_Text _debtLeft;
-
-	[Header("Formats")]
-	[SerializeField] private string _titleFormat = "DAY {0:0}";
-	[SerializeField] private string _checkedFormat = "CHECKED {0:0}";
-	[SerializeField] private string _correctFormat = "CORRECT {0:0}";
-	[SerializeField] private string _mistakesFormat = "MISTAKES {0:0}";
-	[SerializeField] private string _finesFormat = "FINES -{0:0}";
-	[SerializeField] private string _payFormat = "PAY +{0:0}";
-	[SerializeField] private string _debtLeftFormat = "DEBT LEFT {0:0}";
 
 	[Header("Tween")]
 	[SerializeField] private float _numberWriteDuration = 0.45f;
@@ -36,26 +37,27 @@ public sealed class UIDaySummary : UIBaseElement
 
 	public void SetSummary(
 		int dayIndex,
-		int checkedCount,
-		int correctCount,
-		int mistakesCount,
+		int inspectedCount,
+		int totalIncome,
 		int totalFines,
-		int totalPayout,
+		string livingCostLabel,
+		int totalLivingCosts,
+		int netResult,
 		int remainingDebt)
 	{
 		if (_title)
 		{
-			_title.SetText(_titleFormat, dayIndex);
+			_title.SetText(TitleFormat, dayIndex);
 		}
 
-		ApplyColors(correctCount, mistakesCount, totalFines, totalPayout);
+		ApplyColors(totalIncome, totalFines, totalLivingCosts, netResult, remainingDebt);
 
-		UINumberTweenUtils.Animate(_checked, _checkedFormat, checkedCount, _numberWriteDuration);
-		UINumberTweenUtils.Animate(_correct, _correctFormat, correctCount, _numberWriteDuration);
-		UINumberTweenUtils.Animate(_mistakes, _mistakesFormat, mistakesCount, _numberWriteDuration);
-		UINumberTweenUtils.Animate(_fines, _finesFormat, totalFines, _numberWriteDuration);
-		UINumberTweenUtils.Animate(_pay, _payFormat, totalPayout, _numberWriteDuration);
-		UINumberTweenUtils.Animate(_debtLeft, _debtLeftFormat, remainingDebt, _numberWriteDuration);
+		UINumberTweenUtils.Animate(_checked, InspectedFormat, inspectedCount, _numberWriteDuration);
+		UINumberTweenUtils.Animate(_correct, IncomeFormat, totalIncome, _numberWriteDuration);
+		UINumberTweenUtils.Animate(_mistakes, FinesFormat, totalFines, _numberWriteDuration);
+		UINumberTweenUtils.Animate(_fines, BuildLivingCostFormat(livingCostLabel), totalLivingCosts, _numberWriteDuration);
+		UINumberTweenUtils.Animate(_pay, ResolveNetFormat(netResult), Mathf.Abs(netResult), _numberWriteDuration);
+		UINumberTweenUtils.Animate(_debtLeft, DebtAfterSettlementFormat, remainingDebt, _numberWriteDuration);
 	}
 
 	public void StopTweens()
@@ -69,16 +71,41 @@ public sealed class UIDaySummary : UIBaseElement
 	}
 
 	private void ApplyColors(
-		int correctCount,
-		int mistakesCount,
+		int totalIncome,
 		int totalFines,
-		int totalPayout)
+		int totalLivingCosts,
+		int netResult,
+		int remainingDebt)
 	{
 		SetColor(_checked, _defaultColor);
-		SetColor(_correct, correctCount > 0 ? _positiveColor : _defaultColor);
-		SetColor(_mistakes, mistakesCount > 0 ? _negativeColor : _defaultColor);
-		SetColor(_fines, totalFines > 0 ? _negativeColor : _defaultColor);
-		SetColor(_pay, totalPayout > 0 ? _positiveColor : _defaultColor);
+		SetColor(_correct, totalIncome > 0 ? _positiveColor : _defaultColor);
+		SetColor(_mistakes, totalFines > 0 ? _negativeColor : _defaultColor);
+		SetColor(_fines, totalLivingCosts > 0 ? _negativeColor : _defaultColor);
+		SetColor(_pay, netResult > 0 ? _positiveColor : netResult < 0 ? _negativeColor : _defaultColor);
+		SetColor(_debtLeft, remainingDebt <= 0 ? _positiveColor : _negativeColor);
+	}
+
+	private static string BuildLivingCostFormat(string livingCostLabel)
+	{
+		var normalizedLabel = string.IsNullOrWhiteSpace(livingCostLabel)
+			? DefaultLivingCostLabel
+			: livingCostLabel.Trim().ToUpperInvariant();
+		return $"{normalizedLabel} -{{0:0}}";
+	}
+
+	private static string ResolveNetFormat(int netResult)
+	{
+		if (netResult > 0)
+		{
+			return NetPositiveFormat;
+		}
+
+		if (netResult < 0)
+		{
+			return NetNegativeFormat;
+		}
+
+		return NetNeutralFormat;
 	}
 
 	private static void SetColor(TMP_Text text, ColorStyleRef colorRef)

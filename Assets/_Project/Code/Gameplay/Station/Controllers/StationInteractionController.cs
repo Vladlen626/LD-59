@@ -2,6 +2,7 @@ using System;
 using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
+using PlatformCore.Services.Audio;
 using PlatformCore.Services.Input;
 using PlatformCore.Services.UI;
 using Project.Gameplay.Interaction;
@@ -11,6 +12,7 @@ using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Station.Views;
 using Project.Gameplay.Train;
+using Project.Infrastructure;
 using UnityEngine;
 
 namespace Project.Gameplay.Station.Controllers
@@ -41,12 +43,14 @@ namespace Project.Gameplay.Station.Controllers
 		private readonly StationFlowController _stationFlowController;
 		private readonly IInputService _inputService;
 		private readonly ICursorService _cursorService;
+		private readonly IAudioService _audioService;
 		private readonly ILoggerService _loggerService;
 		private readonly RaycastHit[] _raycastHits = new RaycastHit[MaxRaycastHits];
 		private readonly Collider[] _overlapColliders = new Collider[MaxOverlapHits];
 
 		private WagonDoorInteractableView _currentDoorInteractable;
 		private IPlayerInteractable _hoveredInteractable;
+		private Func<IPlayerInteractable, bool> _interactionRestriction;
 		private Transform _rayOrigin;
 		private string _currentHint = string.Empty;
 		private string _temporaryHint = string.Empty;
@@ -58,6 +62,23 @@ namespace Project.Gameplay.Station.Controllers
 
 		public string CurrentHint => _currentHint;
 
+		public void SetInteractionRestriction(Func<IPlayerInteractable, bool> interactionRestriction)
+		{
+			_interactionRestriction = interactionRestriction;
+			InvalidateHintState();
+		}
+
+		public void ClearInteractionRestriction()
+		{
+			if (_interactionRestriction == null)
+			{
+				return;
+			}
+
+			_interactionRestriction = null;
+			InvalidateHintState();
+		}
+
 		public StationInteractionController(
 			SamplePlayerView playerView,
 			SceneContext sceneContext,
@@ -66,6 +87,7 @@ namespace Project.Gameplay.Station.Controllers
 			StationFlowController stationFlowController,
 			IInputService inputService,
 			ICursorService cursorService,
+			IAudioService audioService,
 			ILoggerService loggerService)
 		{
 			_playerView = playerView;
@@ -75,6 +97,7 @@ namespace Project.Gameplay.Station.Controllers
 			_stationFlowController = stationFlowController;
 			_inputService = inputService;
 			_cursorService = cursorService;
+			_audioService = audioService;
 			_loggerService = loggerService;
 		}
 
@@ -224,6 +247,11 @@ namespace Project.Gameplay.Station.Controllers
 					continue;
 				}
 
+				if (IsInteractionRestricted(interactable))
+				{
+					continue;
+				}
+
 				var isFurther = hit.distance > selectedDistance + 0.001f;
 				var sameDistanceLowerPriority = Mathf.Abs(hit.distance - selectedDistance) <= 0.001f &&
 					interactable.Priority <= selectedPriority;
@@ -265,6 +293,11 @@ namespace Project.Gameplay.Station.Controllers
 			{
 				var collider = _overlapColliders[i];
 				if (PlayerInteractableRegistry.TryGet(collider, out var interactable) == false || interactable.CanInteract == false)
+				{
+					continue;
+				}
+
+				if (IsInteractionRestricted(interactable))
 				{
 					continue;
 				}
@@ -316,6 +349,13 @@ namespace Project.Gameplay.Station.Controllers
 		private float GetInteractionDistance()
 		{
 			return _playerView ? _playerView.InteractionDistance : DefaultInteractionDistance;
+		}
+
+		private bool IsInteractionRestricted(IPlayerInteractable interactable)
+		{
+			return interactable != null &&
+				_interactionRestriction != null &&
+				_interactionRestriction.Invoke(interactable) == false;
 		}
 
 		private int GetInteractionMask()
@@ -370,6 +410,7 @@ namespace Project.Gameplay.Station.Controllers
 
 			var shouldOpenDoor = _runtimeModel.IsCurrentWagonDoorOpen == false;
 			_runtimeModel.SetCurrentWagonDoorOpen(shouldOpenDoor);
+			PlaySoundAt(ProjectAudioEventPaths.TrainDoor, _currentDoorInteractable.transform.position);
 
 			if (shouldOpenDoor)
 			{
@@ -401,6 +442,7 @@ namespace Project.Gameplay.Station.Controllers
 
 				if (_stationFlowController.ResolveCase(_selectedDecision, out _))
 				{
+					PlaySoundAtActionButton(ProjectAudioEventPaths.Bell);
 					ResetDecisionSelection();
 				}
 
@@ -414,6 +456,7 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
+			PlaySoundAtActionButton(ProjectAudioEventPaths.Bell);
 			InvalidateHintState();
 		}
 
@@ -428,9 +471,23 @@ namespace Project.Gameplay.Station.Controllers
 			if (_sceneContext.DecisionToggle)
 			{
 				_sceneContext.DecisionToggle.SetDecision(_selectedDecision);
+				PlaySoundAt(ProjectAudioEventPaths.Lever, _sceneContext.DecisionToggle.transform.position);
 			}
 
 			InvalidateHintState();
+		}
+
+		private void PlaySoundAtActionButton(string soundEvent)
+		{
+			var position = _sceneContext && _sceneContext.ActionButton
+				? _sceneContext.ActionButton.transform.position
+				: (_playerView ? _playerView.transform.position : Vector3.zero);
+			PlaySoundAt(soundEvent, position);
+		}
+
+		private void PlaySoundAt(string soundEvent, Vector3 position)
+		{
+			_audioService?.PlaySoundAt(soundEvent, position);
 		}
 
 		private bool CanInteractWithCase()
@@ -535,7 +592,9 @@ namespace Project.Gameplay.Station.Controllers
 				return ResolveDoorHint();
 			}
 
-			return string.Empty;
+			return interactable is IPlayerInteractableHintProvider hintProvider
+				? hintProvider.InteractionHint
+				: string.Empty;
 		}
 
 		private string ResolveActionButtonHint()

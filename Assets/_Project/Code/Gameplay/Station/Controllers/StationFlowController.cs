@@ -27,6 +27,7 @@ namespace Project.Gameplay.Station.Controllers
 		private bool _isDayFinished;
 		private string _forbiddenCargoLogValue = "<none>";
 
+		public event Action<StationDayContent> DayStarted;
 		public event Action DayFinished;
 
 		public bool IsAwaitingTrainCall => _isActive &&
@@ -38,7 +39,13 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.FlowState == StationFlowState.AwaitingDecision &&
 			_runtimeModel.HasActiveScenario;
 
+		public bool IsDayIntroPending => _isActive &&
+			_runtimeModel.FlowState == StationFlowState.DayIntroPending &&
+			_runtimeModel.HasActiveScenario == false;
+
 		public bool HasNextDay => _campaignProgress?.HasNextDay == true;
+		public bool IsCurrentDayLastAuthored => _campaignProgress?.IsCurrentDayLastAuthored == true;
+		public StationDayContent CurrentDayContent => _campaignProgress?.CurrentDay;
 
 		public StationFlowController(
 			StationSharedRuntimeContext runtimeContext,
@@ -114,15 +121,20 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetActiveCaseIndex(-1);
 			_runtimeModel.SetTrainTransitState(TrainTransitState.None);
-			_runtimeModel.SetFlowState(StationFlowState.StartDay);
+			_runtimeModel.SetFlowState(StationFlowState.DayIntroPending);
 			_isDayFinished = false;
 			UpdateForbiddenCargoLogValue();
 			_loggerService?.Log(
 				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} started. " +
 				$"CampaignDay={_campaignProgress.CurrentDayOrder}/{_campaignProgress.TotalDays}, " +
 				$"Cases={CurrentDayScenarios.Count}, InitialDebt={_runtimeModel.Debt.InitialDebt}.");
+			if (DayStarted == null)
+			{
+				TryCompleteDayIntro();
+				return;
+			}
 
-			EnterAwaitingTrainCall();
+			DayStarted?.Invoke(currentDay);
 		}
 
 		public bool TryAdvanceToNextDay()
@@ -158,6 +170,19 @@ namespace Project.Gameplay.Station.Controllers
 			CallNextTrainAsync().Forget();
 			_loggerService?.Log(
 				$"[StationFlow] Train call accepted. Preparing case {nextIndex + 1}.");
+			return true;
+		}
+
+		public bool TryCompleteDayIntro()
+		{
+			if (_isActive == false || _isDayFinished || IsDayIntroPending == false)
+			{
+				return false;
+			}
+
+			_loggerService?.Log(
+				$"[StationFlow] Day intro completed for day {_runtimeModel.StationDay.DayIndex}. Gameplay unlocked.");
+			EnterAwaitingTrainCall();
 			return true;
 		}
 
@@ -333,6 +358,8 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
+			var livingCost = CurrentDayContent?.LivingCost;
+			_runtimeModel.Debt.ApplyLivingCost(livingCost?.Amount ?? 0);
 			_isDayFinished = true;
 			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
@@ -342,6 +369,7 @@ namespace Project.Gameplay.Station.Controllers
 				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} finished. " +
 				$"Cases={_runtimeModel.StationDay.CompletedCasesCount}, " +
 				$"Debt={_runtimeModel.Debt.RemainingDebt}, Fines={_runtimeModel.Debt.TotalFines}, Earnings={_runtimeModel.Debt.TotalEarnings}, " +
+				$"LivingCosts={_runtimeModel.Debt.TotalLivingCosts}, Net={_runtimeModel.Debt.NetResult}, " +
 				$"HasNextDay={HasNextDay}.");
 		}
 

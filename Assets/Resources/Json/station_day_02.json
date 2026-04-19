@@ -7,6 +7,14 @@
   "forbidden_cargo_ids": [
     "dynamite_crates"
   ],
+  "shift_letter": {
+    "title": "Night Orders",
+    "body": "Do not trust sealed crates. Contraband is being hidden inside otherwise legal shipments. If something feels wrong, check again before you touch the lever."
+  },
+  "living_cost": {
+    "label": "Food and kerosene",
+    "amount": 20
+  },
   "train_scenarios": [
     {
       "id": "day02_case_001",

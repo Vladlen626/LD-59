@@ -7,6 +7,18 @@
   "forbidden_cargo_ids": [
     "dynamite_crates"
   ],
+  "shift_letter": {
+    "title": "Night Orders",
+    "body": "You are on debt duty. Check every manifest, inspect every wagon, and keep contraband off the line. The station gets paid first. You settle what is left."
+  },
+  "final_notice": {
+    "title": "Final Notice",
+    "body": "This is your last shift. Be careful tonight. The debt must be cleared before dawn."
+  },
+  "living_cost": {
+    "label": "Food, lamp oil, and room rent",
+    "amount": 26
+  },
   "train_scenarios": [
     {
       "id": "case_001",

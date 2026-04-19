@@ -8,6 +8,7 @@ using PlatformCore.Services;
 using PlatformCore.Services.Audio;
 using PlatformCore.Services.Factory;
 using PlatformCore.Services.Input;
+using PlatformCore.Services.Notifications;
 
 namespace Project.Infrastructure
 {
@@ -37,7 +38,15 @@ namespace Project.Infrastructure
 			serviceLocator.Register<IAudioService, AudioBaseService>(audioService);
 
 			var uiService = serviceLocator.RegisterUIFoundation(persistentSceneContext, logger, resourceService);
-			serviceLocator.RegisterGlobalNotificationsFoundation(uiService, objectFactory, audioService);
+			serviceLocator.RegisterGlobalNotificationsFoundation(
+				uiService,
+				objectFactory,
+				audioService,
+				new GlobalNotificationServiceOptions
+				{
+					PositiveNotificationSound = ProjectAudioEventPaths.Notification,
+					NegativeNotificationSound = ProjectAudioEventPaths.Notification,
+				});
 
 			var inputService = new InputBaseService();
 			serviceLocator.Register<IInputService, InputBaseService>(inputService);

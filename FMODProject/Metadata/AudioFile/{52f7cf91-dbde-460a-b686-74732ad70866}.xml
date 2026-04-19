@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{52f7cf91-dbde-460a-b686-74732ad70866}">
+		<property name="assetPath">
+			<value>WoodStep_2.wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>0.35020408163265304</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{8b9e8333-f1aa-4766-b388-acb928ce38b2}</destination>
+		</relationship>
+	</object>
+</objects>

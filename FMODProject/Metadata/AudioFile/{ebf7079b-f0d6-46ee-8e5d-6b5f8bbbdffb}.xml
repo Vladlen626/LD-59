@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{ebf7079b-f0d6-46ee-8e5d-6b5f8bbbdffb}">
+		<property name="assetPath">
+			<value>freesound_community-open-sliding-door-105746 (mp3cut.net).mp3</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>24</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>3.3599999999999999</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{8b9e8333-f1aa-4766-b388-acb928ce38b2}</destination>
+		</relationship>
+	</object>
+</objects>
