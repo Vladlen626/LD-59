@@ -5,6 +5,7 @@ using PlatformCore.Services;
 using PlatformCore.Services.Factory;
 using PlatformCore.Services.Input;
 using PlatformCore.Services.UI;
+using Project.Gameplay.Station.Controllers;
 using Project.Gameplay.Station.Runtime;
 using Project.Infrastructure;
 using UnityEngine;
@@ -15,6 +16,7 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 	private readonly ICursorService _cursorService;
 	private readonly ILoggerService _loggerService;
 	private readonly IObjectFactory _objectFactory;
+	private readonly StationInteractionController _stationInteractionController;
 
 	private UILetterView _view;
 	private bool _isActive;
@@ -24,17 +26,20 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 	private UniTaskCompletionSource _closeSource;
 	private UniTask _viewLoadTask;
 	private bool _isViewLoadInProgress;
+	private int _interactionSuspendVersion;
 
 	public UILetterController(
 		IInputService inputService,
 		ICursorService cursorService,
 		ILoggerService loggerService,
-		IObjectFactory objectFactory)
+		IObjectFactory objectFactory,
+		StationInteractionController stationInteractionController)
 	{
 		_inputService = inputService;
 		_cursorService = cursorService;
 		_loggerService = loggerService;
 		_objectFactory = objectFactory;
+		_stationInteractionController = stationInteractionController;
 	}
 
 	public event System.Action LetterOpened;
@@ -67,6 +72,7 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 
 		_isActive = false;
 		HideLetter();
+		_stationInteractionController.SetInteractionSuspended(false);
 
 		if (_view)
 		{
@@ -114,6 +120,8 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 		_isOpen = true;
 		_openedFrame = Time.frameCount;
 		_closeSource = new UniTaskCompletionSource();
+		_interactionSuspendVersion++;
+		_stationInteractionController.SetInteractionSuspended(true);
 
 		_cursorUnlockedByLetter = false;
 		if (_cursorService.IsCursorLocked)
@@ -153,9 +161,21 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 		}
 
 		_cursorUnlockedByLetter = false;
+		ReleaseInteractionSuspensionNextFrameAsync(++_interactionSuspendVersion).Forget();
 		_closeSource?.TrySetResult();
 		_closeSource = null;
 		LetterClosed?.Invoke();
+	}
+
+	private async UniTaskVoid ReleaseInteractionSuspensionNextFrameAsync(int version)
+	{
+		await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
+		if (_isOpen || _interactionSuspendVersion != version)
+		{
+			return;
+		}
+
+		_stationInteractionController.SetInteractionSuspended(false);
 	}
 
 	private async UniTask EnsureViewAsync()

@@ -256,7 +256,8 @@ namespace Project.Bootstrap
 						inputService,
 						cursorService,
 						loggerService,
-						objectFactory);
+						objectFactory,
+						stationInteractionController);
 					uiWakeTransitionController = new UIWakeTransitionController(loggerService, objectFactory);
 					nightShiftIntroController = new NightShiftIntroController(
 						playerView,

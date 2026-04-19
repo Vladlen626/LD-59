@@ -56,6 +56,7 @@ namespace Project.Gameplay.Station.Controllers
 		private string _temporaryHint = string.Empty;
 		private float _temporaryHintUntil;
 		private bool _isActive;
+		private bool _isInteractionSuspended;
 		private PlayerDecision _selectedDecision = PlayerDecision.AllowPassage;
 
 		public event Action<string> HintChanged;
@@ -72,6 +73,23 @@ namespace Project.Gameplay.Station.Controllers
 		{
 			_interactionRestriction = null;
 			InvalidateHintState();
+		}
+
+		public void SetInteractionSuspended(bool isSuspended)
+		{
+			if (_isInteractionSuspended == isSuspended)
+			{
+				return;
+			}
+
+			_isInteractionSuspended = isSuspended;
+			if (isSuspended)
+			{
+				ClearTemporaryHint();
+				UpdateHoveredInteractable(null);
+			}
+
+			RefreshHint();
 		}
 
 		public StationInteractionController(
@@ -144,6 +162,11 @@ namespace Project.Gameplay.Station.Controllers
 		{
 			if (_isActive == false)
 			{
+				return;
+			}
+			if (_isInteractionSuspended)
+			{
+				UpdateHoveredInteractable(null);
 				return;
 			}
 
@@ -546,6 +569,11 @@ namespace Project.Gameplay.Station.Controllers
 		private void RefreshHint()
 		{
 			if (_isActive == false)
+			{
+				SetCurrentHint(string.Empty);
+				return;
+			}
+			if (_isInteractionSuspended)
 			{
 				SetCurrentHint(string.Empty);
 				return;
