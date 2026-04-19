@@ -133,7 +133,7 @@ namespace Project.Gameplay.Station.Controllers
 			var activeScenario = _runtimeModel.ActiveScenario;
 			if (activeScenario != null)
 			{
-				view.SetAllowedCargo(BuildAllowedCargoText(activeScenario.Manifest.DeclaredCargoId));
+				view.SetAllowedCargo(BuildAllowedCargoText(activeScenario.Manifest));
 			}
 			else
 			{
@@ -235,9 +235,42 @@ namespace Project.Gameplay.Station.Controllers
 			return _forbiddenCargoText;
 		}
 
-		private string BuildAllowedCargoText(string cargoId)
+		private string BuildAllowedCargoText(ManifestData manifest)
 		{
-			return ResolveCargoDisplayName(cargoId);
+			if (manifest == null || manifest.DeclaredCargo == null || manifest.DeclaredCargo.IsEmpty)
+			{
+				return NoAllowedCargoText;
+			}
+
+			var entries = manifest.DeclaredCargo.Entries;
+			if (entries.Count == 1)
+			{
+				return FormatCargoLine(entries[0], false);
+			}
+
+			var builder = new StringBuilder();
+			for (var i = 0; i < entries.Count; i++)
+			{
+				if (i > 0)
+				{
+					builder.Append('\n');
+				}
+
+				builder.Append(FormatCargoLine(entries[i], true));
+			}
+
+			return builder.ToString();
+		}
+
+		private string FormatCargoLine(CargoQuantity cargoEntry, bool includeBullet)
+		{
+			if (cargoEntry == null || cargoEntry.IsValid == false)
+			{
+				return NoAllowedCargoText;
+			}
+
+			var prefix = includeBullet ? "- " : string.Empty;
+			return $"{prefix}{ResolveCargoDisplayName(cargoEntry.CargoId)} x{cargoEntry.Quantity}";
 		}
 
 		private string ResolveCargoDisplayName(string cargoId)

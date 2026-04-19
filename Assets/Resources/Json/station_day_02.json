@@ -3,19 +3,28 @@
   "initial_debt": 300,
   "day_index": 3,
   "missed_contraband_penalty": 120,
-  "wrongful_rejection_penalty": 35,
+  "wrongful_rejection_penalty": 30,
   "forbidden_cargo_ids": [
-    "dynamite_crates",
-    "moonshine_barrels"
+    "dynamite_crates"
   ],
   "train_scenarios": [
     {
       "id": "day02_case_001",
       "manifest": {
-        "declared_cargo_id": "grain_sacks",
+        "declared_cargo": [
+          {
+            "cargo_id": "grain_sacks",
+            "quantity": 2
+          }
+        ],
         "declared_description": "Grain sacks for the mills"
       },
-      "actual_cargo_id": "grain_sacks",
+      "actual_cargo": [
+        {
+          "cargo_id": "grain_sacks",
+          "quantity": 2
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 55
@@ -23,10 +32,28 @@
     {
       "id": "day02_case_002",
       "manifest": {
-        "declared_cargo_id": "weapon_crates",
-        "declared_description": "Registered weapon shipment"
+        "declared_cargo": [
+          {
+            "cargo_id": "weapon_crates",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "timber",
+            "quantity": 1
+          }
+        ],
+        "declared_description": "Registered weapon shipment with timber braces"
       },
-      "actual_cargo_id": "weapon_crates",
+      "actual_cargo": [
+        {
+          "cargo_id": "weapon_crates",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "timber",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 55
@@ -34,10 +61,20 @@
     {
       "id": "day02_case_003",
       "manifest": {
-        "declared_cargo_id": "medical_supplies",
+        "declared_cargo": [
+          {
+            "cargo_id": "medical_supplies",
+            "quantity": 2
+          }
+        ],
         "declared_description": "Emergency aid crates"
       },
-      "actual_cargo_id": "medical_supplies",
+      "actual_cargo": [
+        {
+          "cargo_id": "medical_supplies",
+          "quantity": 2
+        }
+      ],
       "has_hidden_contraband": true,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 55
@@ -45,10 +82,28 @@
     {
       "id": "day02_case_004",
       "manifest": {
-        "declared_cargo_id": "cheese_wheels",
-        "declared_description": "Cheese wheels from the north"
+        "declared_cargo": [
+          {
+            "cargo_id": "cheese_wheels",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "canned_food",
+            "quantity": 1
+          }
+        ],
+        "declared_description": "Cheese and reserve food"
       },
-      "actual_cargo_id": "cheese_wheels",
+      "actual_cargo": [
+        {
+          "cargo_id": "cheese_wheels",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 55
@@ -56,10 +111,20 @@
     {
       "id": "day02_case_005",
       "manifest": {
-        "declared_cargo_id": "canned_food",
+        "declared_cargo": [
+          {
+            "cargo_id": "canned_food",
+            "quantity": 2
+          }
+        ],
         "declared_description": "Reserve food stock"
       },
-      "actual_cargo_id": "canned_food",
+      "actual_cargo": [
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 55
@@ -67,12 +132,22 @@
     {
       "id": "day02_case_006",
       "manifest": {
-        "declared_cargo_id": "moonshine_barrels",
-        "declared_description": "Barrels marked for station cleaning"
+        "declared_cargo": [
+          {
+            "cargo_id": "prisoner_transport",
+            "quantity": 1
+          }
+        ],
+        "declared_description": "Prisoner transfer papers"
       },
-      "actual_cargo_id": "moonshine_barrels",
+      "actual_cargo": [
+        {
+          "cargo_id": "prisoner_transport",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
-      "has_illegal_marker": true,
+      "has_illegal_marker": false,
       "reward_on_correct_decision": 55
     }
   ]

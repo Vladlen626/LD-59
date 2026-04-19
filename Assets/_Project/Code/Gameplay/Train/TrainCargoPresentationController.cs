@@ -73,52 +73,71 @@ namespace Project.Gameplay.Train
 			ClearPresentationState();
 			_presentedTrain = trainView;
 
-			var cargoConfig = await _cargoCatalogLoader.GetByIdAsync(scenario.ActualCargoId);
+			if (scenario.ActualCargo == null || scenario.ActualCargo.IsEmpty)
+			{
+				_loggerService?.LogError(
+					$"[TrainCargoPresentation] Scenario '{scenario.ScenarioId}' has no actual cargo entries.");
+				ClearPresentationState();
+				return false;
+			}
+
+			var cargoConfigs = await ResolveCargoConfigsAsync(scenario);
 			if (IsPresentationValid(revision, trainView) == false)
 			{
 				return false;
 			}
 
-			if (cargoConfig == null || string.IsNullOrWhiteSpace(cargoConfig.prefab_resource_path))
-			{
-				_loggerService?.LogError(
-					$"[TrainCargoPresentation] Cargo config is missing for id '{scenario.ActualCargoId}'.");
-				ClearPresentationState();
-				return false;
-			}
-
 			var cargoAnchors = ResolveCargoAnchors(trainView);
-			for (var i = 0; i < cargoAnchors.Count; i++)
+			var totalCargoUnits = scenario.ActualCargo.TotalQuantity;
+			var slotIndex = 0;
+			for (var i = 0; i < scenario.ActualCargo.Entries.Count; i++)
 			{
-				var anchor = cargoAnchors[i];
-				var cargoInstance = await SpawnAttachedPrefabAsync(
-					revision,
-					trainView,
-					cargoConfig.prefab_resource_path,
-					anchor,
-					Vector3.zero,
-					Quaternion.identity,
-					CargoVisualKind.MainCargo,
-					scenario.ActualCargoId);
-				if (!cargoInstance)
+				var cargoEntry = scenario.ActualCargo.Entries[i];
+				if (cargoConfigs.TryGetValue(cargoEntry.CargoId, out var cargoConfig) == false ||
+					cargoConfig == null ||
+					string.IsNullOrWhiteSpace(cargoConfig.prefab_resource_path))
 				{
+					_loggerService?.LogError(
+						$"[TrainCargoPresentation] Cargo config is missing for id '{cargoEntry.CargoId}'.");
 					ClearPresentationState();
 					return false;
+				}
+
+				for (var quantityIndex = 0; quantityIndex < cargoEntry.Quantity; quantityIndex++)
+				{
+					var anchor = ResolveCargoAnchor(cargoAnchors, slotIndex);
+					var cargoInstance = await SpawnAttachedPrefabAsync(
+						revision,
+						trainView,
+						cargoConfig.prefab_resource_path,
+						anchor,
+						ResolveCargoLocalPosition(slotIndex, cargoAnchors.Count),
+						Quaternion.identity,
+						CargoVisualKind.MainCargo,
+						cargoEntry.CargoId);
+					if (!cargoInstance)
+					{
+						ClearPresentationState();
+						return false;
+					}
+
+					slotIndex++;
 				}
 			}
 
 			if (scenario.HasHiddenContraband)
 			{
-				var hiddenAnchor = cargoAnchors[Mathf.Clamp(cargoAnchors.Count / 2, 0, cargoAnchors.Count - 1)];
+				var hiddenSlotIndex = Mathf.Clamp(totalCargoUnits / 2, 0, Math.Max(0, totalCargoUnits - 1));
+				var hiddenAnchor = ResolveCargoAnchor(cargoAnchors, hiddenSlotIndex);
 				var hiddenClue = await SpawnAttachedPrefabAsync(
 					revision,
 					trainView,
 					ProjectGameplayResourcePaths.CargoClues_HiddenContraband,
 					hiddenAnchor,
-					new Vector3(0f, 0.45f, 0f),
+					ResolveCargoLocalPosition(hiddenSlotIndex, cargoAnchors.Count) + new Vector3(0f, 0.45f, 0f),
 					Quaternion.identity,
 					CargoVisualKind.HiddenContraband,
-					scenario.ActualCargoId);
+					scenario.ActualCargo.SingleCargoId);
 				if (!hiddenClue)
 				{
 					ClearPresentationState();
@@ -128,16 +147,16 @@ namespace Project.Gameplay.Train
 
 			if (scenario.HasIllegalMarker)
 			{
-				var markerAnchor = cargoAnchors[0];
+				var markerAnchor = ResolveCargoAnchor(cargoAnchors, 0);
 				var markerClue = await SpawnAttachedPrefabAsync(
 					revision,
 					trainView,
 					ProjectGameplayResourcePaths.CargoClues_IllegalMarker,
 					markerAnchor,
-					new Vector3(0f, 1.05f, 0f),
+					ResolveCargoLocalPosition(0, cargoAnchors.Count) + new Vector3(0f, 1.05f, 0f),
 					Quaternion.identity,
 					CargoVisualKind.IllegalMarker,
-					scenario.ActualCargoId);
+					scenario.ActualCargo.SingleCargoId);
 				if (!markerClue)
 				{
 					ClearPresentationState();
@@ -146,10 +165,27 @@ namespace Project.Gameplay.Train
 			}
 
 			_loggerService?.Log(
-				$"[TrainCargoPresentation] Presented cargo '{scenario.ActualCargoId}' " +
-				$"for scenario '{scenario.ScenarioId}'. CargoCount={cargoAnchors.Count}, " +
+				$"[TrainCargoPresentation] Presented cargo '{scenario.ActualCargo.ToDebugString()}' " +
+				$"for scenario '{scenario.ScenarioId}'. CargoUnits={totalCargoUnits}, CargoAnchors={cargoAnchors.Count}, " +
 				$"HiddenContraband={scenario.HasHiddenContraband}, IllegalMarker={scenario.HasIllegalMarker}.");
 			return true;
+		}
+
+		private async UniTask<Dictionary<string, CargoTypeConfig>> ResolveCargoConfigsAsync(TrainScenario scenario)
+		{
+			var result = new Dictionary<string, CargoTypeConfig>(StringComparer.OrdinalIgnoreCase);
+			for (var i = 0; i < scenario.ActualCargo.Entries.Count; i++)
+			{
+				var cargoEntry = scenario.ActualCargo.Entries[i];
+				if (result.ContainsKey(cargoEntry.CargoId))
+				{
+					continue;
+				}
+
+				result[cargoEntry.CargoId] = await _cargoCatalogLoader.GetByIdAsync(cargoEntry.CargoId);
+			}
+
+			return result;
 		}
 
 		private async UniTask<GameObject> SpawnAttachedPrefabAsync(
@@ -235,6 +271,36 @@ namespace Project.Gameplay.Train
 
 			_cargoAnchors.Add(trainView.transform);
 			return _cargoAnchors;
+		}
+
+		private static Transform ResolveCargoAnchor(IReadOnlyList<Transform> cargoAnchors, int slotIndex)
+		{
+			if (cargoAnchors == null || cargoAnchors.Count == 0)
+			{
+				return null;
+			}
+
+			var normalizedIndex = Mathf.Clamp(slotIndex, 0, int.MaxValue);
+			return cargoAnchors[normalizedIndex % cargoAnchors.Count];
+		}
+
+		private static Vector3 ResolveCargoLocalPosition(int slotIndex, int anchorCount)
+		{
+			var safeAnchorCount = Math.Max(1, anchorCount);
+			var repeatedLayer = slotIndex / safeAnchorCount;
+			switch (repeatedLayer)
+			{
+				case 0:
+					return Vector3.zero;
+				case 1:
+					return new Vector3(-0.24f, 0f, 0.18f);
+				case 2:
+					return new Vector3(0.24f, 0f, -0.18f);
+				case 3:
+					return new Vector3(0f, 0.2f, 0f);
+				default:
+					return new Vector3(0f, 0.2f * (repeatedLayer - 2), 0f);
+			}
 		}
 
 		private void EnsureFallbackVisual(GameObject instance, CargoVisualKind visualKind, string cargoId)

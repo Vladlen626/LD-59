@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{60079563-0123-42c9-81b2-e38611976189}">
+		<property name="assetPath">
+			<value>WestersOsts/Desert Checkpoint Loop (1).mp3</value>
+		</property>
+		<property name="isStreaming">
+			<value>true</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>48</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>189.98400000000001</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{8b9e8333-f1aa-4766-b388-acb928ce38b2}</destination>
+		</relationship>
+	</object>
+</objects>

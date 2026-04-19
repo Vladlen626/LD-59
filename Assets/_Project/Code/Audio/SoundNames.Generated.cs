@@ -7,5 +7,6 @@ namespace PlatformCore.Services.Audio
 		public const string JumpSample = "event:/JumpSample";
 		public const string Ost_1 = "event:/Ost_1";
 		public const string DesertAmbience = "event:/DesertAmbience";
+		public const string Ost_2 = "event:/Ost_2";
 	}
 }

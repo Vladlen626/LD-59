@@ -1,9 +1,9 @@
 {
   "id": "day_01",
-  "initial_debt": 240,
+  "initial_debt": 235,
   "day_index": 2,
   "missed_contraband_penalty": 90,
-  "wrongful_rejection_penalty": 40,
+  "wrongful_rejection_penalty": 35,
   "forbidden_cargo_ids": [
     "dynamite_crates"
   ],
@@ -11,10 +11,20 @@
     {
       "id": "day01_case_001",
       "manifest": {
-        "declared_cargo_id": "cheese_wheels",
+        "declared_cargo": [
+          {
+            "cargo_id": "cheese_wheels",
+            "quantity": 1
+          }
+        ],
         "declared_description": "Aged cheese shipment"
       },
-      "actual_cargo_id": "cheese_wheels",
+      "actual_cargo": [
+        {
+          "cargo_id": "cheese_wheels",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 50
@@ -22,10 +32,28 @@
     {
       "id": "day01_case_002",
       "manifest": {
-        "declared_cargo_id": "medical_supplies",
-        "declared_description": "Medical supply crates"
+        "declared_cargo": [
+          {
+            "cargo_id": "medical_supplies",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "canned_food",
+            "quantity": 1
+          }
+        ],
+        "declared_description": "Medical and ration crates"
       },
-      "actual_cargo_id": "medical_supplies",
+      "actual_cargo": [
+        {
+          "cargo_id": "medical_supplies",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 50
@@ -33,21 +61,45 @@
     {
       "id": "day01_case_003",
       "manifest": {
-        "declared_cargo_id": "canned_food",
+        "declared_cargo": [
+          {
+            "cargo_id": "canned_food",
+            "quantity": 2
+          }
+        ],
         "declared_description": "Food crates from the valley"
       },
-      "actual_cargo_id": "dynamite_crates",
+      "actual_cargo": [
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "grain_sacks",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
-      "reward_on_correct_decision": 55
+      "reward_on_correct_decision": 50
     },
     {
       "id": "day01_case_004",
       "manifest": {
-        "declared_cargo_id": "timber",
+        "declared_cargo": [
+          {
+            "cargo_id": "timber",
+            "quantity": 2
+          }
+        ],
         "declared_description": "Processed timber planks"
       },
-      "actual_cargo_id": "timber",
+      "actual_cargo": [
+        {
+          "cargo_id": "timber",
+          "quantity": 2
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 50
@@ -55,13 +107,23 @@
     {
       "id": "day01_case_005",
       "manifest": {
-        "declared_cargo_id": "moonshine_barrels",
+        "declared_cargo": [
+          {
+            "cargo_id": "moonshine_barrels",
+            "quantity": 1
+          }
+        ],
         "declared_description": "Barrels for cleaning solvent"
       },
-      "actual_cargo_id": "moonshine_barrels",
+      "actual_cargo": [
+        {
+          "cargo_id": "moonshine_barrels",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": true,
-      "reward_on_correct_decision": 55
+      "reward_on_correct_decision": 50
     }
   ]
 }

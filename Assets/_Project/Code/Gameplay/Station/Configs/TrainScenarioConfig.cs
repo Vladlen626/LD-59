@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Project.Gameplay.Station.Domain;
 using UnityEngine;
 
@@ -16,6 +17,9 @@ namespace Project.Gameplay.Station.Configs
 		[Tooltip("Real cargo ID in wagon for judge evaluation.")]
 		public string actual_cargo_id = string.Empty;
 
+		[Tooltip("Real cargo list in wagon with quantities. Preferred over legacy actual_cargo_id.")]
+		public List<CargoQuantityConfig> actual_cargo = new List<CargoQuantityConfig>();
+
 		[Tooltip("True if contraband is hidden in cargo.")]
 		public bool has_hidden_contraband;
 
@@ -30,6 +34,13 @@ namespace Project.Gameplay.Station.Configs
 		{
 			id = StationConfigText.Normalize(id);
 			actual_cargo_id = StationConfigText.Normalize(actual_cargo_id);
+			actual_cargo ??= new List<CargoQuantityConfig>();
+			for (var i = 0; i < actual_cargo.Count; i++)
+			{
+				actual_cargo[i] ??= new CargoQuantityConfig();
+				actual_cargo[i].ParseConfig();
+			}
+
 			manifest ??= new ManifestDataConfig();
 			manifest.ParseConfig();
 		}
@@ -40,10 +51,32 @@ namespace Project.Gameplay.Station.Configs
 			return new TrainScenario(
 				id,
 				manifest.ToDomain(),
-				actual_cargo_id,
+				BuildActualCargoEntries(),
 				has_hidden_contraband,
 				has_illegal_marker,
 				reward_on_correct_decision);
+		}
+
+		private List<CargoQuantity> BuildActualCargoEntries()
+		{
+			var result = new List<CargoQuantity>();
+			for (var i = 0; i < actual_cargo.Count; i++)
+			{
+				var entry = actual_cargo[i]?.ToDomain();
+				if (entry == null || entry.IsValid == false)
+				{
+					continue;
+				}
+
+				result.Add(entry);
+			}
+
+			if (result.Count == 0 && string.IsNullOrWhiteSpace(actual_cargo_id) == false)
+			{
+				result.Add(new CargoQuantity(actual_cargo_id, 1));
+			}
+
+			return result;
 		}
 	}
 }

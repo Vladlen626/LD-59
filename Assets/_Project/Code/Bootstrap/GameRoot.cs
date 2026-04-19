@@ -250,10 +250,10 @@ namespace Project.Bootstrap
 
 			await UniTask.WhenAll(
 				audioService.PrewarmEventAsync(SoundNames.DesertAmbience),
-				audioService.PrewarmEventAsync(SoundNames.Ost_1));
+				audioService.PrewarmEventAsync(SoundNames.Ost_2));
 
 			audioService.PlaySoundParallel(SoundNames.DesertAmbience);
-			audioService.PlaySoundParallel(SoundNames.Ost_1);
+			audioService.PlaySoundParallel(SoundNames.Ost_2);
 		}
 
 		private async UniTask<List<StationDayContent>> LoadStationDayContentsAsync(

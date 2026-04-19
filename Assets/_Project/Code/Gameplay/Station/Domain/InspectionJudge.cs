@@ -13,11 +13,8 @@ namespace Project.Gameplay.Station.Domain
 			TrainScenario scenario,
 			PlayerDecision playerDecision)
 		{
-			var isForbiddenCargo = dayRuleSet.IsCargoForbidden(scenario.ActualCargoId);
-			var isManifestMismatch = !string.Equals(
-				scenario.Manifest.DeclaredCargoId,
-				scenario.ActualCargoId,
-				StringComparison.OrdinalIgnoreCase);
+			var isForbiddenCargo = HasForbiddenCargo(dayRuleSet, scenario.ActualCargo);
+			var isManifestMismatch = scenario.Manifest.DeclaredCargo.Matches(scenario.ActualCargo) == false;
 			var hasHiddenContraband = scenario.HasHiddenContraband;
 			var hasIllegalMarker = scenario.HasIllegalMarker;
 
@@ -107,6 +104,24 @@ namespace Project.Gameplay.Station.Domain
 			}
 
 			return reasons;
+		}
+
+		private static bool HasForbiddenCargo(DayRuleSet dayRuleSet, CargoLoadout actualCargo)
+		{
+			if (dayRuleSet == null || actualCargo == null || actualCargo.IsEmpty)
+			{
+				return false;
+			}
+
+			for (var i = 0; i < actualCargo.Entries.Count; i++)
+			{
+				if (dayRuleSet.IsCargoForbidden(actualCargo.Entries[i].CargoId))
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 	}
 }

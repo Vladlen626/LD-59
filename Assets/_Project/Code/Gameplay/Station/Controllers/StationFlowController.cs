@@ -367,13 +367,13 @@ namespace Project.Gameplay.Station.Controllers
 		private void LogCaseDetails(TrainScenario scenario, int caseIndex)
 		{
 			var ruleSet = _runtimeModel.StationDay.CurrentRuleSet;
-			var isForbidden = ruleSet.IsCargoForbidden(scenario.ActualCargoId);
+			var isForbidden = HasForbiddenCargo(ruleSet, scenario.ActualCargo);
 
 			_loggerService?.Log(
 				$"[StationFlow] Begin inspection case {caseIndex + 1}: " +
-				$"ManifestCargo='{scenario.Manifest.DeclaredCargoId}', " +
+				$"ManifestCargo='{scenario.Manifest.DeclaredCargo.ToDebugString()}', " +
 				$"ManifestDesc='{scenario.Manifest.DeclaredDescription}', " +
-				$"ActualCargo='{scenario.ActualCargoId}', HiddenContraband={scenario.HasHiddenContraband}, " +
+				$"ActualCargo='{scenario.ActualCargo.ToDebugString()}', HiddenContraband={scenario.HasHiddenContraband}, " +
 				$"IllegalMarker={scenario.HasIllegalMarker}, ForbiddenCargo=[{_forbiddenCargoLogValue}], " +
 				$"ActualCargoForbidden={isForbidden}, " +
 				$"Penalties(Missed={ruleSet.MissedContrabandPenalty}, Wrongful={ruleSet.WrongfulRejectionPenalty}).");
@@ -417,7 +417,7 @@ namespace Project.Gameplay.Station.Controllers
 					case InspectionErrorReason.AllowedForbiddenCargo:
 						return "Wrong allow. Banned cargo got through.";
 					case InspectionErrorReason.AllowedManifestMismatch:
-						return "Wrong allow. Papers did not match the cargo.";
+						return "Wrong allow. Papers did not match the cargo load.";
 					case InspectionErrorReason.AllowedHiddenContraband:
 						return "Wrong allow. Hidden contraband got through.";
 					case InspectionErrorReason.AllowedIllegalMarker:
@@ -434,6 +434,24 @@ namespace Project.Gameplay.Station.Controllers
 			_forbiddenCargoLogValue = forbiddenCargoIds.Count == 0
 				? "<none>"
 				: string.Join(", ", forbiddenCargoIds);
+		}
+
+		private static bool HasForbiddenCargo(DayRuleSet ruleSet, CargoLoadout actualCargo)
+		{
+			if (ruleSet == null || actualCargo == null || actualCargo.IsEmpty)
+			{
+				return false;
+			}
+
+			for (var i = 0; i < actualCargo.Entries.Count; i++)
+			{
+				if (ruleSet.IsCargoForbidden(actualCargo.Entries[i].CargoId))
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		private IReadOnlyList<TrainScenario> CurrentDayScenarios

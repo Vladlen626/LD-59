@@ -1,14 +1,19 @@
+using System.Collections.Generic;
+
 namespace Project.Gameplay.Station.Domain
 {
 	public sealed class ManifestData
 	{
-		public ManifestData(string declaredCargoId, string declaredDescription)
+		public ManifestData(
+			IEnumerable<CargoQuantity> declaredCargo,
+			string declaredDescription)
 		{
-			DeclaredCargoId = Normalize(declaredCargoId);
+			DeclaredCargo = new CargoLoadout(declaredCargo);
 			DeclaredDescription = Normalize(declaredDescription);
 		}
 
-		public string DeclaredCargoId { get; }
+		public CargoLoadout DeclaredCargo { get; }
+		public string DeclaredCargoId => DeclaredCargo.SingleCargoId;
 		public string DeclaredDescription { get; }
 
 		private static string Normalize(string value)

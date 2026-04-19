@@ -1,6 +1,6 @@
 {
   "id": "day_03",
-  "initial_debt": 360,
+  "initial_debt": 400,
   "day_index": 4,
   "missed_contraband_penalty": 110,
   "wrongful_rejection_penalty": 50,
@@ -12,10 +12,28 @@
     {
       "id": "day03_case_001",
       "manifest": {
-        "declared_cargo_id": "grain_sacks",
-        "declared_description": "Bulk grain sacks"
+        "declared_cargo": [
+          {
+            "cargo_id": "grain_sacks",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "timber",
+            "quantity": 1
+          }
+        ],
+        "declared_description": "Bulk grain sacks with timber braces"
       },
-      "actual_cargo_id": "grain_sacks",
+      "actual_cargo": [
+        {
+          "cargo_id": "grain_sacks",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "timber",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 60
@@ -23,10 +41,28 @@
     {
       "id": "day03_case_002",
       "manifest": {
-        "declared_cargo_id": "canned_food",
+        "declared_cargo": [
+          {
+            "cargo_id": "canned_food",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "grain_sacks",
+            "quantity": 1
+          }
+        ],
         "declared_description": "Ration crates for patrols"
       },
-      "actual_cargo_id": "dynamite_crates",
+      "actual_cargo": [
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "dynamite_crates",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 60
@@ -34,10 +70,20 @@
     {
       "id": "day03_case_003",
       "manifest": {
-        "declared_cargo_id": "prisoner_transport",
+        "declared_cargo": [
+          {
+            "cargo_id": "prisoner_transport",
+            "quantity": 1
+          }
+        ],
         "declared_description": "Prisoner transfer papers"
       },
-      "actual_cargo_id": "prisoner_transport",
+      "actual_cargo": [
+        {
+          "cargo_id": "prisoner_transport",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 60
@@ -45,10 +91,20 @@
     {
       "id": "day03_case_004",
       "manifest": {
-        "declared_cargo_id": "medical_supplies",
+        "declared_cargo": [
+          {
+            "cargo_id": "medical_supplies",
+            "quantity": 2
+          }
+        ],
         "declared_description": "Medical crates with sealed reserve"
       },
-      "actual_cargo_id": "medical_supplies",
+      "actual_cargo": [
+        {
+          "cargo_id": "medical_supplies",
+          "quantity": 2
+        }
+      ],
       "has_hidden_contraband": true,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 60
@@ -56,10 +112,20 @@
     {
       "id": "day03_case_005",
       "manifest": {
-        "declared_cargo_id": "timber",
-        "declared_description": "Processed timber planks"
+        "declared_cargo": [
+          {
+            "cargo_id": "cheese_wheels",
+            "quantity": 2
+          }
+        ],
+        "declared_description": "Aged cheese wheels"
       },
-      "actual_cargo_id": "timber",
+      "actual_cargo": [
+        {
+          "cargo_id": "cheese_wheels",
+          "quantity": 2
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 60
@@ -67,10 +133,24 @@
     {
       "id": "day03_case_006",
       "manifest": {
-        "declared_cargo_id": "canned_food",
+        "declared_cargo": [
+          {
+            "cargo_id": "canned_food",
+            "quantity": 2
+          }
+        ],
         "declared_description": "Dry ration paperwork"
       },
-      "actual_cargo_id": "weapon_crates",
+      "actual_cargo": [
+        {
+          "cargo_id": "weapon_crates",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 60
@@ -78,10 +158,20 @@
     {
       "id": "day03_case_007",
       "manifest": {
-        "declared_cargo_id": "cheese_wheels",
-        "declared_description": "Aged cheese wheels"
+        "declared_cargo": [
+          {
+            "cargo_id": "timber",
+            "quantity": 3
+          }
+        ],
+        "declared_description": "Processed timber planks"
       },
-      "actual_cargo_id": "cheese_wheels",
+      "actual_cargo": [
+        {
+          "cargo_id": "timber",
+          "quantity": 3
+        }
+      ],
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
       "reward_on_correct_decision": 60

@@ -48,7 +48,7 @@ namespace Project.Gameplay.Station.Views
 		{
 			if (_allowedTitleText)
 			{
-				_allowedTitleText.text = "Allowed For This Train";
+				_allowedTitleText.text = "Manifest";
 			}
 
 			if (_allowedValueText)

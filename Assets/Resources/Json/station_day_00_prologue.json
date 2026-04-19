@@ -1,9 +1,9 @@
 {
   "id": "day_00_prologue",
-  "initial_debt": 110,
+  "initial_debt": 100,
   "day_index": 1,
-  "missed_contraband_penalty": 80,
-  "wrongful_rejection_penalty": 25,
+  "missed_contraband_penalty": 85,
+  "wrongful_rejection_penalty": 30,
   "forbidden_cargo_ids": [
     "dynamite_crates"
   ],
@@ -17,7 +17,7 @@
       "actual_cargo_id": "grain_sacks",
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
-      "reward_on_correct_decision": 35
+      "reward_on_correct_decision": 40
     },
     {
       "id": "prologue_case_002",
@@ -28,7 +28,7 @@
       "actual_cargo_id": "timber",
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
-      "reward_on_correct_decision": 35
+      "reward_on_correct_decision": 40
     },
     {
       "id": "prologue_case_003",
@@ -39,7 +39,7 @@
       "actual_cargo_id": "dynamite_crates",
       "has_hidden_contraband": false,
       "has_illegal_marker": false,
-      "reward_on_correct_decision": 45
+      "reward_on_correct_decision": 40
     }
   ]
 }

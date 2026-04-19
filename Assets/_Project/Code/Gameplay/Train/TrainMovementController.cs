@@ -14,9 +14,12 @@ namespace Project.Gameplay.Train
 	{
 		private const float TravelDistanceMultiplier = 5f;
 		private const float TravelDurationMultiplier = 5f;
-		private const float ArrivalShakePhaseStart = 0.7f;
-		private const int ArrivalShakePulses = 5;
-		private const float ArrivalShakeMaxIntensity = 0.45f;
+		private const float ArrivalShakeBrakeFadeStart = 0.75f;
+		private const float ArrivalShakeRampEnd = 0.5f;
+		private const float DepartureShakeRampEnd = 0.25f;
+		private const float DepartureShakeFadeStart = 0.5f;
+		private const float ArrivalShakeMaxIntensity = 1.1f;
+		private const float ArrivalShakeStepDuration = 0.12f;
 
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly StationRuntimeModel _runtimeModel;
@@ -93,7 +96,7 @@ namespace Project.Gameplay.Train
 				SimpleTweensTransform.MoveToLocalPositionSmoothStop(trainView.transform, stopLocalPosition, duration);
 				await UniTask.WhenAll(
 					UniTask.Delay(TimeSpan.FromSeconds(duration)),
-					PlayArrivalShakeAsync(duration, revision, trainView));
+					PlayMovementShakeAsync(duration, revision, trainView, EvaluateArrivalShakeIntensity));
 			}
 
 			if (IsMoveValid(revision, trainView) == false)
@@ -130,7 +133,9 @@ namespace Project.Gameplay.Train
 			if (duration > 0f)
 			{
 				SimpleTweensTransform.MoveToLocalPositionSmoothStart(trainView.transform, targetLocalPosition, duration);
-				await UniTask.Delay(TimeSpan.FromSeconds(duration));
+				await UniTask.WhenAll(
+					UniTask.Delay(TimeSpan.FromSeconds(duration)),
+					PlayMovementShakeAsync(duration, revision, trainView, EvaluateDepartureShakeIntensity));
 			}
 
 			if (IsMoveValid(revision, trainView) == false)
@@ -154,17 +159,15 @@ namespace Project.Gameplay.Train
 			}
 		}
 
-		private async UniTask PlayArrivalShakeAsync(float duration, int revision, TrainView trainView)
+		private async UniTask PlayMovementShakeAsync(
+			float duration,
+			int revision,
+			TrainView trainView,
+			Func<float, float> intensityEvaluator)
 		{
 			if (_cameraShakeService == null || duration <= 0f)
 			{
 				return;
-			}
-
-			var shakeDelay = duration * ArrivalShakePhaseStart;
-			if (shakeDelay > 0f)
-			{
-				await UniTask.Delay(TimeSpan.FromSeconds(shakeDelay));
 			}
 
 			if (IsMoveValid(revision, trainView) == false)
@@ -173,10 +176,8 @@ namespace Project.Gameplay.Train
 				return;
 			}
 
-			var shakeDuration = Mathf.Max(0.01f, duration - shakeDelay);
-			var pulseDuration = shakeDuration / ArrivalShakePulses;
-
-			for (var i = 0; i < ArrivalShakePulses; i++)
+			var elapsed = 0f;
+			while (elapsed < duration)
 			{
 				if (IsMoveValid(revision, trainView) == false)
 				{
@@ -184,13 +185,58 @@ namespace Project.Gameplay.Train
 					return;
 				}
 
-				var normalizedPulse = (i + 0.5f) / ArrivalShakePulses;
-				var intensityFactor = Mathf.Pow(1f - normalizedPulse, 2f);
-				var intensity = ArrivalShakeMaxIntensity * intensityFactor;
-				await _cameraShakeService.ShakeAsync(intensity, pulseDuration);
+				var movementProgress = Mathf.Clamp01(elapsed / duration);
+				var intensity = intensityEvaluator(movementProgress);
+				if (intensity <= 0f)
+				{
+					var idleStepDuration = Mathf.Min(ArrivalShakeStepDuration, duration - elapsed);
+					await UniTask.Delay(TimeSpan.FromSeconds(idleStepDuration));
+					elapsed += idleStepDuration;
+					continue;
+				}
+
+				var stepDuration = Mathf.Min(ArrivalShakeStepDuration, duration - elapsed);
+				await _cameraShakeService.ShakeAsync(intensity, stepDuration);
+				elapsed += stepDuration;
 			}
 
 			_cameraShakeService.StopShake();
+		}
+
+		private static float EvaluateArrivalShakeIntensity(float arrivalProgress)
+		{
+			if (arrivalProgress < ArrivalShakeRampEnd)
+			{
+				var rampProgress = Mathf.InverseLerp(0f, ArrivalShakeRampEnd, arrivalProgress);
+				return ArrivalShakeMaxIntensity * Mathf.SmoothStep(0f, 1f, rampProgress);
+			}
+
+			if (arrivalProgress < ArrivalShakeBrakeFadeStart)
+			{
+				return ArrivalShakeMaxIntensity;
+			}
+
+			var fadeProgress = Mathf.InverseLerp(ArrivalShakeBrakeFadeStart, 1f, arrivalProgress);
+			var fadeFactor = 1f - Mathf.SmoothStep(0f, 1f, fadeProgress);
+			return ArrivalShakeMaxIntensity * fadeFactor;
+		}
+
+		private static float EvaluateDepartureShakeIntensity(float departureProgress)
+		{
+			if (departureProgress < DepartureShakeRampEnd)
+			{
+				var rampProgress = Mathf.InverseLerp(0f, DepartureShakeRampEnd, departureProgress);
+				return ArrivalShakeMaxIntensity * Mathf.SmoothStep(0f, 1f, rampProgress);
+			}
+
+			if (departureProgress < DepartureShakeFadeStart)
+			{
+				return ArrivalShakeMaxIntensity;
+			}
+
+			var fadeProgress = Mathf.InverseLerp(DepartureShakeFadeStart, 1f, departureProgress);
+			var fadeFactor = 1f - Mathf.SmoothStep(0f, 1f, fadeProgress);
+			return ArrivalShakeMaxIntensity * fadeFactor;
 		}
 
 		private Vector3 ResolveDirection()

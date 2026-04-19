@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 
 namespace Project.Gameplay.Station.Domain
@@ -7,14 +8,14 @@ namespace Project.Gameplay.Station.Domain
 		public TrainScenario(
 			string scenarioId,
 			ManifestData manifest,
-			string actualCargoId,
+			IEnumerable<CargoQuantity> actualCargo,
 			bool hasHiddenContraband,
 			bool hasIllegalMarker,
 			int rewardOnCorrectDecision)
 		{
 			ScenarioId = Normalize(scenarioId);
-			Manifest = manifest ?? new ManifestData(string.Empty, string.Empty);
-			ActualCargoId = Normalize(actualCargoId);
+			Manifest = manifest ?? new ManifestData(Array.Empty<CargoQuantity>(), string.Empty);
+			ActualCargo = new CargoLoadout(actualCargo);
 			HasHiddenContraband = hasHiddenContraband;
 			HasIllegalMarker = hasIllegalMarker;
 			RewardOnCorrectDecision = Math.Max(0, rewardOnCorrectDecision);
@@ -22,7 +23,8 @@ namespace Project.Gameplay.Station.Domain
 
 		public string ScenarioId { get; }
 		public ManifestData Manifest { get; }
-		public string ActualCargoId { get; }
+		public CargoLoadout ActualCargo { get; }
+		public string ActualCargoId => ActualCargo.SingleCargoId;
 		public bool HasHiddenContraband { get; }
 		public bool HasIllegalMarker { get; }
 		public int RewardOnCorrectDecision { get; }
