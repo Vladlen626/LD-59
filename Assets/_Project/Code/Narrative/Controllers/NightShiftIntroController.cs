@@ -5,7 +5,9 @@ using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
 using PlatformCore.Services.Audio;
+using PlatformCore.Services.Factory;
 using PlatformCore.Services.UI;
+using PlatformCore.Services.UI.SplashScreen;
 using Project.Gameplay.Interaction;
 using Project.Gameplay.Player;
 using Project.Gameplay.Scene;
@@ -13,7 +15,6 @@ using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Station.Views;
 using Project.Infrastructure;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Project.Gameplay.Station.Controllers
 {
@@ -35,6 +36,8 @@ namespace Project.Gameplay.Station.Controllers
 		private readonly ICursorService _cursorService;
 		private readonly ICameraShakeService _cameraShakeService;
 		private readonly IAudioService _audioService;
+		private readonly IObjectFactory _objectFactory;
+		private readonly ISplashScreenService _splashScreenService;
 
 		private MorningLetterInteractableView _activeLetter;
 		private NightShiftLetterData _currentLetterData;
@@ -55,7 +58,9 @@ namespace Project.Gameplay.Station.Controllers
 			UILetterController uiLetterController,
 			ICursorService cursorService,
 			ICameraShakeService cameraShakeService,
-			IAudioService audioService)
+			IAudioService audioService,
+			IObjectFactory objectFactory,
+			ISplashScreenService splashScreenService)
 		{
 			_playerView = playerView;
 			_playerMovementController = playerMovementController;
@@ -67,6 +72,8 @@ namespace Project.Gameplay.Station.Controllers
 			_cursorService = cursorService;
 			_cameraShakeService = cameraShakeService;
 			_audioService = audioService;
+			_objectFactory = objectFactory;
+			_splashScreenService = splashScreenService;
 		}
 
 		public void Activate()
@@ -126,10 +133,15 @@ namespace Project.Gameplay.Station.Controllers
 				TeleportPlayerToWakePoint(roomTargets);
 				SuspendPlayerControl();
 
+				await _splashScreenService.FadeOutAsync(ProjectSplashScreenSettings.BeforeWakeFadeOutSeconds);
 				await _wakeTransitionController.PlayWakeUpAsync(2, cancellationToken);
 
 				await PlayDoorKnockAsync(roomTargets, cancellationToken);
-				SpawnLetter(roomTargets);
+				if (await SpawnLetterAsync(roomTargets) == false)
+				{
+					return false;
+				}
+
 				await AnimateLetterArrivalAsync(roomTargets, cancellationToken);
 
 				if (_activeLetter)
@@ -239,23 +251,23 @@ namespace Project.Gameplay.Station.Controllers
 			await UniTask.Delay(TimeSpan.FromSeconds(LetterSettleDelay), cancellationToken: cancellationToken);
 		}
 
-		private void SpawnLetter(NightShiftRoomTargets roomTargets)
+		private async UniTask<bool> SpawnLetterAsync(NightShiftRoomTargets roomTargets)
 		{
 			CleanupActiveLetter();
-
-			var letterObject = new GameObject("MorningLetter", typeof(MorningLetterInteractableView));
-			if (roomTargets.LetterParent)
+			_activeLetter = await _objectFactory.CreateAsync<MorningLetterInteractableView>(
+				ProjectGameplayResourcePaths.Letters_MorningLetterInteractableView,
+				roomTargets.LetterThrowStartPosition,
+				roomTargets.LetterStartRotation,
+				roomTargets.LetterParent);
+			if (!_activeLetter)
 			{
-				letterObject.transform.SetParent(roomTargets.LetterParent, true);
+				return false;
 			}
 
-			letterObject.layer = _playerView.gameObject.layer;
-			letterObject.transform.position = roomTargets.LetterThrowStartPosition;
-			letterObject.transform.rotation = roomTargets.LetterStartRotation;
-
-			_activeLetter = letterObject.GetComponent<MorningLetterInteractableView>();
+			SetLayerRecursively(_activeLetter.gameObject, _playerView.gameObject.layer);
 			_activeLetter.SetAvailable(false);
 			_activeLetter.Interacted += OnLetterInteracted;
+			return true;
 		}
 
 		private void CleanupActiveLetter()
@@ -266,8 +278,18 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			_activeLetter.Interacted -= OnLetterInteracted;
-			Object.Destroy(_activeLetter.gameObject);
+			_objectFactory.Destroy(_activeLetter.gameObject);
 			_activeLetter = null;
+		}
+
+		private static void SetLayerRecursively(GameObject target, int layer)
+		{
+			target.layer = layer;
+			var rootTransform = target.transform;
+			for (var i = 0; i < rootTransform.childCount; i++)
+			{
+				SetLayerRecursively(rootTransform.GetChild(i).gameObject, layer);
+			}
 		}
 
 		private void TeleportPlayerToWakePoint(NightShiftRoomTargets roomTargets)

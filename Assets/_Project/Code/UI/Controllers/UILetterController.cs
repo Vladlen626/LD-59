@@ -2,17 +2,19 @@ using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
+using PlatformCore.Services.Factory;
 using PlatformCore.Services.Input;
 using PlatformCore.Services.UI;
 using Project.Gameplay.Station.Runtime;
+using Project.Infrastructure;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 public sealed class UILetterController : IBaseController, IActivatable, IDeactivatable, IUpdatable
 {
 	private readonly IInputService _inputService;
 	private readonly ICursorService _cursorService;
 	private readonly ILoggerService _loggerService;
+	private readonly IObjectFactory _objectFactory;
 
 	private UILetterView _view;
 	private bool _isActive;
@@ -20,15 +22,19 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 	private bool _cursorUnlockedByLetter;
 	private int _openedFrame;
 	private UniTaskCompletionSource _closeSource;
+	private UniTask _viewLoadTask;
+	private bool _isViewLoadInProgress;
 
 	public UILetterController(
 		IInputService inputService,
 		ICursorService cursorService,
-		ILoggerService loggerService)
+		ILoggerService loggerService,
+		IObjectFactory objectFactory)
 	{
 		_inputService = inputService;
 		_cursorService = cursorService;
 		_loggerService = loggerService;
+		_objectFactory = objectFactory;
 	}
 
 	public event System.Action LetterOpened;
@@ -44,7 +50,7 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 		}
 
 		_isActive = true;
-		EnsureView();
+		EnsureViewAsync().Forget();
 		if (_view)
 		{
 			_view.Hide();
@@ -64,7 +70,7 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 
 		if (_view)
 		{
-			Object.Destroy(_view.gameObject);
+			_objectFactory.Destroy(_view.gameObject);
 			_view = null;
 		}
 	}
@@ -86,12 +92,17 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 
 	public void ShowLetter(NightShiftLetterData letterData)
 	{
+		ShowLetterAsync(letterData).Forget();
+	}
+
+	private async UniTaskVoid ShowLetterAsync(NightShiftLetterData letterData)
+	{
 		if (_isActive == false)
 		{
 			return;
 		}
 
-		EnsureView();
+		await EnsureViewAsync();
 		if (!_view)
 		{
 			return;
@@ -147,10 +158,16 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 		LetterClosed?.Invoke();
 	}
 
-	private void EnsureView()
+	private async UniTask EnsureViewAsync()
 	{
 		if (_view)
 		{
+			return;
+		}
+
+		if (_isViewLoadInProgress)
+		{
+			await _viewLoadTask;
 			return;
 		}
 
@@ -161,15 +178,39 @@ public sealed class UILetterController : IBaseController, IActivatable, IDeactiv
 			return;
 		}
 
-		var viewObject = new GameObject(
-			nameof(UILetterView),
-			typeof(RectTransform),
-			typeof(CanvasGroup),
-			typeof(UILetterView));
-		viewObject.layer = parent.gameObject.layer;
-		viewObject.transform.SetParent(parent, false);
-		_view = viewObject.GetComponent<UILetterView>();
-		viewObject.SetActive(false);
+		_isViewLoadInProgress = true;
+		_viewLoadTask = CreateViewAsync(parent);
+		await _viewLoadTask;
+	}
+
+	private async UniTask CreateViewAsync(Transform parent)
+	{
+		try
+		{
+			var view = await _objectFactory.CreateAsync<UILetterView>(
+				ProjectGameplayResourcePaths.UI_UILetterView,
+				Vector3.zero,
+				Quaternion.identity,
+				parent);
+			if (!view)
+			{
+				return;
+			}
+
+			if (_isActive == false)
+			{
+				_objectFactory.Destroy(view.gameObject);
+				return;
+			}
+
+			view.gameObject.layer = parent.gameObject.layer;
+			view.gameObject.SetActive(false);
+			_view = view;
+		}
+		finally
+		{
+			_isViewLoadInProgress = false;
+		}
 	}
 
 	private static Transform ResolveCanvasTransform()

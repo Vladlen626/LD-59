@@ -8,6 +8,7 @@ using PlatformCore.Services.Factory;
 using PlatformCore.Services.Input;
 using PlatformCore.Services.Notifications;
 using PlatformCore.Services.UI;
+using PlatformCore.Services.UI.SplashScreen;
 using Project.Gameplay.Player;
 using Project.Gameplay.Scene;
 using Project.Gameplay.Station.Configs;
@@ -36,6 +37,7 @@ namespace Project.Bootstrap
 			var cursorService = _serviceLocator.Get<ICursorService>();
 			var inputService = _serviceLocator.Get<IInputService>();
 			var globalNotificationService = _serviceLocator.Get<IGlobalNotificationService>();
+			var splashScreenService = _serviceLocator.Get<ISplashScreenService>();
 			var loggerService = _serviceLocator.Get<ILoggerService>();
 			var objectFactory = _serviceLocator.Get<IObjectFactory>();
 			var cameraService = _serviceLocator.Get<ICameraService>();
@@ -68,10 +70,12 @@ namespace Project.Bootstrap
 					new UIMainMenuController(uiService, cursorService, gameStartModel),
 				});
 			await gameStartModel.WaitUntilStartedAsync();
+			await splashScreenService.FadeInAsync(ProjectSplashScreenSettings.MainMenuToGameFadeInSeconds);
 
 			if (launchSettings.IsMultiplayer)
 			{
 				LaunchMultiplayer(launchSettings, loggerService);
+				await splashScreenService.FadeOutAsync(ProjectSplashScreenSettings.MainMenuToGameFallbackFadeOutSeconds);
 			}
 			else
 			{
@@ -82,6 +86,7 @@ namespace Project.Bootstrap
 					cursorService,
 					inputService,
 					globalNotificationService,
+					splashScreenService,
 					audioService,
 					configService,
 					loggerService);
@@ -108,6 +113,7 @@ namespace Project.Bootstrap
 			ICursorService cursorService,
 			IInputService inputService,
 			IGlobalNotificationService globalNotificationService,
+			ISplashScreenService splashScreenService,
 			IAudioService audioService,
 			ConfigService configService,
 			ILoggerService loggerService)
@@ -116,6 +122,7 @@ namespace Project.Bootstrap
 			if (!playerView)
 			{
 				loggerService?.LogError("[GameRoot] Failed to spawn local player in singleplayer mode.");
+				await splashScreenService.FadeOutAsync(ProjectSplashScreenSettings.MainMenuToGameFallbackFadeOutSeconds);
 				return;
 			}
 
@@ -135,6 +142,7 @@ namespace Project.Bootstrap
 			UILetterController uiLetterController = null;
 			UIWakeTransitionController uiWakeTransitionController = null;
 			NightShiftIntroController nightShiftIntroController = null;
+			var handlesSplashFadeOut = false;
 			IBaseController[] controllers = new IBaseController[]
 			{
 				playerMovementController,
@@ -223,13 +231,15 @@ namespace Project.Bootstrap
 					campaignEndingController = new CampaignEndingController(
 						inputService,
 						cursorService,
-						loggerService);
+						loggerService,
+						objectFactory);
 					var daySummaryController = new DaySummaryController(
 						uiService,
 						cursorService,
 						stationFlowController,
 						stationRuntimeContext,
 						campaignEndingController,
+						splashScreenService,
 						audioService,
 						loggerService);
 					var stationInteractionController = new StationInteractionController(
@@ -245,8 +255,9 @@ namespace Project.Bootstrap
 					uiLetterController = new UILetterController(
 						inputService,
 						cursorService,
-						loggerService);
-					uiWakeTransitionController = new UIWakeTransitionController(loggerService);
+						loggerService,
+						objectFactory);
+					uiWakeTransitionController = new UIWakeTransitionController(loggerService, objectFactory);
 					nightShiftIntroController = new NightShiftIntroController(
 						playerView,
 						playerMovementController,
@@ -257,7 +268,9 @@ namespace Project.Bootstrap
 						uiLetterController,
 						cursorService,
 						cameraService,
-						audioService);
+						audioService,
+						objectFactory,
+						splashScreenService);
 					var uiHintViewController = new UIHintViewController(
 						uiService,
 						stationInteractionController);
@@ -279,9 +292,14 @@ namespace Project.Bootstrap
 						daySummaryController,
 						stationFlowController,
 					};
+					handlesSplashFadeOut = true;
 				}
 			}
 			await _lifecycle.RegisterControllersGroupAsync(controllers);
+			if (handlesSplashFadeOut == false)
+			{
+				await splashScreenService.FadeOutAsync(ProjectSplashScreenSettings.MainMenuToGameFallbackFadeOutSeconds);
+			}
 		}
 
 		private static async UniTask StartBackgroundAudioAsync(IAudioService audioService)

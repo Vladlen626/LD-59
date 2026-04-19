@@ -38,6 +38,7 @@ namespace Project.Infrastructure
 			serviceLocator.Register<IAudioService, AudioBaseService>(audioService);
 
 			var uiService = serviceLocator.RegisterUIFoundation(persistentSceneContext, logger, resourceService);
+			serviceLocator.RegisterSplashScreenFoundation(logger);
 			serviceLocator.RegisterGlobalNotificationsFoundation(
 				uiService,
 				objectFactory,

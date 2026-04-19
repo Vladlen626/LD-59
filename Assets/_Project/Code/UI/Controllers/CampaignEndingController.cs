@@ -1,10 +1,12 @@
+using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
+using PlatformCore.Services.Factory;
 using PlatformCore.Services.Input;
 using PlatformCore.Services.UI;
+using Project.Infrastructure;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 public sealed class CampaignEndingController : IBaseController, IActivatable, IDeactivatable, IUpdatable
 {
@@ -15,21 +17,26 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 	private readonly IInputService _inputService;
 	private readonly ICursorService _cursorService;
 	private readonly ILoggerService _loggerService;
+	private readonly IObjectFactory _objectFactory;
 
 	private UICampaignEndingView _view;
 	private bool _isActive;
 	private bool _isOpen;
 	private bool _cursorUnlockedByEnding;
 	private int _openedFrame;
+	private UniTask _viewLoadTask;
+	private bool _isViewLoadInProgress;
 
 	public CampaignEndingController(
 		IInputService inputService,
 		ICursorService cursorService,
-		ILoggerService loggerService)
+		ILoggerService loggerService,
+		IObjectFactory objectFactory)
 	{
 		_inputService = inputService;
 		_cursorService = cursorService;
 		_loggerService = loggerService;
+		_objectFactory = objectFactory;
 	}
 
 	public bool IsOpen => _isOpen;
@@ -42,7 +49,7 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 		}
 
 		_isActive = true;
-		EnsureView();
+		EnsureViewAsync().Forget();
 		if (_view)
 		{
 			_view.Hide();
@@ -62,7 +69,7 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 
 		if (_view)
 		{
-			Object.Destroy(_view.gameObject);
+			_objectFactory.Destroy(_view.gameObject);
 			_view = null;
 		}
 	}
@@ -84,12 +91,17 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 
 	public void ShowEnding(bool isWin, int remainingDebt)
 	{
+		ShowEndingAsync(isWin, remainingDebt).Forget();
+	}
+
+	private async UniTaskVoid ShowEndingAsync(bool isWin, int remainingDebt)
+	{
 		if (_isActive == false)
 		{
 			return;
 		}
 
-		EnsureView();
+		await EnsureViewAsync();
 		if (!_view)
 		{
 			return;
@@ -138,10 +150,16 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 		_cursorUnlockedByEnding = false;
 	}
 
-	private void EnsureView()
+	private async UniTask EnsureViewAsync()
 	{
 		if (_view)
 		{
+			return;
+		}
+
+		if (_isViewLoadInProgress)
+		{
+			await _viewLoadTask;
 			return;
 		}
 
@@ -152,15 +170,39 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 			return;
 		}
 
-		var viewObject = new GameObject(
-			nameof(UICampaignEndingView),
-			typeof(RectTransform),
-			typeof(CanvasGroup),
-			typeof(UICampaignEndingView));
-		viewObject.layer = parent.gameObject.layer;
-		viewObject.transform.SetParent(parent, false);
-		_view = viewObject.GetComponent<UICampaignEndingView>();
-		viewObject.SetActive(false);
+		_isViewLoadInProgress = true;
+		_viewLoadTask = CreateViewAsync(parent);
+		await _viewLoadTask;
+	}
+
+	private async UniTask CreateViewAsync(Transform parent)
+	{
+		try
+		{
+			var view = await _objectFactory.CreateAsync<UICampaignEndingView>(
+				ProjectGameplayResourcePaths.UI_UICampaignEndingView,
+				Vector3.zero,
+				Quaternion.identity,
+				parent);
+			if (!view)
+			{
+				return;
+			}
+
+			if (_isActive == false)
+			{
+				_objectFactory.Destroy(view.gameObject);
+				return;
+			}
+
+			view.gameObject.layer = parent.gameObject.layer;
+			view.gameObject.SetActive(false);
+			_view = view;
+		}
+		finally
+		{
+			_isViewLoadInProgress = false;
+		}
 	}
 
 	private static Transform ResolveCanvasTransform()
