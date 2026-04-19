@@ -189,6 +189,7 @@ namespace Project.Bootstrap
 						trainSpawnController,
 						stationRuntimeContext,
 						stationSetup,
+						cameraService,
 						loggerService);
 					var stationFlowController = new StationFlowController(
 						stationRuntimeContext,

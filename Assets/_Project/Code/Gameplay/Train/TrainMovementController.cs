@@ -12,9 +12,16 @@ namespace Project.Gameplay.Train
 {
 	public sealed class TrainMovementController : IBaseController, IActivatable, IDeactivatable
 	{
+		private const float TravelDistanceMultiplier = 5f;
+		private const float TravelDurationMultiplier = 5f;
+		private const float ArrivalShakePhaseStart = 0.7f;
+		private const int ArrivalShakePulses = 5;
+		private const float ArrivalShakeMaxIntensity = 0.45f;
+
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly StationRuntimeModel _runtimeModel;
 		private readonly SceneRuntimeSetup _sceneSetup;
+		private readonly ICameraShakeService _cameraShakeService;
 		private readonly ILoggerService _loggerService;
 
 		private bool _isActive;
@@ -24,11 +31,13 @@ namespace Project.Gameplay.Train
 			TrainSpawnController trainSpawnController,
 			StationSharedRuntimeContext runtimeContext,
 			SceneRuntimeSetup sceneSetup,
+			ICameraShakeService cameraShakeService,
 			ILoggerService loggerService)
 		{
 			_trainSpawnController = trainSpawnController;
 			_runtimeModel = runtimeContext.RuntimeModel;
 			_sceneSetup = sceneSetup;
+			_cameraShakeService = cameraShakeService;
 			_loggerService = loggerService;
 		}
 
@@ -53,6 +62,7 @@ namespace Project.Gameplay.Train
 
 			_trainSpawnController.CurrentTrainChanged -= OnCurrentTrainChanged;
 			_runtimeModel.SetTrainTransitState(TrainTransitState.None);
+			_cameraShakeService?.StopShake();
 			_movementRevision++;
 			_isActive = false;
 		}
@@ -68,18 +78,22 @@ namespace Project.Gameplay.Train
 			var revision = ++_movementRevision;
 			var direction = ResolveDirection();
 			var stopWorldPosition = ResolveStopWorldPosition(trainView);
-			var startWorldPosition = stopWorldPosition - direction * Mathf.Max(0f, _sceneSetup.TrainArrivalDistance);
+			var arrivalDistance = Mathf.Max(0f, _sceneSetup.TrainArrivalDistance) * TravelDistanceMultiplier;
+			var startWorldPosition = stopWorldPosition - direction * arrivalDistance;
 			var stopLocalPosition = ToLocalPosition(trainView.transform, stopWorldPosition);
 			var startLocalPosition = ToLocalPosition(trainView.transform, startWorldPosition);
-			var duration = Mathf.Max(0f, _sceneSetup.TrainArrivalDuration);
+			var duration = Mathf.Max(0f, _sceneSetup.TrainArrivalDuration) * TravelDurationMultiplier;
 
 			trainView.transform.localPosition = startLocalPosition;
 			_runtimeModel.SetTrainTransitState(TrainTransitState.Arriving);
+			_cameraShakeService?.StopShake();
 
 			if (duration > 0f)
 			{
 				SimpleTweensTransform.MoveToLocalPositionSmoothStop(trainView.transform, stopLocalPosition, duration);
-				await UniTask.Delay(TimeSpan.FromSeconds(duration));
+				await UniTask.WhenAll(
+					UniTask.Delay(TimeSpan.FromSeconds(duration)),
+					PlayArrivalShakeAsync(duration, revision, trainView));
 			}
 
 			if (IsMoveValid(revision, trainView) == false)
@@ -105,11 +119,13 @@ namespace Project.Gameplay.Train
 			var revision = ++_movementRevision;
 			var direction = ResolveDirection();
 			var stopWorldPosition = ResolveStopWorldPosition(trainView);
-			var targetWorldPosition = stopWorldPosition + direction * Mathf.Max(0f, _sceneSetup.TrainDepartureDistance);
+			var departureDistance = Mathf.Max(0f, _sceneSetup.TrainDepartureDistance) * TravelDistanceMultiplier;
+			var targetWorldPosition = stopWorldPosition + direction * departureDistance;
 			var targetLocalPosition = ToLocalPosition(trainView.transform, targetWorldPosition);
-			var duration = Mathf.Max(0f, _sceneSetup.TrainDepartureDuration);
+			var duration = Mathf.Max(0f, _sceneSetup.TrainDepartureDuration) * TravelDurationMultiplier;
 
 			_runtimeModel.SetTrainTransitState(TrainTransitState.Departing);
+			_cameraShakeService?.StopShake();
 
 			if (duration > 0f)
 			{
@@ -133,8 +149,48 @@ namespace Project.Gameplay.Train
 		{
 			if (!currentTrain)
 			{
+				_cameraShakeService?.StopShake();
 				_runtimeModel.SetTrainTransitState(TrainTransitState.None);
 			}
+		}
+
+		private async UniTask PlayArrivalShakeAsync(float duration, int revision, TrainView trainView)
+		{
+			if (_cameraShakeService == null || duration <= 0f)
+			{
+				return;
+			}
+
+			var shakeDelay = duration * ArrivalShakePhaseStart;
+			if (shakeDelay > 0f)
+			{
+				await UniTask.Delay(TimeSpan.FromSeconds(shakeDelay));
+			}
+
+			if (IsMoveValid(revision, trainView) == false)
+			{
+				_cameraShakeService.StopShake();
+				return;
+			}
+
+			var shakeDuration = Mathf.Max(0.01f, duration - shakeDelay);
+			var pulseDuration = shakeDuration / ArrivalShakePulses;
+
+			for (var i = 0; i < ArrivalShakePulses; i++)
+			{
+				if (IsMoveValid(revision, trainView) == false)
+				{
+					_cameraShakeService.StopShake();
+					return;
+				}
+
+				var normalizedPulse = (i + 0.5f) / ArrivalShakePulses;
+				var intensityFactor = Mathf.Pow(1f - normalizedPulse, 2f);
+				var intensity = ArrivalShakeMaxIntensity * intensityFactor;
+				await _cameraShakeService.ShakeAsync(intensity, pulseDuration);
+			}
+
+			_cameraShakeService.StopShake();
 		}
 
 		private Vector3 ResolveDirection()
