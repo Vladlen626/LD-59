@@ -103,6 +103,11 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 	private void OnCloseClickedHandler()
 	{
 		HideContext();
+
+		if (_stationFlowController.TryAdvanceToNextDay())
+		{
+			_loggerService?.Log("[DaySummary] Continue requested. Advancing to next authored day.");
+		}
 	}
 
 	private void ShowContext()

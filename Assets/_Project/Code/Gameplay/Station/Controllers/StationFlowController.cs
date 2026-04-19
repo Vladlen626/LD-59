@@ -5,6 +5,7 @@ using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
 using PlatformCore.Services.Notifications;
+using Project.Gameplay.Station.Configs;
 using Project.Gameplay.Station.Domain;
 using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Train;
@@ -15,10 +16,10 @@ namespace Project.Gameplay.Station.Controllers
 	{
 		private readonly StationRuntimeModel _runtimeModel;
 		private readonly InspectionJudge _inspectionJudge;
+		private readonly StationCampaignProgressModel _campaignProgress;
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly TrainMovementController _trainMovementController;
 		private readonly TrainCargoPresentationController _trainCargoPresentationController;
-		private readonly IReadOnlyList<TrainScenario> _dayScenarios;
 		private readonly IGlobalNotificationService _globalNotificationService;
 		private readonly ILoggerService _loggerService;
 		private bool _isActive;
@@ -37,22 +38,29 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.FlowState == StationFlowState.AwaitingDecision &&
 			_runtimeModel.HasActiveScenario;
 
+		public bool HasNextDay => _campaignProgress?.HasNextDay == true;
+
 		public StationFlowController(
 			StationSharedRuntimeContext runtimeContext,
 			InspectionJudge inspectionJudge,
+			StationCampaignProgressModel campaignProgress,
 			TrainSpawnController trainSpawnController,
 			TrainCargoPresentationController trainCargoPresentationController,
 			TrainMovementController trainMovementController,
-			IReadOnlyList<TrainScenario> dayScenarios,
 			IGlobalNotificationService globalNotificationService,
 			ILoggerService loggerService)
 		{
 			_runtimeModel = runtimeContext.RuntimeModel;
 			_inspectionJudge = inspectionJudge;
+			_campaignProgress = campaignProgress ?? new StationCampaignProgressModel(
+				Array.Empty<StationDayContent>(),
+				StationDayConfig.MaxTrainScenariosPerDay,
+				false,
+				6,
+				StationDayConfig.MaxTrainScenariosPerDay);
 			_trainSpawnController = trainSpawnController;
 			_trainCargoPresentationController = trainCargoPresentationController;
 			_trainMovementController = trainMovementController;
-			_dayScenarios = dayScenarios ?? Array.Empty<TrainScenario>();
 			_globalNotificationService = globalNotificationService;
 			_loggerService = loggerService;
 		}
@@ -91,18 +99,46 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
-			_runtimeModel.StationDay.SetDay(_runtimeModel.StationDay.CurrentRuleSet);
+			var currentDay = _campaignProgress.CurrentDay;
+			if (currentDay == null)
+			{
+				_loggerService?.LogError("[StationFlow] No campaign day is available to start.");
+				FinishDay();
+				return;
+			}
+
+			_runtimeModel.StationDay.SetDay(currentDay.RuleSet);
+			_runtimeModel.Debt.Reset(currentDay.InitialDebt);
 			_runtimeModel.InspectionJournal.Clear();
 			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetActiveCaseIndex(-1);
+			_runtimeModel.SetTrainTransitState(TrainTransitState.None);
 			_runtimeModel.SetFlowState(StationFlowState.StartDay);
 			_isDayFinished = false;
 			UpdateForbiddenCargoLogValue();
 			_loggerService?.Log(
-				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} started. Cases={_dayScenarios.Count}.");
+				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} started. " +
+				$"CampaignDay={_campaignProgress.CurrentDayOrder}/{_campaignProgress.TotalDays}, " +
+				$"Cases={CurrentDayScenarios.Count}, InitialDebt={_runtimeModel.Debt.InitialDebt}.");
 
 			EnterAwaitingTrainCall();
+		}
+
+		public bool TryAdvanceToNextDay()
+		{
+			if (_isActive == false || _isDayFinished == false)
+			{
+				return false;
+			}
+
+			if (_campaignProgress.TryAdvanceToNextDay() == false)
+			{
+				return false;
+			}
+
+			StartDay();
+			return true;
 		}
 
 		public bool TryCallNextTrain()
@@ -141,7 +177,7 @@ namespace Project.Gameplay.Station.Controllers
 				var nextIndex = FindNextCaseIndex(_runtimeModel.ActiveCaseIndex + 1);
 				while (_isActive && nextIndex >= 0)
 				{
-					var nextScenario = _dayScenarios[nextIndex];
+					var nextScenario = CurrentDayScenarios[nextIndex];
 					_runtimeModel.SetActiveCaseIndex(nextIndex);
 					_runtimeModel.SetActiveScenario(nextScenario);
 
@@ -298,20 +334,21 @@ namespace Project.Gameplay.Station.Controllers
 			_loggerService?.Log(
 				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} finished. " +
 				$"Cases={_runtimeModel.StationDay.CompletedCasesCount}, " +
-				$"Debt={_runtimeModel.Debt.RemainingDebt}, Fines={_runtimeModel.Debt.TotalFines}, Earnings={_runtimeModel.Debt.TotalEarnings}.");
+				$"Debt={_runtimeModel.Debt.RemainingDebt}, Fines={_runtimeModel.Debt.TotalFines}, Earnings={_runtimeModel.Debt.TotalEarnings}, " +
+				$"HasNextDay={HasNextDay}.");
 		}
 
 		private int FindNextCaseIndex(int startIndex)
 		{
-			if (_dayScenarios.Count == 0)
+			if (CurrentDayScenarios.Count == 0)
 			{
 				return -1;
 			}
 
 			var index = Math.Max(0, startIndex);
-			for (; index < _dayScenarios.Count; index++)
+			for (; index < CurrentDayScenarios.Count; index++)
 			{
-				if (_dayScenarios[index] != null)
+				if (CurrentDayScenarios[index] != null)
 				{
 					return index;
 				}
@@ -390,6 +427,15 @@ namespace Project.Gameplay.Station.Controllers
 			_forbiddenCargoLogValue = forbiddenCargoIds.Count == 0
 				? "<none>"
 				: string.Join(", ", forbiddenCargoIds);
+		}
+
+		private IReadOnlyList<TrainScenario> CurrentDayScenarios
+		{
+			get
+			{
+				var currentDay = _campaignProgress.CurrentDay;
+				return currentDay?.Scenarios ?? Array.Empty<TrainScenario>();
+			}
 		}
 	}
 }

@@ -1,9 +1,12 @@
+using System;
 using Project.Gameplay.Station.Domain;
 
 namespace Project.Gameplay.Station.Runtime
 {
 	public sealed class StationDayModel
 	{
+		public event Action<DayRuleSet> DayChanged;
+
 		public StationDayModel(DayRuleSet initialRuleSet)
 		{
 			CurrentRuleSet = initialRuleSet ?? new DayRuleSet(1, null, 0, 0);
@@ -24,6 +27,7 @@ namespace Project.Gameplay.Station.Runtime
 			CurrentRuleSet = ruleSet;
 			DayIndex = ruleSet.DayIndex;
 			CompletedCasesCount = 0;
+			DayChanged?.Invoke(CurrentRuleSet);
 		}
 
 		public void RegisterCompletedCase()

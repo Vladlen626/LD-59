@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Infrastructure;
@@ -136,23 +137,38 @@ namespace Project.Bootstrap
 			else
 			{
 				var stationSetup = sceneContext.BuildRuntimeSetup();
-				var stationDayConfig = await configService.GetFirstOrDefaultAsync<StationDayConfig>(StationDayConfigResourcePaths.Day);
-				if (stationDayConfig == null)
+				var stationCampaignConfig =
+					await configService.GetFirstOrDefaultAsync<StationCampaignConfig>(StationCampaignConfigResourcePaths.Campaign);
+				var dayContents = await LoadStationDayContentsAsync(configService, stationCampaignConfig, loggerService);
+				if (dayContents.Count == 0)
 				{
-					loggerService?.LogError("[GameRoot] Station day JSON config is missing. Station gameplay flow is disabled.");
+					loggerService?.LogError("[GameRoot] Station campaign/day JSON config is missing. Station gameplay flow is disabled.");
 				}
 				else
 				{
-					stationDayConfig.BuildRuntimeData(out var dayRuleSet, out var dayScenarios);
-					if (dayScenarios.Count == 0)
+					var campaignProgress = new StationCampaignProgressModel(
+						dayContents,
+						stationCampaignConfig?.max_cases_per_day ?? StationDayConfig.MaxTrainScenariosPerDay,
+						stationCampaignConfig?.allow_endless_after_campaign ?? false,
+						stationCampaignConfig?.endless_min_cases ?? 6,
+						stationCampaignConfig?.endless_max_cases ?? StationDayConfig.MaxTrainScenariosPerDay);
+					var initialDay = campaignProgress.CurrentDay;
+					if (initialDay == null)
+					{
+						loggerService?.LogError("[GameRoot] Campaign loaded but does not have a valid first day.");
+						await _lifecycle.RegisterControllersGroupAsync(controllers);
+						return;
+					}
+
+					if (initialDay.Scenarios.Count == 0)
 					{
 						loggerService?.LogWarning(
-							"[GameRoot] Station day scenarios list is empty. Flow controller will finish day immediately.");
+							"[GameRoot] First authored station day has no scenarios. Flow controller will finish day immediately.");
 					}
 
 					var stationRuntimeContext = new StationSharedRuntimeContext(
-						new StationDayModel(dayRuleSet),
-						new DebtModel(stationDayConfig.initial_debt),
+						new StationDayModel(initialDay.RuleSet),
+						new DebtModel(initialDay.InitialDebt),
 						new InspectionJournalModel());
 
 					var trainSpawnController = new TrainSpawnController(
@@ -175,10 +191,10 @@ namespace Project.Bootstrap
 					var stationFlowController = new StationFlowController(
 						stationRuntimeContext,
 						new InspectionJudge(),
+						campaignProgress,
 						trainSpawnController,
 						trainCargoPresentationController,
 						trainMovementController,
-						dayScenarios,
 						globalNotificationService,
 						loggerService);
 					var stationInspectionInfoController = new StationInspectionInfoController(
@@ -220,6 +236,96 @@ namespace Project.Bootstrap
 				}
 			}
 			await _lifecycle.RegisterControllersGroupAsync(controllers);
+		}
+
+		private async UniTask<List<StationDayContent>> LoadStationDayContentsAsync(
+			ConfigService configService,
+			StationCampaignConfig campaignConfig,
+			ILoggerService loggerService)
+		{
+			var maxCasesPerDay = campaignConfig?.max_cases_per_day ?? StationDayConfig.MaxTrainScenariosPerDay;
+			var dayContents = new List<StationDayContent>();
+
+			if (campaignConfig != null && campaignConfig.day_resource_paths.Count > 0)
+			{
+				for (var i = 0; i < campaignConfig.day_resource_paths.Count; i++)
+				{
+					var resourcePath = campaignConfig.day_resource_paths[i];
+					var dayContent = await LoadStationDayContentAsync(configService, resourcePath, maxCasesPerDay, loggerService);
+					if (dayContent == null)
+					{
+						continue;
+					}
+
+					dayContents.Add(dayContent);
+				}
+
+				if (dayContents.Count > 0)
+				{
+					return dayContents;
+				}
+
+				loggerService?.LogWarning(
+					"[GameRoot] Station campaign config was loaded but no valid day resources were found. Falling back to single day mode.");
+			}
+
+			var fallbackDayContent = await LoadStationDayContentAsync(
+				configService,
+				StationDayConfigResourcePaths.Day,
+				StationDayConfig.MaxTrainScenariosPerDay,
+				loggerService);
+			if (fallbackDayContent != null)
+			{
+				dayContents.Add(fallbackDayContent);
+			}
+
+			return dayContents;
+		}
+
+		private async UniTask<StationDayContent> LoadStationDayContentAsync(
+			ConfigService configService,
+			string resourcePath,
+			int maxCasesPerDay,
+			ILoggerService loggerService)
+		{
+			if (string.IsNullOrWhiteSpace(resourcePath))
+			{
+				return null;
+			}
+
+			var loadedConfigs = await configService.GetConfigsAsync<StationDayConfig>(resourcePath);
+			StationDayConfig stationDayConfig = null;
+			foreach (var pair in loadedConfigs)
+			{
+				stationDayConfig = pair.Value;
+				break;
+			}
+
+			if (stationDayConfig == null)
+			{
+				loggerService?.LogWarning($"[GameRoot] Station day config at '{resourcePath}' could not be loaded.");
+				return null;
+			}
+
+			stationDayConfig.BuildRuntimeData(out var dayRuleSet, out var dayScenarios);
+			var cappedScenarios = CapDayScenarios(dayScenarios, maxCasesPerDay);
+			return new StationDayContent(resourcePath, stationDayConfig.initial_debt, dayRuleSet, cappedScenarios);
+		}
+
+		private static List<TrainScenario> CapDayScenarios(List<TrainScenario> scenarios, int maxCasesPerDay)
+		{
+			if (scenarios == null || scenarios.Count == 0)
+			{
+				return new List<TrainScenario>();
+			}
+
+			var safeMaxCases = Mathf.Max(1, maxCasesPerDay);
+			if (scenarios.Count <= safeMaxCases)
+			{
+				return scenarios;
+			}
+
+			return scenarios.GetRange(0, safeMaxCases);
 		}
 	}
 }

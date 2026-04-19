@@ -19,6 +19,7 @@ namespace Project.Gameplay.Station.Controllers
 		private const string NoAllowedCargoText = "No papers";
 
 		private readonly SceneContext _sceneContext;
+		private readonly StationDayModel _stationDayModel;
 		private readonly StationRuntimeModel _runtimeModel;
 		private readonly CargoCatalogLoader _cargoCatalogLoader;
 		private readonly ILoggerService _loggerService;
@@ -37,6 +38,7 @@ namespace Project.Gameplay.Station.Controllers
 			ILoggerService loggerService)
 		{
 			_sceneContext = sceneContext;
+			_stationDayModel = runtimeContext?.StationDay;
 			_runtimeModel = runtimeContext?.RuntimeModel;
 			_cargoCatalogLoader = cargoCatalogLoader;
 			_loggerService = loggerService;
@@ -54,6 +56,11 @@ namespace Project.Gameplay.Station.Controllers
 			if (_runtimeModel != null)
 			{
 				_runtimeModel.ActiveScenarioChanged += OnRuntimeStateChanged;
+			}
+
+			if (_stationDayModel != null)
+			{
+				_stationDayModel.DayChanged += OnDayChanged;
 			}
 
 			if (ResolveView() == null)
@@ -78,6 +85,11 @@ namespace Project.Gameplay.Station.Controllers
 				_runtimeModel.ActiveScenarioChanged -= OnRuntimeStateChanged;
 			}
 
+			if (_stationDayModel != null)
+			{
+				_stationDayModel.DayChanged -= OnDayChanged;
+			}
+
 			_isActive = false;
 
 			var view = GetExistingView();
@@ -95,6 +107,12 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void OnRuntimeStateChanged(TrainScenario _)
 		{
+			RefreshView();
+		}
+
+		private void OnDayChanged(DayRuleSet _)
+		{
+			_hasForbiddenCargoText = false;
 			RefreshView();
 		}
 

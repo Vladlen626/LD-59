@@ -91,7 +91,7 @@ Material:
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _CloudCutoff: 0.74
-    - _CloudIntensity: 0.8
+    - _CloudIntensity: 0
     - _CloudScaleA: 2
     - _CloudScaleB: 15.4
     - _CloudSoftness: 0.05
@@ -106,8 +106,8 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _HorizonFadeEnd: 0.22
-    - _HorizonFadeStart: 0.05
+    - _HorizonFadeEnd: 2
+    - _HorizonFadeStart: 0.005
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
@@ -138,7 +138,7 @@ Material:
     - _CloudSpeedB: {r: 0.006, g: 0.001, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _SkyHorizonColor: {r: 0, g: 0.020411685, b: 0.16037738, a: 1}
+    - _SkyHorizonColor: {r: 0, g: 0.014956252, b: 0.122641504, a: 1}
     - _SkyTopColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarColor: {r: 1, g: 0.95931685, b: 0.8349056, a: 1}

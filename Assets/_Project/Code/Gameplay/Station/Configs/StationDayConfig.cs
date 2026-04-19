@@ -8,6 +8,8 @@ namespace Project.Gameplay.Station.Configs
 	[Serializable]
 	public sealed class StationDayConfig : BaseConfig
 	{
+		public const int MaxTrainScenariosPerDay = 8;
+
 		[Tooltip("Debt value at day start.")]
 		[Min(0)]
 		public int initial_debt = 1000;
@@ -66,6 +68,13 @@ namespace Project.Gameplay.Station.Configs
 			if (train_scenarios == null)
 			{
 				train_scenarios = new List<TrainScenarioConfig>();
+			}
+
+			if (train_scenarios.Count > MaxTrainScenariosPerDay)
+			{
+				train_scenarios.RemoveRange(
+					MaxTrainScenariosPerDay,
+					train_scenarios.Count - MaxTrainScenariosPerDay);
 			}
 
 			for (var i = 0; i < train_scenarios.Count; i++)

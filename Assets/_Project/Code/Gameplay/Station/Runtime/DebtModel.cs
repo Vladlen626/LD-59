@@ -7,15 +7,22 @@ namespace Project.Gameplay.Station.Runtime
 	{
 		public DebtModel(int initialDebt)
 		{
-			var normalizedInitialDebt = Math.Max(0, initialDebt);
-			InitialDebt = normalizedInitialDebt;
-			RemainingDebt = normalizedInitialDebt;
+			Reset(initialDebt);
 		}
 
-		public int InitialDebt { get; }
+		public int InitialDebt { get; private set; }
 		public int RemainingDebt { get; private set; }
 		public int TotalFines { get; private set; }
 		public int TotalEarnings { get; private set; }
+
+		public void Reset(int initialDebt)
+		{
+			var normalizedInitialDebt = Math.Max(0, initialDebt);
+			InitialDebt = normalizedInitialDebt;
+			RemainingDebt = normalizedInitialDebt;
+			TotalFines = 0;
+			TotalEarnings = 0;
+		}
 
 		public void ApplyInspectionOutcome(InspectionResult result, int rewardOnCorrectDecision)
 		{

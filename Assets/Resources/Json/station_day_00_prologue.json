@@ -1,0 +1,45 @@
+{
+  "id": "day_00_prologue",
+  "initial_debt": 110,
+  "day_index": 1,
+  "missed_contraband_penalty": 80,
+  "wrongful_rejection_penalty": 25,
+  "forbidden_cargo_ids": [
+    "dynamite_crates"
+  ],
+  "train_scenarios": [
+    {
+      "id": "prologue_case_001",
+      "manifest": {
+        "declared_cargo_id": "grain_sacks",
+        "declared_description": "Routine grain delivery"
+      },
+      "actual_cargo_id": "grain_sacks",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 35
+    },
+    {
+      "id": "prologue_case_002",
+      "manifest": {
+        "declared_cargo_id": "timber",
+        "declared_description": "Timber for local repairs"
+      },
+      "actual_cargo_id": "timber",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 35
+    },
+    {
+      "id": "prologue_case_003",
+      "manifest": {
+        "declared_cargo_id": "canned_food",
+        "declared_description": "Canned food for station stock"
+      },
+      "actual_cargo_id": "dynamite_crates",
+      "has_hidden_contraband": false,
+      "has_illegal_marker": false,
+      "reward_on_correct_decision": 45
+    }
+  ]
+}
