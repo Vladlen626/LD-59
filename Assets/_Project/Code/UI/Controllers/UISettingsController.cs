@@ -99,6 +99,11 @@ public sealed class UISettingsController : BaseContextController<UISettings>
 
 	private void OnPausePressedHandler()
 	{
+		if (_uiService.IsShowed<UILetterView>())
+		{
+			return;
+		}
+
 		if (_context.IsShown())
 		{
 			HideContext();

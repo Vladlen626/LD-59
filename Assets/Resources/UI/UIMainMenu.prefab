@@ -65,7 +65,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UIMainMenu
   _group: {fileID: 5089125921639085364}
   _canvasType: 10
-  _startButton: {fileID: 0}
+  _startButton: {fileID: 2167334904950361017}
 --- !u!1 &7537804601626833751
 GameObject:
   m_ObjectHideFlags: 0
@@ -578,6 +578,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bc99fd0029367884a8d7a2acab8f0ba7, type: 3}
+--- !u!114 &2167334904950361017 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8110780303101510356, guid: bc99fd0029367884a8d7a2acab8f0ba7, type: 3}
+  m_PrefabInstance: {fileID: 7970434738794449261}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!224 &3689564030286298610 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6750714171123512479, guid: bc99fd0029367884a8d7a2acab8f0ba7, type: 3}
