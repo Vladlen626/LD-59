@@ -52,14 +52,11 @@ namespace Project.Bootstrap
 
 			await _lifecycle.RegisterControllersGroupAsync(baseControllers);
 
-			if (sceneService.IsSceneLoaded(SceneNames.SampleScene))
-			{
-				sceneService.TrySetActiveScene(SceneNames.SampleScene);
-			}
-			else
+			if (sceneService.IsSceneLoaded(SceneNames.SampleScene) == false)
 			{
 				await sceneService.LoadAndSetActiveSceneAsync(SceneNames.SampleScene, ApplicationCancellationToken);
 			}
+			sceneService.TrySetActiveScene(SceneNames.SampleScene);
 
 			cameraService.SetActiveCamera(CameraIds.MainMenu, CameraTransitions.Instant);
 
@@ -314,8 +311,9 @@ namespace Project.Bootstrap
 				audioService.PrewarmEventAsync(SoundNames.DesertAmbience),
 				audioService.PrewarmEventAsync(SoundNames.Ost_2),
 				audioService.PrewarmEventAsync(SoundNames.Bell),
-				audioService.PrewarmEventAsync(SoundNames.DayStart),
+				audioService.PrewarmEventAsync(SoundNames.BuildingDoor),
 				audioService.PrewarmEventAsync(SoundNames.DayEnd),
+				audioService.PrewarmEventAsync(SoundNames.DoorKnocking),
 				audioService.PrewarmEventAsync(SoundNames.JumpSample),
 				audioService.PrewarmEventAsync(SoundNames.Lever),
 				audioService.PrewarmEventAsync(SoundNames.Notification),

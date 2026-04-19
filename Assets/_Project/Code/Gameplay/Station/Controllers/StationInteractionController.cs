@@ -181,7 +181,17 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
-			(_hoveredInteractable ?? ResolveNearestInteractable())?.Interact();
+			var interacted = _hoveredInteractable ?? ResolveNearestInteractable();
+			if (interacted == null)
+			{
+				return;
+			}
+
+			interacted.Interact();
+			if (interacted is BuildingDoorInteractableView buildingDoor)
+			{
+				PlaySoundAt(ProjectAudioEventPaths.BuildingDoor, buildingDoor.transform.position);
+			}
 		}
 
 		private void SubscribeSceneInteractables()

@@ -18,5 +18,7 @@ namespace PlatformCore.Services.Audio
 		public const string DayStart = "event:/DayStart";
 		public const string TrainDoorClose = "event:/TrainDoorClose";
 		public const string TrainDoorOpen = "event:/TrainDoorOpen";
+		public const string DoorKnocking = "event:/DoorKnocking";
+		public const string BuildingDoor = "event:/BuildingDoor";
 	}
 }

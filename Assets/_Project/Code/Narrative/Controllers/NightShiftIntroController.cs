@@ -22,6 +22,9 @@ namespace Project.Gameplay.Station.Controllers
 	{
 		private const float KnockShakeIntensity = 0.18f;
 		private const float KnockShakeDuration = 0.18f;
+		private const int KnockCount = 3;
+		private const float KnockIntervalSeconds = 0.3f;
+		private const float LetterThrowDelayAfterKnocksSeconds = 1f;
 		private const float LetterSlideDuration = 0.55f;
 		private const float LetterSettleDelay = 0.08f;
 		private const float FirstNightFocusHold = 0.85f;
@@ -133,10 +136,22 @@ namespace Project.Gameplay.Station.Controllers
 				TeleportPlayerToWakePoint(roomTargets);
 				SuspendPlayerControl();
 
+				if (ProjectSplashScreenSettings.BeforeWakeBlackHoldSeconds > 0f)
+				{
+					await UniTask.Delay(
+						TimeSpan.FromSeconds(ProjectSplashScreenSettings.BeforeWakeBlackHoldSeconds),
+						cancellationToken: cancellationToken);
+				}
+
 				await _splashScreenService.FadeOutAsync(ProjectSplashScreenSettings.BeforeWakeFadeOutSeconds);
 				await _wakeTransitionController.PlayWakeUpAsync(2, cancellationToken);
 
 				await PlayDoorKnockAsync(roomTargets, cancellationToken);
+				if (LetterThrowDelayAfterKnocksSeconds > 0f)
+				{
+					await UniTask.Delay(TimeSpan.FromSeconds(LetterThrowDelayAfterKnocksSeconds), cancellationToken: cancellationToken);
+				}
+
 				if (await SpawnLetterAsync(roomTargets) == false)
 				{
 					return false;
@@ -221,10 +236,15 @@ namespace Project.Gameplay.Station.Controllers
 
 		private async UniTask PlayDoorKnockAsync(NightShiftRoomTargets roomTargets, CancellationToken cancellationToken)
 		{
-			_audioService.PlaySoundAt(ProjectAudioEventPaths.DayStart, roomTargets.DoorPosition);
-			await _cameraShakeService.ShakeAsync(KnockShakeIntensity, KnockShakeDuration);
-
-			await UniTask.Delay(TimeSpan.FromSeconds(0.1f), cancellationToken: cancellationToken);
+			for (var i = 0; i < KnockCount; i++)
+			{
+				_audioService.PlaySoundAt(ProjectAudioEventPaths.DoorKnocking, roomTargets.DoorPosition);
+				await _cameraShakeService.ShakeAsync(KnockShakeIntensity, KnockShakeDuration);
+				if (i < KnockCount - 1 && KnockIntervalSeconds > 0f)
+				{
+					await UniTask.Delay(TimeSpan.FromSeconds(KnockIntervalSeconds), cancellationToken: cancellationToken);
+				}
+			}
 		}
 
 		private async UniTask AnimateLetterArrivalAsync(NightShiftRoomTargets roomTargets, CancellationToken cancellationToken)

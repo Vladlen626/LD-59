@@ -87,27 +87,19 @@ public sealed class UIWakeTransitionController : IBaseController, IActivatable, 
 			return;
 		}
 
-		var parent = ResolveCanvasTransform();
-		if (!parent)
-		{
-			_loggerService?.LogWarning("[WakeTransition] Could not resolve target canvas for wake transition.");
-			return;
-		}
-
 		_isViewLoadInProgress = true;
-		_viewLoadTask = CreateViewAsync(parent);
+		_viewLoadTask = CreateViewAsync();
 		await _viewLoadTask;
 	}
 
-	private async UniTask CreateViewAsync(Transform parent)
+	private async UniTask CreateViewAsync()
 	{
 		try
 		{
 			var view = await _objectFactory.CreateAsync<UIWakeTransitionView>(
 				ProjectGameplayResourcePaths.UI_UIWakeTransitionView,
 				Vector3.zero,
-				Quaternion.identity,
-				parent);
+				Quaternion.identity);
 			if (!view)
 			{
 				return;
@@ -119,6 +111,15 @@ public sealed class UIWakeTransitionController : IBaseController, IActivatable, 
 				return;
 			}
 
+			var parent = UICanvasResolver.Resolve(view.CanvasType);
+			if (!parent)
+			{
+				_loggerService?.LogWarning($"[WakeTransition] Could not resolve canvas '{view.CanvasType}' for wake transition.");
+				_objectFactory.Destroy(view.gameObject);
+				return;
+			}
+
+			view.transform.SetParent(parent, false);
 			view.gameObject.layer = parent.gameObject.layer;
 			view.gameObject.SetActive(false);
 			_view = view;
@@ -127,32 +128,5 @@ public sealed class UIWakeTransitionController : IBaseController, IActivatable, 
 		{
 			_isViewLoadInProgress = false;
 		}
-	}
-
-	private static Transform ResolveCanvasTransform()
-	{
-		var canvases = Object.FindObjectsByType<Canvas>();
-		Canvas fallbackCanvas = null;
-
-		for (var i = 0; i < canvases.Length; i++)
-		{
-			var canvas = canvases[i];
-			if (!canvas || !canvas.isActiveAndEnabled)
-			{
-				continue;
-			}
-
-			if (canvas.sortingOrder == (int)UICanvasType.ModalOverlay)
-			{
-				return canvas.transform;
-			}
-
-			if (fallbackCanvas == null || canvas.sortingOrder > fallbackCanvas.sortingOrder)
-			{
-				fallbackCanvas = canvas;
-			}
-		}
-
-		return fallbackCanvas ? fallbackCanvas.transform : null;
 	}
 }

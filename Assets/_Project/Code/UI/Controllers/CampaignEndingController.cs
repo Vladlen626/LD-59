@@ -163,27 +163,19 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 			return;
 		}
 
-		var parent = ResolveCanvasTransform();
-		if (!parent)
-		{
-			_loggerService?.LogWarning("[CampaignEnding] Could not resolve target canvas for runtime ending UI.");
-			return;
-		}
-
 		_isViewLoadInProgress = true;
-		_viewLoadTask = CreateViewAsync(parent);
+		_viewLoadTask = CreateViewAsync();
 		await _viewLoadTask;
 	}
 
-	private async UniTask CreateViewAsync(Transform parent)
+	private async UniTask CreateViewAsync()
 	{
 		try
 		{
 			var view = await _objectFactory.CreateAsync<UICampaignEndingView>(
 				ProjectGameplayResourcePaths.UI_UICampaignEndingView,
 				Vector3.zero,
-				Quaternion.identity,
-				parent);
+				Quaternion.identity);
 			if (!view)
 			{
 				return;
@@ -195,6 +187,15 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 				return;
 			}
 
+			var parent = UICanvasResolver.Resolve(view.CanvasType);
+			if (!parent)
+			{
+				_loggerService?.LogWarning($"[CampaignEnding] Could not resolve canvas '{view.CanvasType}' for runtime ending UI.");
+				_objectFactory.Destroy(view.gameObject);
+				return;
+			}
+
+			view.transform.SetParent(parent, false);
 			view.gameObject.layer = parent.gameObject.layer;
 			view.gameObject.SetActive(false);
 			_view = view;
@@ -203,33 +204,6 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 		{
 			_isViewLoadInProgress = false;
 		}
-	}
-
-	private static Transform ResolveCanvasTransform()
-	{
-		var canvases = Object.FindObjectsByType<Canvas>();
-		Canvas fallbackCanvas = null;
-
-		for (var i = 0; i < canvases.Length; i++)
-		{
-			var canvas = canvases[i];
-			if (!canvas || !canvas.isActiveAndEnabled)
-			{
-				continue;
-			}
-
-			if (canvas.sortingOrder == (int)UICanvasType.Modal)
-			{
-				return canvas.transform;
-			}
-
-			if (fallbackCanvas == null || canvas.sortingOrder > fallbackCanvas.sortingOrder)
-			{
-				fallbackCanvas = canvas;
-			}
-		}
-
-		return fallbackCanvas ? fallbackCanvas.transform : null;
 	}
 
 	private static string BuildBody(bool isWin, int remainingDebt)

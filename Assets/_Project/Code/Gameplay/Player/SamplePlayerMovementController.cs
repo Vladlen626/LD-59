@@ -11,8 +11,8 @@ namespace Project.Gameplay.Player
 	public sealed class SamplePlayerMovementController : IBaseController, IActivatable, IDeactivatable, IUpdatable
 	{
 		private const float GroundedStickVelocity = -2f;
-		private const float WalkStepDistance = 2f;
-		private const float SprintStepDistance = 1.5f;
+		private const float HalfPi = 1.5707964f;
+		private const float Pi = 3.1415927f;
 
 		private readonly SamplePlayerView _playerView;
 		private readonly CharacterController _characterController;
@@ -28,8 +28,7 @@ namespace Project.Gameplay.Player
 		private Vector3 _cameraRootBaseLocalPosition;
 		private float _headBobPhase;
 		private float _headBobOffsetY;
-		private Vector3 _lastFootstepPosition;
-		private float _remainingStepDistance;
+		private float _nextFootstepBobPhase;
 
 		public SamplePlayerMovementController(
 			SamplePlayerView playerView,
@@ -64,16 +63,13 @@ namespace Project.Gameplay.Player
 			{
 				_cameraRootBaseLocalPosition = _playerView.CameraRoot.localPosition;
 			}
-
-			_lastFootstepPosition = _playerView.transform.position;
-			_remainingStepDistance = WalkStepDistance;
+			_nextFootstepBobPhase = HalfPi;
 		}
 
 		public void Deactivate()
 		{
 			_verticalVelocity = 0f;
 			_isGrounded = false;
-			_remainingStepDistance = WalkStepDistance;
 			ResetHeadBob();
 		}
 
@@ -90,7 +86,6 @@ namespace Project.Gameplay.Player
 
 			UpdateLook(lookInput);
 			UpdateMovement(hasControl, moveInput, deltaTime);
-			UpdateFootsteps(hasControl, moveInput);
 			UpdateHeadBob(moveInput, hasControl, deltaTime);
 		}
 
@@ -106,9 +101,6 @@ namespace Project.Gameplay.Player
 			{
 				_pitch = Mathf.DeltaAngle(0f, _playerView.Head.localEulerAngles.x);
 			}
-
-			_lastFootstepPosition = _playerView.transform.position;
-			_remainingStepDistance = WalkStepDistance;
 		}
 
 		private void UpdateLook(Vector2 lookInput)
@@ -169,50 +161,34 @@ namespace Project.Gameplay.Player
 			}
 		}
 
-		private void UpdateFootsteps(bool hasControl, Vector2 moveInput)
-		{
-			var currentPosition = _playerView.transform.position;
-			var horizontalDelta = currentPosition - _lastFootstepPosition;
-			horizontalDelta.y = 0f;
-			_lastFootstepPosition = currentPosition;
-
-			if (!hasControl || !_isGrounded || moveInput.sqrMagnitude <= 0.01f)
-			{
-				_remainingStepDistance = Mathf.Min(_remainingStepDistance, ResolveStepDistance());
-				return;
-			}
-
-			_remainingStepDistance -= horizontalDelta.magnitude;
-			var stepDistance = ResolveStepDistance();
-			while (_remainingStepDistance <= 0f)
-			{
-				_audioService?.PlaySoundAt(ProjectAudioEventPaths.WoodFootSteps, currentPosition);
-				_remainingStepDistance += stepDistance;
-			}
-		}
-
-		private float ResolveStepDistance()
-		{
-			return _inputService.IsSprintPressed
-				? SprintStepDistance
-				: WalkStepDistance;
-		}
-
 		private void UpdateHeadBob(Vector2 moveInput, bool hasControl, float deltaTime)
 		{
+			var isMoving = hasControl && _isGrounded && moveInput.sqrMagnitude > 0.01f;
+			if (isMoving)
+			{
+				var bobFrequency = _playerView.HeadBobFrequency;
+				if (_inputService.IsSprintPressed)
+				{
+					bobFrequency *= _playerView.SprintSpeedMultiplier;
+				}
+
+				_headBobPhase += deltaTime * bobFrequency;
+				PlaySynchronizedFootsteps();
+			}
+			else
+			{
+				_headBobPhase = 0f;
+				_nextFootstepBobPhase = HalfPi;
+			}
+
 			if (!_playerView.EnableHeadBob || !_playerView.CameraRoot)
 			{
 				return;
 			}
 
-			var isMoving = hasControl && _isGrounded && moveInput.sqrMagnitude > 0.01f;
-			var targetOffsetY = 0f;
-
-			if (isMoving)
-			{
-				_headBobPhase += deltaTime * _playerView.HeadBobFrequency;
-				targetOffsetY = Mathf.Sin(_headBobPhase) * _playerView.HeadBobAmplitude;
-			}
+			var targetOffsetY = isMoving
+				? Mathf.Sin(_headBobPhase) * _playerView.HeadBobAmplitude
+				: 0f;
 
 			_headBobOffsetY = Mathf.MoveTowards(
 				_headBobOffsetY,
@@ -224,10 +200,21 @@ namespace Project.Gameplay.Player
 			_playerView.CameraRoot.localPosition = localPosition;
 		}
 
+		private void PlaySynchronizedFootsteps()
+		{
+			var currentPosition = _playerView.transform.position;
+			while (_headBobPhase >= _nextFootstepBobPhase)
+			{
+				_audioService?.PlaySoundAt(ProjectAudioEventPaths.WoodFootSteps, currentPosition);
+				_nextFootstepBobPhase += Pi;
+			}
+		}
+
 		private void ResetHeadBob()
 		{
 			_headBobPhase = 0f;
 			_headBobOffsetY = 0f;
+			_nextFootstepBobPhase = HalfPi;
 
 			if (!_playerView || !_playerView.CameraRoot)
 			{
