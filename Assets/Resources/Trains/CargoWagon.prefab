@@ -884,10 +884,10 @@ Light:
   serializedVersion: 13
   m_Type: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1
-  m_Range: 10
-  m_SpotAngle: 143.6996
-  m_InnerSpotAngle: 92.480194
+  m_Intensity: 5
+  m_Range: 15
+  m_SpotAngle: 119.771576
+  m_InnerSpotAngle: 54.747547
   m_CookieSize2D: {x: 0.5, y: 0.5}
   m_Shadows:
     m_Type: 0

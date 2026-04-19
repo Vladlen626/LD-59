@@ -15,7 +15,7 @@ MonoBehaviour:
   active: 1
   temperature:
     m_OverrideState: 1
-    m_Value: -12
+    m_Value: -8
   tint:
     m_OverrideState: 1
     m_Value: 2
@@ -37,7 +37,7 @@ MonoBehaviour:
     m_Value: 0
   intensity:
     m_OverrideState: 1
-    m_Value: 0.12
+    m_Value: 0.1
   response:
     m_OverrideState: 1
     m_Value: 0.7
@@ -59,7 +59,7 @@ MonoBehaviour:
   active: 1
   intensity:
     m_OverrideState: 1
-    m_Value: -0.04
+    m_Value: -0.02
   xMultiplier:
     m_OverrideState: 0
     m_Value: 1
@@ -133,10 +133,10 @@ MonoBehaviour:
     m_Value: {x: 0.5, y: 0.5}
   intensity:
     m_OverrideState: 1
-    m_Value: 0.22
+    m_Value: 0.1
   smoothness:
     m_OverrideState: 1
-    m_Value: 0.55
+    m_Value: 0.6
   rounded:
     m_OverrideState: 1
     m_Value: 1
@@ -173,7 +173,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2db86121404754db890f4c8dfe81b2, type: 3}
   m_Name: Bloom
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.Bloom
-  active: 1
+  active: 0
   skipIterations:
     m_OverrideState: 0
     m_Value: 1
@@ -182,10 +182,10 @@ MonoBehaviour:
     m_Value: 1.4
   intensity:
     m_OverrideState: 1
-    m_Value: 0.35
+    m_Value: 0
   scatter:
     m_OverrideState: 1
-    m_Value: 0.8
+    m_Value: 0.691
   clamp:
     m_OverrideState: 0
     m_Value: 65472
@@ -226,19 +226,19 @@ MonoBehaviour:
   active: 1
   postExposure:
     m_OverrideState: 1
-    m_Value: -0.15
+    m_Value: 0.15
   contrast:
     m_OverrideState: 1
-    m_Value: 15
+    m_Value: 8
   colorFilter:
-    m_OverrideState: 0
-    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    m_OverrideState: 1
+    m_Value: {r: 0.9292453, g: 0.96242964, b: 1, a: 1}
   hueShift:
     m_OverrideState: 0
     m_Value: 0
   saturation:
     m_OverrideState: 1
-    m_Value: -10
+    m_Value: -5
 --- !u!114 &7306503725728282730
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -254,4 +254,4 @@ MonoBehaviour:
   active: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0.02
+    m_Value: 0.015

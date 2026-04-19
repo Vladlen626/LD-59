@@ -6,6 +6,7 @@ using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
 using PlatformCore.Services.Audio;
 using PlatformCore.Services.Factory;
+using PlatformCore.Services.Notifications;
 using PlatformCore.Services.UI;
 using PlatformCore.Services.UI.SplashScreen;
 using Project.Gameplay.Interaction;
@@ -41,6 +42,7 @@ namespace Project.Gameplay.Station.Controllers
 		private readonly IAudioService _audioService;
 		private readonly IObjectFactory _objectFactory;
 		private readonly ISplashScreenService _splashScreenService;
+		private readonly IGlobalNotificationService _globalNotificationService;
 
 		private MorningLetterInteractableView _activeLetter;
 		private NightShiftLetterData _currentLetterData;
@@ -63,7 +65,8 @@ namespace Project.Gameplay.Station.Controllers
 			ICameraShakeService cameraShakeService,
 			IAudioService audioService,
 			IObjectFactory objectFactory,
-			ISplashScreenService splashScreenService)
+			ISplashScreenService splashScreenService,
+			IGlobalNotificationService globalNotificationService)
 		{
 			_playerView = playerView;
 			_playerMovementController = playerMovementController;
@@ -77,6 +80,7 @@ namespace Project.Gameplay.Station.Controllers
 			_audioService = audioService;
 			_objectFactory = objectFactory;
 			_splashScreenService = splashScreenService;
+			_globalNotificationService = globalNotificationService;
 		}
 
 		public void Activate()
@@ -146,6 +150,7 @@ namespace Project.Gameplay.Station.Controllers
 				await _splashScreenService.FadeOutAsync(ProjectSplashScreenSettings.BeforeWakeFadeOutSeconds);
 				await _wakeTransitionController.PlayWakeUpAsync(2, cancellationToken);
 
+				ShowCurrentDayNotification();
 				await PlayDoorKnockAsync(roomTargets, cancellationToken);
 				if (LetterThrowDelayAfterKnocksSeconds > 0f)
 				{
@@ -245,6 +250,18 @@ namespace Project.Gameplay.Station.Controllers
 					await UniTask.Delay(TimeSpan.FromSeconds(KnockIntervalSeconds), cancellationToken: cancellationToken);
 				}
 			}
+		}
+
+		private void ShowCurrentDayNotification()
+		{
+			if (_globalNotificationService == null)
+			{
+				return;
+			}
+
+			var holdSeconds =
+				Mathf.Max(0f, KnockCount * KnockShakeDuration + Mathf.Max(0, KnockCount - 1) * KnockIntervalSeconds);
+			_globalNotificationService.ShowBanner($"Day {_stationFlowController.CurrentDayIndex}", holdSeconds, false, false);
 		}
 
 		private async UniTask AnimateLetterArrivalAsync(NightShiftRoomTargets roomTargets, CancellationToken cancellationToken)

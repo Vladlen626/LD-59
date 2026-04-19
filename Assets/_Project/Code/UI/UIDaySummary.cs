@@ -6,15 +6,17 @@ using UnityEngine;
 
 public sealed class UIDaySummary : UIBaseElement
 {
-	private const string TitleFormat = "SHIFT {0:0} REPORT";
-	private const string InspectedFormat = "INSPECTED {0:0}";
-	private const string IncomeFormat = "INCOME +{0:0}";
-	private const string FinesFormat = "FINES -{0:0}";
-	private const string NetPositiveFormat = "NET +{0:0}";
-	private const string NetNegativeFormat = "NET -{0:0}";
-	private const string NetNeutralFormat = "NET {0:0}";
-	private const string DebtAfterSettlementFormat = "DEBT AFTER SETTLEMENT {0:0}";
-	private const string DefaultLivingCostLabel = "LIVING COSTS";
+	private const string TitleFormat = "DAY {0:0}";
+	private const string InspectedFormat = "Wagons checked: {0:0}";
+	private const string IncomeFormat = "Earnings: {0:0}";
+	private const string FinesFormat = "Mistake fines: {0:0}";
+	private const string FinesNoneText = "Mistake fines: none";
+	private const string NetPositiveFormat = "Net result: +{0:0}";
+	private const string NetNegativeFormat = "Net result: -{0:0}";
+	private const string NetNeutralText = "Net result: 0";
+	private const string DebtAfterSettlementFormat = "Debt remaining: {0:0}";
+	private const string DefaultLivingCostLabel = "Food and bills";
+	private const string LivingCostNoneText = "Food and bills: none";
 	private const string DefaultEndDayNote = "Night ledger closed. Report filed.";
 
 	[Header("Labels")]
@@ -59,10 +61,14 @@ public sealed class UIDaySummary : UIBaseElement
 		ApplyColors(totalIncome, totalFines, totalLivingCosts, netResult, remainingDebt);
 
 		UINumberTweenUtils.Animate(_inspectedLabel, InspectedFormat, inspectedCount, _numberTweenDuration);
-		UINumberTweenUtils.Animate(_incomeLabel, IncomeFormat, totalIncome, _numberTweenDuration);
-		UINumberTweenUtils.Animate(_mistakeFinesLabel, FinesFormat, totalFines, _numberTweenDuration);
-		UINumberTweenUtils.Animate(_livingCostLabel, BuildLivingCostFormat(livingCostLabel), totalLivingCosts, _numberTweenDuration);
-		UINumberTweenUtils.Animate(_netLabel, ResolveNetFormat(netResult), Mathf.Abs(netResult), _numberTweenDuration);
+		UINumberTweenUtils.Animate(_incomeLabel, IncomeFormat, Mathf.Max(0, totalIncome), _numberTweenDuration);
+		ApplyAmountOrNone(_mistakeFinesLabel, FinesFormat, FinesNoneText, totalFines);
+		ApplyAmountOrNone(
+			_livingCostLabel,
+			BuildLivingCostFormat(livingCostLabel),
+			BuildLivingCostNoneText(livingCostLabel),
+			totalLivingCosts);
+		ApplyNet(netResult);
 		UINumberTweenUtils.Animate(_debtAfterSettlementLabel, DebtAfterSettlementFormat, remainingDebt, _numberTweenDuration);
 	}
 
@@ -95,23 +101,16 @@ public sealed class UIDaySummary : UIBaseElement
 	{
 		var normalizedLabel = string.IsNullOrWhiteSpace(livingCostLabel)
 			? DefaultLivingCostLabel
-			: livingCostLabel.Trim().ToUpperInvariant();
-		return $"{normalizedLabel} -{{0:0}}";
+			: livingCostLabel.Trim();
+		return $"{normalizedLabel}: {{0:0}}";
 	}
 
-	private static string ResolveNetFormat(int netResult)
+	private static string BuildLivingCostNoneText(string livingCostLabel)
 	{
-		if (netResult > 0)
-		{
-			return NetPositiveFormat;
-		}
-
-		if (netResult < 0)
-		{
-			return NetNegativeFormat;
-		}
-
-		return NetNeutralFormat;
+		var normalizedLabel = string.IsNullOrWhiteSpace(livingCostLabel)
+			? DefaultLivingCostLabel
+			: livingCostLabel.Trim();
+		return $"{normalizedLabel}: none";
 	}
 
 	private static void SetColor(TMP_Text text, ColorStyleRef colorRef)
@@ -168,6 +167,45 @@ public sealed class UIDaySummary : UIBaseElement
 			? DefaultEndDayNote
 			: endDayNote.Trim();
 		SetColor(_noteLabel, _neutralColorRef);
+	}
+
+	private void ApplyAmountOrNone(TMP_Text label, string format, string noneText, int value)
+	{
+		if (!label)
+		{
+			return;
+		}
+
+		var safeValue = Mathf.Max(0, value);
+		if (safeValue == 0)
+		{
+			UINumberTweenUtils.Stop(label);
+			label.SetText(noneText);
+			return;
+		}
+
+		UINumberTweenUtils.Animate(label, format, safeValue, _numberTweenDuration);
+	}
+
+	private void ApplyNet(int netResult)
+	{
+		if (!_netLabel)
+		{
+			return;
+		}
+
+		if (netResult == 0)
+		{
+			UINumberTweenUtils.Stop(_netLabel);
+			_netLabel.SetText(NetNeutralText);
+			return;
+		}
+
+		UINumberTweenUtils.Animate(
+			_netLabel,
+			netResult > 0 ? NetPositiveFormat : NetNegativeFormat,
+			Mathf.Abs(netResult),
+			_numberTweenDuration);
 	}
 
 	public void Close()

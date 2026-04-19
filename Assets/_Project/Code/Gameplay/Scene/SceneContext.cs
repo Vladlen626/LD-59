@@ -35,11 +35,14 @@ namespace Project.Gameplay.Scene
 		private Transform _letterLandingPoint;
 		[SerializeField] [Tooltip("Optional parent for the spawned night letter object.")]
 		private Transform _letterParent;
+		[SerializeField] [Tooltip("Optional world-space start sign used on the 3D main menu.")]
+		private MainMenuStartInteractableView _mainMenuStartInteractable;
 
 		public UnityScene Scene { get; private set; }
 		public StationActionButtonInteractableView ActionButton => _stationActionButton;
 		public StationDecisionToggleInteractableView DecisionToggle => _stationDecisionToggle;
 		public StationInspectionInfoView InspectionInfoView => _stationInspectionInfo;
+		public MainMenuStartInteractableView MainMenuStartInteractable => _mainMenuStartInteractable;
 
 		public SceneRuntimeSetup BuildRuntimeSetup()
 		{

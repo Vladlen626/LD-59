@@ -46,6 +46,7 @@ namespace Project.Gameplay.Station.Controllers
 		public bool HasNextDay => _campaignProgress.HasNextDay;
 		public bool IsCurrentDayLastAuthored => _campaignProgress.IsCurrentDayLastAuthored;
 		public StationDayContent CurrentDayContent => _campaignProgress.CurrentDay;
+		public int CurrentDayIndex => _runtimeModel.StationDay.DayIndex;
 
 		public StationFlowController(
 			StationSharedRuntimeContext runtimeContext,

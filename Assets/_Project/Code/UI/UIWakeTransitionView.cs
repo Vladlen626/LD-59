@@ -6,19 +6,18 @@ using UnityEngine.UI;
 
 public sealed class UIWakeTransitionView : UIBaseElement
 {
+	private const float ClosedHoldSeconds = 0.24f;
+	private const float InitialOpenSeconds = 0.34f;
+	private const float BlinkIntervalSeconds = 0.12f;
+	private const float BlinkCloseSeconds = 0.08f;
+	private const float BlinkHoldSeconds = 0.05f;
+	private const float BlinkOpenSeconds = 0.2f;
+	private const float SettleSeconds = 0.1f;
+
 	[Header("References")]
 	[SerializeField] private Image _backdrop;
 	[SerializeField] private RectTransform _upperLidRect;
 	[SerializeField] private RectTransform _lowerLidRect;
-
-	[Header("Timing")]
-	[SerializeField] private float _closedHoldSeconds = 0.16f;
-	[SerializeField] private float _initialOpenSeconds = 0.24f;
-	[SerializeField] private float _blinkInterval = 0.08f;
-	[SerializeField] private float _blinkCloseSeconds = 0.06f;
-	[SerializeField] private float _blinkHoldSeconds = 0.03f;
-	[SerializeField] private float _blinkOpenSeconds = 0.12f;
-	[SerializeField] private float _settleSeconds = 0.08f;
 
 	private float _closedAmount = 1f;
 
@@ -30,6 +29,7 @@ public sealed class UIWakeTransitionView : UIBaseElement
 
 	protected override void OnShow()
 	{
+		SetClosedAmount(1f);
 		ApplyCanvasGroupState();
 	}
 
@@ -42,33 +42,33 @@ public sealed class UIWakeTransitionView : UIBaseElement
 	{
 		SetClosedAmount(1f);
 
-		if (_closedHoldSeconds > 0f)
+		if (ClosedHoldSeconds > 0f)
 		{
-			await UniTask.Delay((int)(_closedHoldSeconds * 1000f), cancellationToken: cancellationToken);
+			await UniTask.Delay((int)(ClosedHoldSeconds * 1000f), cancellationToken: cancellationToken);
 		}
 
-		await AnimateClosedAmountAsync(0f, _initialOpenSeconds, cancellationToken);
+		await AnimateClosedAmountAsync(0f, InitialOpenSeconds, cancellationToken);
 
 		for (var i = 1; i < blinkCount; i++)
 		{
-			if (_blinkInterval > 0f)
+			if (BlinkIntervalSeconds > 0f)
 			{
-				await UniTask.Delay((int)(_blinkInterval * 1000f), cancellationToken: cancellationToken);
+				await UniTask.Delay((int)(BlinkIntervalSeconds * 1000f), cancellationToken: cancellationToken);
 			}
 
-			await AnimateClosedAmountAsync(1f, _blinkCloseSeconds, cancellationToken);
+			await AnimateClosedAmountAsync(1f, BlinkCloseSeconds, cancellationToken);
 
-			if (_blinkHoldSeconds > 0f)
+			if (BlinkHoldSeconds > 0f)
 			{
-				await UniTask.Delay((int)(_blinkHoldSeconds * 1000f), cancellationToken: cancellationToken);
+				await UniTask.Delay((int)(BlinkHoldSeconds * 1000f), cancellationToken: cancellationToken);
 			}
 
-			await AnimateClosedAmountAsync(0f, _blinkOpenSeconds, cancellationToken);
+			await AnimateClosedAmountAsync(0f, BlinkOpenSeconds, cancellationToken);
 		}
 
-		if (_settleSeconds > 0f)
+		if (SettleSeconds > 0f)
 		{
-			await UniTask.Delay((int)(_settleSeconds * 1000f), cancellationToken: cancellationToken);
+			await UniTask.Delay((int)(SettleSeconds * 1000f), cancellationToken: cancellationToken);
 		}
 	}
 

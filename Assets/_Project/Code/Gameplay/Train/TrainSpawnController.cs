@@ -2,6 +2,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
+using Project.Gameplay.Scene;
 using PlatformCore.Services;
 using PlatformCore.Services.Factory;
 using UnityEngine;
@@ -10,11 +11,14 @@ namespace Project.Gameplay.Train
 {
 	public sealed class TrainSpawnController : IBaseController, IActivatable, IDeactivatable
 	{
+		private const float ArrivalSpawnDistanceMultiplier = 5f;
+
 		private readonly IObjectFactory _objectFactory;
 		private readonly ILoggerService _loggerService;
 		private readonly string _trainResourcePath;
 		private readonly Transform _spawnPoint;
 		private readonly Transform _spawnParent;
+		private readonly SceneRuntimeSetup _sceneSetup;
 
 		private TrainView _currentTrain;
 		private bool _isActive;
@@ -26,12 +30,14 @@ namespace Project.Gameplay.Train
 			IObjectFactory objectFactory,
 			ILoggerService loggerService,
 			string trainResourcePath,
+			SceneRuntimeSetup sceneSetup,
 			Transform spawnPoint,
 			Transform spawnParent)
 		{
 			_objectFactory = objectFactory;
 			_loggerService = loggerService;
 			_trainResourcePath = trainResourcePath;
+			_sceneSetup = sceneSetup;
 			_spawnPoint = spawnPoint;
 			_spawnParent = spawnParent;
 		}
@@ -59,7 +65,7 @@ namespace Project.Gameplay.Train
 			var revision = ++_spawnRevision;
 			ClearCurrentTrainInternal();
 
-			var spawnPosition = _spawnPoint ? _spawnPoint.position : Vector3.zero;
+			var spawnPosition = ResolveArrivalStartPosition();
 			var spawnRotation = _spawnPoint ? _spawnPoint.rotation : Quaternion.identity;
 			var trainView = await _objectFactory.CreateAsync<TrainView>(
 				_trainResourcePath,
@@ -86,6 +92,20 @@ namespace Project.Gameplay.Train
 			_currentTrain = trainView;
 			CurrentTrainChanged?.Invoke(_currentTrain);
 			return _currentTrain;
+		}
+
+		private Vector3 ResolveArrivalStartPosition()
+		{
+			if (!_spawnPoint)
+			{
+				return Vector3.zero;
+			}
+
+			var direction = _spawnPoint.forward.sqrMagnitude > 0.001f
+				? _spawnPoint.forward.normalized
+				: Vector3.forward;
+			var arrivalDistance = Mathf.Max(0f, _sceneSetup.TrainArrivalDistance) * ArrivalSpawnDistanceMultiplier;
+			return _spawnPoint.position - direction * arrivalDistance;
 		}
 
 		public void ClearCurrentTrain()

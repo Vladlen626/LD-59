@@ -57,6 +57,7 @@ namespace Project.Bootstrap
 				await sceneService.LoadAndSetActiveSceneAsync(SceneNames.SampleScene, ApplicationCancellationToken);
 			}
 			sceneService.TrySetActiveScene(SceneNames.SampleScene);
+			var menuSceneContext = Object.FindAnyObjectByType<SceneContext>();
 
 			cameraService.SetActiveCamera(CameraIds.MainMenu, CameraTransitions.Instant);
 
@@ -64,7 +65,7 @@ namespace Project.Bootstrap
 			await _lifecycle.RegisterControllersGroupAsync(
 				new IBaseController[]
 				{
-					new UIMainMenuController(uiService, cursorService, gameStartModel),
+					new UIMainMenuController(uiService, cursorService, inputService, menuSceneContext, gameStartModel),
 				});
 			await gameStartModel.WaitUntilStartedAsync();
 			await splashScreenService.FadeInAsync(ProjectSplashScreenSettings.MainMenuToGameFadeInSeconds);
@@ -192,6 +193,7 @@ namespace Project.Bootstrap
 						objectFactory,
 						loggerService,
 						ProjectGameplayResourcePaths.Trains_CargoWagon,
+						stationSetup,
 						stationSetup.TrainSpawnPoint,
 						stationSetup.TrainSpawnParent);
 					var cargoCatalogLoader = new CargoCatalogLoader(configService);
@@ -230,15 +232,6 @@ namespace Project.Bootstrap
 						cursorService,
 						loggerService,
 						objectFactory);
-					var daySummaryController = new DaySummaryController(
-						uiService,
-						cursorService,
-						stationFlowController,
-						stationRuntimeContext,
-						campaignEndingController,
-						splashScreenService,
-						audioService,
-						loggerService);
 					var stationInteractionController = new StationInteractionController(
 						playerView,
 						sceneContext,
@@ -249,12 +242,31 @@ namespace Project.Bootstrap
 						cursorService,
 						audioService,
 						loggerService);
+					var boundaryHomePosition = stationSetup.RoomSetup.WakePoint
+						? stationSetup.RoomSetup.WakePoint.position
+						: playerView.transform.position;
+					var playerBoundaryController = new PlayerBoundaryController(
+						playerView,
+						playerMovementController,
+						globalNotificationService,
+						boundaryHomePosition,
+						50f);
 					uiLetterController = new UILetterController(
 						inputService,
 						cursorService,
 						loggerService,
 						objectFactory,
 						stationInteractionController);
+					var daySummaryController = new DaySummaryController(
+						uiService,
+						cursorService,
+						stationFlowController,
+						stationRuntimeContext,
+						uiLetterController,
+						campaignEndingController,
+						splashScreenService,
+						audioService,
+						loggerService);
 					uiWakeTransitionController = new UIWakeTransitionController(loggerService, objectFactory);
 					nightShiftIntroController = new NightShiftIntroController(
 						playerView,
@@ -268,7 +280,8 @@ namespace Project.Bootstrap
 						cameraService,
 						audioService,
 						objectFactory,
-						splashScreenService);
+						splashScreenService,
+						globalNotificationService);
 					var uiHintViewController = new UIHintViewController(
 						uiService,
 						stationInteractionController);
@@ -276,6 +289,7 @@ namespace Project.Bootstrap
 					controllers = new IBaseController[]
 					{
 						playerMovementController,
+						playerBoundaryController,
 						trainSpawnController,
 						trainCargoPresentationController,
 						trainMovementController,

@@ -12,6 +12,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 	private readonly ICursorService _cursorService;
 	private readonly StationFlowController _stationFlowController;
 	private readonly StationSharedRuntimeContext _runtimeContext;
+	private readonly UILetterController _uiLetterController;
 	private readonly CampaignEndingController _campaignEndingController;
 	private readonly ISplashScreenService _splashScreenService;
 	private readonly IAudioService _audioService;
@@ -25,6 +26,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		ICursorService cursorService,
 		StationFlowController stationFlowController,
 		StationSharedRuntimeContext runtimeContext,
+		UILetterController uiLetterController,
 		CampaignEndingController campaignEndingController,
 		ISplashScreenService splashScreenService,
 		IAudioService audioService,
@@ -34,6 +36,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		_cursorService = cursorService;
 		_stationFlowController = stationFlowController;
 		_runtimeContext = runtimeContext;
+		_uiLetterController = uiLetterController;
 		_campaignEndingController = campaignEndingController;
 		_splashScreenService = splashScreenService;
 		_audioService = audioService;
@@ -73,6 +76,9 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		{
 			return;
 		}
+
+		_uiLetterController?.HideLetter();
+		_runtimeContext.RuntimeModel.SetCurrentWagonDoorOpen(false);
 
 		var journal = _runtimeContext.InspectionJournal;
 		var debt = _runtimeContext.Debt;
