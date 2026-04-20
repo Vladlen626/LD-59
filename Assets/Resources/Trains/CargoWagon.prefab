@@ -887,9 +887,9 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.79975426, b: 0.6745283, a: 1}
   m_Intensity: 5
-  m_Range: 15
+  m_Range: 20
   m_SpotAngle: 119.771576
   m_InnerSpotAngle: 54.747547
   m_CookieSize2D: {x: 0.5, y: 0.5}
@@ -971,47 +971,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1 &8145437068060984411
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1197881682881036347}
-  m_Layer: 0
-  m_Name: PositionsHandler
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1197881682881036347
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8145437068060984411}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.15, z: -3.177}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1132982187803039583}
-  - {fileID: 8799798013930822213}
-  - {fileID: 6824037019033310881}
-  - {fileID: 2702590537082506772}
-  - {fileID: 2702195089443220975}
-  - {fileID: 1314296887453663779}
-  - {fileID: 6610000000000000002}
-  - {fileID: 6610000000000000004}
-  - {fileID: 6610000000000000006}
-  - {fileID: 6610000000000000008}
-  m_Father: {fileID: 3290274840437871806}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6610000000000000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -1135,6 +1094,47 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1197881682881036347}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8145437068060984411
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1197881682881036347}
+  m_Layer: 0
+  m_Name: PositionsHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1197881682881036347
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8145437068060984411}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -1.15, z: -3.177}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1132982187803039583}
+  - {fileID: 8799798013930822213}
+  - {fileID: 6824037019033310881}
+  - {fileID: 2702590537082506772}
+  - {fileID: 2702195089443220975}
+  - {fileID: 1314296887453663779}
+  - {fileID: 6610000000000000002}
+  - {fileID: 6610000000000000004}
+  - {fileID: 6610000000000000006}
+  - {fileID: 6610000000000000008}
+  m_Father: {fileID: 3290274840437871806}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8500914395576701853
 GameObject:
@@ -1356,6 +1356,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wild west LOCOMOTIVE
       objectReference: {fileID: 0}
+    - target: {fileID: 5100068591777345685, guid: 809b48b7a8efccf4e80193e7ea03652d, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: f68008b11ae4d87428436d24c9f7c711, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

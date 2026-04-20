@@ -399,7 +399,7 @@ namespace Project.Gameplay.Station.Controllers
 			var anchor = ResolveArchivePose(archiveIndex);
 			entry.View.transform.SetParent(anchor, false);
 			entry.View.transform.localPosition = Vector3.zero;
-			entry.View.transform.localRotation = Quaternion.identity;
+			entry.View.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
 			entry.View.SetAvailable(true);
 		}
 
