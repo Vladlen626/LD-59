@@ -19,25 +19,6 @@
   "end_day_note": "First night survived. The debt is still heavy, but it moved.",
   "train_scenarios": [
     {
-      "id": "prologue_case_001",
-      "manifest": {
-        "declared_cargo": [
-          {
-            "cargo_id": "grain_sacks",
-            "quantity": 3
-          }
-        ],
-        "declared_description": "Routine grain delivery"
-      },
-      "actual_cargo": [
-        {
-          "cargo_id": "grain_sacks",
-          "quantity": 3
-        }
-      ],
-      "reward_on_correct_decision": 40
-    },
-    {
       "id": "prologue_case_002",
       "manifest": {
         "declared_cargo": [
