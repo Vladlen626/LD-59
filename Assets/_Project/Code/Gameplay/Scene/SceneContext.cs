@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PlatformCore.Services;
 using Project.Gameplay.Station.Views;
 using UnityEngine;
@@ -25,6 +26,8 @@ namespace Project.Gameplay.Scene
 		private StationDecisionToggleInteractableView _stationDecisionToggle;
 		[SerializeField] [Tooltip("World-space inspection info view for forbidden cargo, manifest and dispatch state.")]
 		private StationInspectionInfoView _stationInspectionInfo;
+		[SerializeField] [Tooltip("Building door that should be reset between nights.")]
+		private BuildingDoorInteractableView _buildingDoor;
 		[SerializeField] [Tooltip("Where the player wakes up at the start of a shift.")]
 		private Transform _wakePoint;
 		[SerializeField] [Tooltip("Door transform used as the source of the wake-up knock.")]
@@ -39,11 +42,16 @@ namespace Project.Gameplay.Scene
 		private MainMenuStartInteractableView _mainMenuStartButton;
 		[SerializeField] [Tooltip("Optional root object for main-menu start visuals (for example pole + sign group).")]
 		private MainMenuStartVisualRootView _mainMenuStartVisualRoot;
+		
+		[SerializeField]
+		private List<Transform> _letterPoses = new List<Transform>();
 
+		public List<Transform> LetterPoses => _letterPoses;
 		public UnityScene Scene { get; private set; }
 		public StationActionButtonInteractableView ActionButton => _stationActionButton;
 		public StationDecisionToggleInteractableView DecisionToggle => _stationDecisionToggle;
 		public StationInspectionInfoView InspectionInfoView => _stationInspectionInfo;
+		public BuildingDoorInteractableView BuildingDoor => _buildingDoor;
 		public MainMenuStartInteractableView MainMenuStartButton => _mainMenuStartButton;
 		public MainMenuStartVisualRootView MainMenuStartVisualRoot => _mainMenuStartVisualRoot;
 
@@ -61,7 +69,8 @@ namespace Project.Gameplay.Scene
 					_doorPoint,
 					_letterThrowStartPoint,
 					_letterLandingPoint,
-					_letterParent));
+					_letterParent,
+					_letterPoses));
 		}
 
 		private void Awake()

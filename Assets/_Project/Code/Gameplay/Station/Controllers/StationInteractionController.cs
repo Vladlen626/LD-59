@@ -131,6 +131,7 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.CurrentWagonDoorStateChanged += OnDoorStateChanged;
 
 			_trainSpawnController.CurrentTrainChanged += OnCurrentTrainChanged;
+			_stationFlowController.DayFinished += OnDayFinished;
 			OnCurrentTrainChanged(_trainSpawnController.CurrentTrain);
 			RefreshHint();
 		}
@@ -148,6 +149,7 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.CurrentWagonInspectionChanged -= OnInspectionStateChanged;
 			_runtimeModel.CurrentWagonDoorStateChanged -= OnDoorStateChanged;
 
+			_stationFlowController.DayFinished -= OnDayFinished;
 			_trainSpawnController.CurrentTrainChanged -= OnCurrentTrainChanged;
 			UnsubscribeSceneInteractables();
 			UnbindCurrentDoorInteractable();
@@ -556,6 +558,11 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			InvalidateHintState();
+		}
+
+		private void OnDayFinished()
+		{
+			_sceneContext.BuildingDoor.SetOpenState(false);
 		}
 
 		private void InvalidateHintState()

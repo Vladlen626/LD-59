@@ -15,9 +15,17 @@ namespace Project.Gameplay.Station.Views
 
 		private Collider _cachedInteractionCollider;
 		private bool _isAvailable;
+		private int _dayIndex;
 
 		public event Action Interacted;
-		public string InteractionHint => _hint;
+		public string InteractionHint
+		{
+			get
+			{
+				var hint = string.IsNullOrWhiteSpace(_hint) ? "Read Letter" : _hint.Trim();
+				return _dayIndex > 0 ? $"{hint}\nDay {_dayIndex}" : hint;
+			}
+		}
 
 		public override bool CanInteract => base.CanInteract && _isAvailable;
 
@@ -48,6 +56,11 @@ namespace Project.Gameplay.Station.Views
 			{
 				_cachedInteractionCollider.enabled = isAvailable;
 			}
+		}
+
+		public void SetDayIndex(int dayIndex)
+		{
+			_dayIndex = Mathf.Max(0, dayIndex);
 		}
 
 		public void SetVisible(bool isVisible)

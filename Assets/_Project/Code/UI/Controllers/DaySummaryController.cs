@@ -92,6 +92,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 			livingCost?.Label,
 			debt.TotalLivingCosts,
 			debt.NetResult,
+			debt.InitialDebt,
 			debt.RemainingDebt,
 			_stationFlowController.CurrentDayContent?.EndDayNote);
 

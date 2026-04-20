@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
@@ -44,13 +45,13 @@ namespace Project.Gameplay.Station.Controllers
 		private readonly ISplashScreenService _splashScreenService;
 		private readonly IGlobalNotificationService _globalNotificationService;
 
-		private MorningLetterInteractableView _activeLetter;
-		private NightShiftLetterData _currentLetterData;
+		private readonly List<LetterEntry> _archivedLetters = new(8);
+		private LetterEntry _currentLetterEntry;
+		private LetterEntry _openedLetterEntry;
 		private UniTaskCompletionSource _letterReadSource;
 		private bool _isActive;
 		private bool _isIntroPlaying;
 		private bool _cursorUnlockedByIntro;
-		private bool _currentIntroLetterOpened;
 		private bool _hasShownFirstNightGuidance;
 
 		public NightShiftIntroController(
@@ -109,6 +110,8 @@ namespace Project.Gameplay.Station.Controllers
 			_letterReadSource?.TrySetResult();
 			_letterReadSource = null;
 			CleanupActiveLetter();
+			CleanupArchivedLetters();
+			_openedLetterEntry = null;
 			ClearInteractionRestriction();
 			RestorePlayerControl();
 		}
@@ -129,8 +132,8 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			_isIntroPlaying = true;
-			_currentLetterData = ResolveLetterData(letterData);
-			_currentIntroLetterOpened = false;
+			var resolvedLetterData = ResolveLetterData(letterData);
+			var currentDayIndex = _stationFlowController.CurrentDayIndex;
 			_letterReadSource = new UniTaskCompletionSource();
 			ApplyInteractionRestriction();
 
@@ -157,21 +160,18 @@ namespace Project.Gameplay.Station.Controllers
 					await UniTask.Delay(TimeSpan.FromSeconds(LetterThrowDelayAfterKnocksSeconds), cancellationToken: cancellationToken);
 				}
 
-				if (await SpawnLetterAsync(roomTargets) == false)
+				if (await SpawnLetterAsync(roomTargets, resolvedLetterData, currentDayIndex) == false)
 				{
 					return false;
 				}
 
-				await AnimateLetterArrivalAsync(roomTargets, cancellationToken);
+				await AnimateLetterArrivalAsync(roomTargets, _currentLetterEntry, cancellationToken);
 
-				if (_activeLetter)
-				{
-					_activeLetter.SetAvailable(true);
-				}
+				_currentLetterEntry.View.SetAvailable(true);
 
-				if (focusLetter && _activeLetter)
+				if (focusLetter)
 				{
-					FocusPlayerOnLetter(_activeLetter.transform.position);
+					FocusPlayerOnLetter(_currentLetterEntry.View.transform.position);
 					await UniTask.Delay(TimeSpan.FromSeconds(FirstNightFocusHold), cancellationToken: cancellationToken);
 					_hasShownFirstNightGuidance = true;
 				}
@@ -190,6 +190,7 @@ namespace Project.Gameplay.Station.Controllers
 				_isIntroPlaying = false;
 				ClearInteractionRestriction();
 				RestorePlayerControl();
+				CleanupActiveLetter();
 			}
 		}
 
@@ -204,24 +205,34 @@ namespace Project.Gameplay.Station.Controllers
 			PlayNightShiftIntroAsync(ResolveIntroLetter(dayContent), focusLetter).Forget();
 		}
 
-		private void OnLetterInteracted()
+		private void OnLetterInteracted(LetterEntry entry)
 		{
 			if (_uiLetterController.IsOpen)
 			{
 				return;
 			}
 
-			_currentIntroLetterOpened = true;
-			_uiLetterController.ShowLetter(_currentLetterData);
+			_openedLetterEntry = entry;
+			_uiLetterController.ShowLetter(entry.Data);
 		}
 
 		private void OnLetterClosed()
 		{
-			if (_currentIntroLetterOpened)
+			if (_openedLetterEntry == null)
 			{
-				ClearInteractionRestriction();
-				_letterReadSource?.TrySetResult();
+				return;
 			}
+
+			var openedLetterEntry = _openedLetterEntry;
+			_openedLetterEntry = null;
+			if (!ReferenceEquals(openedLetterEntry, _currentLetterEntry))
+			{
+				return;
+			}
+
+			ArchiveCurrentLetter();
+			ClearInteractionRestriction();
+			_letterReadSource?.TrySetResult();
 		}
 
 		private void ApplyInteractionRestriction()
@@ -236,7 +247,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		private bool IsLetterInteractionAllowed(IPlayerInteractable interactable)
 		{
-			return _activeLetter != null && ReferenceEquals(interactable, _activeLetter);
+			return _currentLetterEntry != null && ReferenceEquals(interactable, _currentLetterEntry.View);
 		}
 
 		private async UniTask PlayDoorKnockAsync(NightShiftRoomTargets roomTargets, CancellationToken cancellationToken)
@@ -264,13 +275,11 @@ namespace Project.Gameplay.Station.Controllers
 			_globalNotificationService.ShowBanner($"Day {_stationFlowController.CurrentDayIndex}", holdSeconds, false, false);
 		}
 
-		private async UniTask AnimateLetterArrivalAsync(NightShiftRoomTargets roomTargets, CancellationToken cancellationToken)
+		private async UniTask AnimateLetterArrivalAsync(
+			NightShiftRoomTargets roomTargets,
+			LetterEntry entry,
+			CancellationToken cancellationToken)
 		{
-			if (!_activeLetter)
-			{
-				return;
-			}
-
 			var elapsed = 0f;
 			while (elapsed < LetterSlideDuration)
 			{
@@ -279,44 +288,140 @@ namespace Project.Gameplay.Station.Controllers
 				elapsed += Time.unscaledDeltaTime;
 				var t = Mathf.Clamp01(elapsed / LetterSlideDuration);
 				var eased = Mathf.SmoothStep(0f, 1f, t);
-				_activeLetter.transform.position = Vector3.Lerp(roomTargets.LetterThrowStartPosition, roomTargets.LetterLandingPosition, eased);
-				_activeLetter.transform.rotation = Quaternion.Slerp(roomTargets.LetterStartRotation, roomTargets.LetterLandingRotation, eased);
+				entry.View.transform.position = Vector3.Lerp(roomTargets.LetterThrowStartPosition, roomTargets.LetterLandingPosition, eased);
+				entry.View.transform.rotation = Quaternion.Slerp(roomTargets.LetterStartRotation, roomTargets.LetterLandingRotation, eased);
 			}
 
-			_activeLetter.transform.position = roomTargets.LetterLandingPosition;
-			_activeLetter.transform.rotation = roomTargets.LetterLandingRotation;
+			entry.View.transform.position = roomTargets.LetterLandingPosition;
+			entry.View.transform.rotation = roomTargets.LetterLandingRotation;
 			await UniTask.Delay(TimeSpan.FromSeconds(LetterSettleDelay), cancellationToken: cancellationToken);
 		}
 
-		private async UniTask<bool> SpawnLetterAsync(NightShiftRoomTargets roomTargets)
+		private async UniTask<bool> SpawnLetterAsync(
+			NightShiftRoomTargets roomTargets,
+			NightShiftLetterData letterData,
+			int dayIndex)
 		{
 			CleanupActiveLetter();
-			_activeLetter = await _objectFactory.CreateAsync<MorningLetterInteractableView>(
+			var letterView = await _objectFactory.CreateAsync<MorningLetterInteractableView>(
 				ProjectGameplayResourcePaths.Letters_MorningLetterInteractableView,
 				roomTargets.LetterThrowStartPosition,
 				roomTargets.LetterStartRotation,
 				roomTargets.LetterParent);
-			if (!_activeLetter)
+			if (!letterView)
 			{
 				return false;
 			}
 
-			SetLayerRecursively(_activeLetter.gameObject, _playerView.gameObject.layer);
-			_activeLetter.SetAvailable(false);
-			_activeLetter.Interacted += OnLetterInteracted;
+			SetLayerRecursively(letterView.gameObject, _playerView.gameObject.layer);
+			letterView.SetDayIndex(dayIndex);
+			letterView.SetAvailable(false);
+			_currentLetterEntry = CreateLetterEntry(letterView, letterData, dayIndex);
 			return true;
 		}
 
 		private void CleanupActiveLetter()
 		{
-			if (!_activeLetter)
+			var currentLetterEntry = _currentLetterEntry;
+			if (currentLetterEntry == null)
 			{
 				return;
 			}
 
-			_activeLetter.Interacted -= OnLetterInteracted;
-			_objectFactory.Destroy(_activeLetter.gameObject);
-			_activeLetter = null;
+			DestroyLetterEntry(currentLetterEntry);
+			if (ReferenceEquals(_openedLetterEntry, currentLetterEntry))
+			{
+				_openedLetterEntry = null;
+			}
+
+			_currentLetterEntry = null;
+		}
+
+		private void CleanupArchivedLetters()
+		{
+			for (var i = 0; i < _archivedLetters.Count; i++)
+			{
+				DestroyLetterEntry(_archivedLetters[i]);
+			}
+
+			_archivedLetters.Clear();
+		}
+
+		private void ArchiveCurrentLetter()
+		{
+			var currentLetterEntry = _currentLetterEntry;
+			if (currentLetterEntry == null)
+			{
+				return;
+			}
+
+			PlaceArchivedLetter(currentLetterEntry, _archivedLetters.Count);
+			_archivedLetters.Add(currentLetterEntry);
+			_currentLetterEntry = null;
+		}
+
+		private LetterEntry CreateLetterEntry(
+			MorningLetterInteractableView letterView,
+			NightShiftLetterData letterData,
+			int dayIndex)
+		{
+			var entry = new LetterEntry(letterView, letterData, dayIndex);
+			entry.InteractedHandler = () => OnLetterInteracted(entry);
+			letterView.Interacted += entry.InteractedHandler;
+			return entry;
+		}
+
+		private void DestroyLetterEntry(LetterEntry entry)
+		{
+			if (entry == null)
+			{
+				return;
+			}
+
+			if (entry.View)
+			{
+				if (entry.InteractedHandler != null)
+				{
+					entry.View.Interacted -= entry.InteractedHandler;
+				}
+
+				_objectFactory.Destroy(entry.View.gameObject);
+			}
+
+			if (ReferenceEquals(_openedLetterEntry, entry))
+			{
+				_openedLetterEntry = null;
+			}
+		}
+
+		private void PlaceArchivedLetter(LetterEntry entry, int archiveIndex)
+		{
+			var anchor = ResolveArchivePose(archiveIndex);
+			entry.View.transform.SetParent(anchor, false);
+			entry.View.transform.localPosition = Vector3.zero;
+			entry.View.transform.localRotation = Quaternion.identity;
+			entry.View.SetAvailable(true);
+		}
+
+		private Transform ResolveArchivePose(int archiveIndex)
+		{
+			var letterPoses = _sceneSetup.RoomSetup.LetterPoses;
+			return letterPoses[archiveIndex];
+		}
+
+		private sealed class LetterEntry
+		{
+			public LetterEntry(MorningLetterInteractableView view, NightShiftLetterData data, int dayIndex)
+			{
+				View = view;
+				Data = data;
+				DayIndex = dayIndex;
+			}
+
+			public MorningLetterInteractableView View { get; }
+			public NightShiftLetterData Data { get; }
+			public int DayIndex { get; }
+			public Action InteractedHandler { get; set; }
 		}
 
 		private static void SetLayerRecursively(GameObject target, int layer)

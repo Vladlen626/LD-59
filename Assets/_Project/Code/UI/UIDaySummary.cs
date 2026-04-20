@@ -1,33 +1,41 @@
 using System;
+using PrimeTween;
 using PlatformCore.Services.UI;
 using PlatformCore.Services.UI.Styles;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public sealed class UIDaySummary : UIBaseElement
 {
-	private const string TitleFormat = "DAY {0:0}";
-	private const string InspectedFormat = "Wagons checked: {0:0}";
-	private const string IncomeFormat = "Earnings: {0:0}";
-	private const string FinesFormat = "Mistake fines: {0:0}";
-	private const string FinesNoneText = "Mistake fines: none";
-	private const string NetPositiveFormat = "Net result: +{0:0}";
-	private const string NetNegativeFormat = "Net result: -{0:0}";
-	private const string NetNeutralText = "Net result: 0";
-	private const string DebtAfterSettlementFormat = "Debt remaining: {0:0}";
+	private const string TitleFormat = "NIGHT {0:0}";
+	private const string NumberValueFormat = "{0:0}";
+	private const string NegativeValueFormat = "-{0:0}";
+	private const string NoneValueText = "none";
+	private const string NetPositiveValueFormat = "+{0:0}";
+	private const string NetNegativeValueFormat = "-{0:0}";
+	private const string NetNeutralValueText = "0";
+	private const string InspectedNameText = "Wagons checked:";
+	private const string IncomeNameText = "Earnings:";
+	private const string FinesNameText = "Mistake fines:";
+	private const string NetNameText = "Net result:";
+	private const string DebtProgressNameText = "Debt payoff:";
 	private const string DefaultLivingCostLabel = "Food and bills";
-	private const string LivingCostNoneText = "Food and bills: none";
 	private const string DefaultEndDayNote = "Night ledger closed. Report filed.";
+	private const float DebtHighThreshold = 0.5f;
+	private const float DebtMediumThreshold = 0.1f;
 
 	[Header("Labels")]
 	[SerializeField] private TMP_Text _titleLabel;
-	[SerializeField] private TMP_Text _inspectedLabel;
-	[SerializeField] private TMP_Text _incomeLabel;
-	[SerializeField] private TMP_Text _mistakeFinesLabel;
-	[SerializeField] private TMP_Text _livingCostLabel;
-	[SerializeField] private TMP_Text _netLabel;
-	[SerializeField] private TMP_Text _debtAfterSettlementLabel;
+	[SerializeField] private UINameValueText _inspectedLabel;
+	[SerializeField] private UINameValueText _incomeLabel;
+	[SerializeField] private UINameValueText _mistakeFinesLabel;
+	[SerializeField] private UINameValueText _livingCostLabel;
+	[SerializeField] private UINameValueText _netLabel;
+	[SerializeField] private UINameValueText _debtAfterSettlementLabel;
 	[SerializeField] private TMP_Text _noteLabel;
+	[SerializeField] private Slider _debtProgressSlider;
+	[SerializeField] private Image _debtProgressFillImage;
 
 	[Header("Tween")]
 	[SerializeField] private float _numberTweenDuration = 0.45f;
@@ -36,6 +44,9 @@ public sealed class UIDaySummary : UIBaseElement
 	[SerializeField] private ColorStyleRef _neutralColorRef;
 	[SerializeField] private ColorStyleRef _positiveColorRef;
 	[SerializeField] private ColorStyleRef _negativeColorRef;
+	[SerializeField] private ColorStyleRef _warningColorRef;
+
+	private Tween _debtProgressTween;
 
 	public event Action OnCloseClicked;
 
@@ -47,6 +58,7 @@ public sealed class UIDaySummary : UIBaseElement
 		string livingCostLabel,
 		int totalLivingCosts,
 		int netResult,
+		int initialDebt,
 		int remainingDebt,
 		string endDayNote)
 	{
@@ -58,28 +70,28 @@ public sealed class UIDaySummary : UIBaseElement
 		EnsureRuntimeEndDayNoteLabel();
 		ApplyEndDayNote(endDayNote);
 
-		ApplyColors(totalIncome, totalFines, totalLivingCosts, netResult, remainingDebt);
+		ApplyColors(totalIncome, totalFines, totalLivingCosts, netResult, initialDebt, remainingDebt);
 
-		UINumberTweenUtils.Animate(_inspectedLabel, InspectedFormat, inspectedCount, _numberTweenDuration);
-		UINumberTweenUtils.Animate(_incomeLabel, IncomeFormat, Mathf.Max(0, totalIncome), _numberTweenDuration);
-		ApplyAmountOrNone(_mistakeFinesLabel, FinesFormat, FinesNoneText, totalFines);
-		ApplyAmountOrNone(
+		ApplyNumber(_inspectedLabel, InspectedNameText, inspectedCount);
+		ApplyNumber(_incomeLabel, IncomeNameText, Mathf.Max(0, totalIncome));
+		ApplyExpenseOrNone(_mistakeFinesLabel, FinesNameText, totalFines);
+		ApplyExpenseOrNone(
 			_livingCostLabel,
-			BuildLivingCostFormat(livingCostLabel),
-			BuildLivingCostNoneText(livingCostLabel),
+			BuildLivingCostName(livingCostLabel),
 			totalLivingCosts);
 		ApplyNet(netResult);
-		UINumberTweenUtils.Animate(_debtAfterSettlementLabel, DebtAfterSettlementFormat, remainingDebt, _numberTweenDuration);
+		ApplyDebtProgress(initialDebt, remainingDebt);
 	}
 
 	public void StopTweens()
 	{
-		UINumberTweenUtils.Stop(_inspectedLabel);
-		UINumberTweenUtils.Stop(_incomeLabel);
-		UINumberTweenUtils.Stop(_mistakeFinesLabel);
-		UINumberTweenUtils.Stop(_livingCostLabel);
-		UINumberTweenUtils.Stop(_netLabel);
-		UINumberTweenUtils.Stop(_debtAfterSettlementLabel);
+		UINumberTweenUtils.Stop(_inspectedLabel ? _inspectedLabel.ValueText : null);
+		UINumberTweenUtils.Stop(_incomeLabel ? _incomeLabel.ValueText : null);
+		UINumberTweenUtils.Stop(_mistakeFinesLabel ? _mistakeFinesLabel.ValueText : null);
+		UINumberTweenUtils.Stop(_livingCostLabel ? _livingCostLabel.ValueText : null);
+		UINumberTweenUtils.Stop(_netLabel ? _netLabel.ValueText : null);
+		UINumberTweenUtils.Stop(_debtAfterSettlementLabel ? _debtAfterSettlementLabel.ValueText : null);
+		StopDebtProgressTween();
 	}
 
 	private void ApplyColors(
@@ -87,6 +99,7 @@ public sealed class UIDaySummary : UIBaseElement
 		int totalFines,
 		int totalLivingCosts,
 		int netResult,
+		int initialDebt,
 		int remainingDebt)
 	{
 		SetColor(_inspectedLabel, _neutralColorRef);
@@ -94,23 +107,39 @@ public sealed class UIDaySummary : UIBaseElement
 		SetColor(_mistakeFinesLabel, totalFines > 0 ? _negativeColorRef : _neutralColorRef);
 		SetColor(_livingCostLabel, totalLivingCosts > 0 ? _negativeColorRef : _neutralColorRef);
 		SetColor(_netLabel, netResult > 0 ? _positiveColorRef : netResult < 0 ? _negativeColorRef : _neutralColorRef);
-		SetColor(_debtAfterSettlementLabel, remainingDebt <= 0 ? _positiveColorRef : _negativeColorRef);
+		var debtColorRef = ResolveDebtColor(initialDebt, remainingDebt);
+		SetColor(_debtAfterSettlementLabel, debtColorRef);
+		if (_debtProgressFillImage)
+		{
+			_debtProgressFillImage.color = debtColorRef.Value;
+		}
 	}
 
-	private static string BuildLivingCostFormat(string livingCostLabel)
+	private static string BuildLivingCostName(string livingCostLabel)
 	{
 		var normalizedLabel = string.IsNullOrWhiteSpace(livingCostLabel)
 			? DefaultLivingCostLabel
 			: livingCostLabel.Trim();
-		return $"{normalizedLabel}: {{0:0}}";
+		return $"{normalizedLabel}:";
 	}
 
-	private static string BuildLivingCostNoneText(string livingCostLabel)
+	private static void SetColor(UINameValueText nameValueText, ColorStyleRef colorRef)
 	{
-		var normalizedLabel = string.IsNullOrWhiteSpace(livingCostLabel)
-			? DefaultLivingCostLabel
-			: livingCostLabel.Trim();
-		return $"{normalizedLabel}: none";
+		if (!nameValueText)
+		{
+			return;
+		}
+
+		var color = colorRef.Value;
+		if (nameValueText.NameText)
+		{
+			nameValueText.NameText.color = color;
+		}
+
+		if (nameValueText.ValueText)
+		{
+			nameValueText.ValueText.color = color;
+		}
 	}
 
 	private static void SetColor(TMP_Text text, ColorStyleRef colorRef)
@@ -121,6 +150,28 @@ public sealed class UIDaySummary : UIBaseElement
 		}
 
 		text.color = colorRef.Value;
+	}
+
+	private ColorStyleRef ResolveDebtColor(int initialDebt, int remainingDebt)
+	{
+		if (remainingDebt <= 0)
+		{
+			return _positiveColorRef;
+		}
+
+		var safeInitialDebt = Mathf.Max(1, initialDebt);
+		var ratio = Mathf.Clamp01((float)remainingDebt / safeInitialDebt);
+		if (ratio > DebtHighThreshold)
+		{
+			return _negativeColorRef;
+		}
+
+		if (ratio > DebtMediumThreshold)
+		{
+			return _warningColorRef;
+		}
+
+		return _neutralColorRef;
 	}
 
 	private void EnsureRuntimeEndDayNoteLabel()
@@ -169,22 +220,99 @@ public sealed class UIDaySummary : UIBaseElement
 		SetColor(_noteLabel, _neutralColorRef);
 	}
 
-	private void ApplyAmountOrNone(TMP_Text label, string format, string noneText, int value)
+	private void ApplyNumber(UINameValueText label, string nameText, int value)
 	{
 		if (!label)
 		{
 			return;
 		}
 
-		var safeValue = Mathf.Max(0, value);
-		if (safeValue == 0)
+		label.SetName(nameText);
+		UINumberTweenUtils.Animate(label.ValueText, NumberValueFormat, value, _numberTweenDuration);
+	}
+
+	private void ApplyExpenseOrNone(UINameValueText label, string nameText, int value)
+	{
+		if (!label)
 		{
-			UINumberTweenUtils.Stop(label);
-			label.SetText(noneText);
 			return;
 		}
 
-		UINumberTweenUtils.Animate(label, format, safeValue, _numberTweenDuration);
+		label.SetName(nameText);
+		var safeValue = Mathf.Max(0, value);
+		if (safeValue == 0)
+		{
+			UINumberTweenUtils.Stop(label.ValueText);
+			label.SetValue(NoneValueText);
+			return;
+		}
+
+		UINumberTweenUtils.Animate(label.ValueText, NegativeValueFormat, safeValue, _numberTweenDuration);
+	}
+
+	private void ApplyDebtProgress(int initialDebt, int remainingDebt)
+	{
+		var safeInitialDebt = Mathf.Max(0, initialDebt);
+		var safeRemainingDebt = Mathf.Max(0, remainingDebt);
+		var paidDebt = Mathf.Clamp(safeInitialDebt - safeRemainingDebt, 0, safeInitialDebt);
+
+		if (_debtAfterSettlementLabel)
+		{
+			_debtAfterSettlementLabel.SetName(DebtProgressNameText);
+			UINumberTweenUtils.Animate(
+				_debtAfterSettlementLabel.ValueText,
+				BuildDebtProgressValueFormat(safeInitialDebt),
+				paidDebt,
+				_numberTweenDuration);
+		}
+
+		ApplyDebtSlider(safeInitialDebt, paidDebt);
+	}
+
+	private static string BuildDebtProgressValueFormat(int initialDebt)
+	{
+		var safeInitialDebt = Mathf.Max(0, initialDebt);
+		return $"{{0:0}}/{safeInitialDebt:0}";
+	}
+
+	private void ApplyDebtSlider(int initialDebt, int paidDebt)
+	{
+		if (!_debtProgressSlider)
+		{
+			return;
+		}
+
+		var targetValue = initialDebt <= 0 ? 1f : Mathf.Clamp01((float)paidDebt / initialDebt);
+		StopDebtProgressTween();
+
+		_debtProgressSlider.minValue = 0f;
+		_debtProgressSlider.maxValue = 1f;
+		if (_numberTweenDuration <= 0f)
+		{
+			_debtProgressSlider.value = targetValue;
+			return;
+		}
+
+		_debtProgressTween = Tween.Custom(
+			_debtProgressSlider,
+			_debtProgressSlider.value,
+			targetValue,
+			_numberTweenDuration,
+			static (slider, value) =>
+			{
+				if (slider)
+				{
+					slider.value = value;
+				}
+			});
+	}
+
+	private void StopDebtProgressTween()
+	{
+		if (_debtProgressTween.isAlive)
+		{
+			_debtProgressTween.Stop();
+		}
 	}
 
 	private void ApplyNet(int netResult)
@@ -194,16 +322,17 @@ public sealed class UIDaySummary : UIBaseElement
 			return;
 		}
 
+		_netLabel.SetName(NetNameText);
 		if (netResult == 0)
 		{
-			UINumberTweenUtils.Stop(_netLabel);
-			_netLabel.SetText(NetNeutralText);
+			UINumberTweenUtils.Stop(_netLabel.ValueText);
+			_netLabel.SetValue(NetNeutralValueText);
 			return;
 		}
 
 		UINumberTweenUtils.Animate(
-			_netLabel,
-			netResult > 0 ? NetPositiveFormat : NetNegativeFormat,
+			_netLabel.ValueText,
+			netResult > 0 ? NetPositiveValueFormat : NetNegativeValueFormat,
 			Mathf.Abs(netResult),
 			_numberTweenDuration);
 	}
