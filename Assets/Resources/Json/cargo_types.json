@@ -1,10 +1,5 @@
 [
   {
-    "id": "grain_sacks",
-    "display_name": "Grain Sacks",
-    "prefab_resource_path": "Cargo/GrainSacks"
-  },
-  {
     "id": "timber",
     "display_name": "Timber",
     "prefab_resource_path": "Cargo/Timber"
@@ -40,8 +35,8 @@
     "prefab_resource_path": "Cargo/MoonshineBarrels"
   },
   {
-    "id": "prisoner_transport",
-    "display_name": "Prisoner Transport",
-    "prefab_resource_path": "Cargo/PrisonerTransport"
+    "id": "poison",
+    "display_name": "Poison",
+    "prefab_resource_path": "Cargo/Poison"
   }
 ]
