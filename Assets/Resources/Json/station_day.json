@@ -24,25 +24,6 @@
   "end_day_note": "The clerk stamps the report. The debt line decides the rest.",
   "train_scenarios": [
     {
-      "id": "case_001",
-      "manifest": {
-        "declared_cargo": [
-          {
-            "cargo_id": "grain_sacks",
-            "quantity": 2
-          }
-        ],
-        "declared_description": "Bulk grain sacks"
-      },
-      "actual_cargo": [
-        {
-          "cargo_id": "grain_sacks",
-          "quantity": 2
-        }
-      ],
-      "reward_on_correct_decision": 80
-    },
-    {
       "id": "case_002",
       "manifest": {
         "declared_cargo": [
@@ -135,15 +116,15 @@
       "manifest": {
         "declared_cargo": [
           {
-            "cargo_id": "prisoner_transport",
+            "cargo_id": "poison",
             "quantity": 1
           }
         ],
-        "declared_description": "Prisoner transfer paperwork"
+        "declared_description": "Poison shipment paperwork"
       },
       "actual_cargo": [
         {
-          "cargo_id": "prisoner_transport",
+          "cargo_id": "poison",
           "quantity": 1
         }
       ],
