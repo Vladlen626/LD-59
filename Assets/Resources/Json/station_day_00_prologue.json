@@ -1,6 +1,6 @@
 {
   "id": "day_00_prologue",
-  "initial_debt": 1500,
+  "initial_debt": 1300,
   "day_index": 1,
   "missed_contraband_penalty": 85,
   "wrongful_rejection_penalty": 30,

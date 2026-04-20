@@ -19,7 +19,6 @@ namespace Project.Gameplay.Train
 		private const float MovementDistanceScale = 5f;
 		private const float FullVolumeDistance = 12f;
 		private const float MinimumMovementLoopVolume = 0.18f;
-		private const float ArrivalLoopStopDistance = 7.5f;
 
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly StationRuntimeModel _runtimeModel;
@@ -30,7 +29,6 @@ namespace Project.Gameplay.Train
 		private TrainView _currentTrain;
 		private bool _isActive;
 		private bool _isMovementLoopPlaying;
-		private bool _arrivalLoopStoppedBeforeStation;
 		private bool _movementLoopUnavailable;
 
 		public TrainAudioController(
@@ -53,7 +51,6 @@ namespace Project.Gameplay.Train
 			}
 
 			_isActive = true;
-			_arrivalLoopStoppedBeforeStation = false;
 			_movementLoopUnavailable = false;
 			_currentTrain = _trainSpawnController.CurrentTrain;
 			_trainSpawnController.CurrentTrainChanged += OnCurrentTrainChanged;
@@ -81,7 +78,6 @@ namespace Project.Gameplay.Train
 
 			_isActive = false;
 			_currentTrain = null;
-			_arrivalLoopStoppedBeforeStation = false;
 			_movementLoopUnavailable = false;
 			StopAndReleaseMovementLoop();
 		}
@@ -99,13 +95,6 @@ namespace Project.Gameplay.Train
 				return;
 			}
 
-			if (ShouldStopArrivalLoopBeforeStation())
-			{
-				_arrivalLoopStoppedBeforeStation = true;
-				StopAndReleaseMovementLoop();
-				return;
-			}
-
 			if (_movementLoopInstance == null || _isMovementLoopPlaying == false)
 			{
 				RefreshMovementLoop();
@@ -118,7 +107,6 @@ namespace Project.Gameplay.Train
 		private void OnCurrentTrainChanged(TrainView currentTrain)
 		{
 			_currentTrain = currentTrain;
-			_arrivalLoopStoppedBeforeStation = false;
 			_movementLoopUnavailable = false;
 			StopAndReleaseMovementLoop();
 			RefreshMovementLoop();
@@ -126,7 +114,6 @@ namespace Project.Gameplay.Train
 
 		private void OnTrainTransitStateChanged(TrainTransitState _)
 		{
-			_arrivalLoopStoppedBeforeStation = false;
 			_movementLoopUnavailable = false;
 			RefreshMovementLoop();
 		}
@@ -144,13 +131,6 @@ namespace Project.Gameplay.Train
 			}
 
 			if (_currentTrain == null || _runtimeModel == null || _runtimeModel.IsTrainInTransit == false)
-			{
-				StopAndReleaseMovementLoop();
-				return;
-			}
-
-			if (_arrivalLoopStoppedBeforeStation &&
-				_runtimeModel.TrainTransitState == TrainTransitState.Arriving)
 			{
 				StopAndReleaseMovementLoop();
 				return;
@@ -220,13 +200,6 @@ namespace Project.Gameplay.Train
 			}
 
 			FmodRuntime.SetVolume(_movementLoopInstance, ResolveMovementLoopVolume());
-		}
-
-		private bool ShouldStopArrivalLoopBeforeStation()
-		{
-			return _runtimeModel.TrainTransitState == TrainTransitState.Arriving &&
-				_sceneSetup.TrainSpawnPoint &&
-				ResolveDistanceToStation() <= ArrivalLoopStopDistance;
 		}
 
 		private float ResolveMovementLoopVolume()

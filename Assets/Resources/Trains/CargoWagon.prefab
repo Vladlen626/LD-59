@@ -1342,7 +1342,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8135426111661466322, guid: 809b48b7a8efccf4e80193e7ea03652d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -38.23689
+      value: -54.16
       objectReference: {fileID: 0}
     - target: {fileID: -8135426111661466322, guid: 809b48b7a8efccf4e80193e7ea03652d, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1355,6 +1355,22 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 809b48b7a8efccf4e80193e7ea03652d, type: 3}
       propertyPath: m_Name
       value: Wild west LOCOMOTIVE
+      objectReference: {fileID: 0}
+    - target: {fileID: 2489159159464621496, guid: 809b48b7a8efccf4e80193e7ea03652d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2489159159464621496, guid: 809b48b7a8efccf4e80193e7ea03652d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2489159159464621496, guid: 809b48b7a8efccf4e80193e7ea03652d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2489159159464621496, guid: 809b48b7a8efccf4e80193e7ea03652d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 5100068591777345685, guid: 809b48b7a8efccf4e80193e7ea03652d, type: 3}
       propertyPath: 'm_Materials.Array.data[1]'

@@ -140,6 +140,19 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		try
 		{
 			HideContext();
+			if (_stationFlowController.ShouldRetryCurrentDay)
+			{
+				await _splashScreenService.FadeInAsync(ProjectSplashScreenSettings.DayAdvanceFadeInSeconds);
+				if (_stationFlowController.TryRetryCurrentDay())
+				{
+					_loggerService?.Log("[DaySummary] Failure acknowledged. Retrying current day.");
+					return;
+				}
+
+				await _splashScreenService.FadeOutAsync(ProjectSplashScreenSettings.DayAdvanceFallbackFadeOutSeconds);
+				_loggerService?.LogWarning("[DaySummary] Current day retry was requested but failed.");
+			}
+
 			var hasNextDay = _stationFlowController.HasNextDay;
 			if (hasNextDay)
 			{

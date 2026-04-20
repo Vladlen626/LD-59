@@ -66,7 +66,7 @@
           "quantity": 1
         }
       ],
-      "reward_on_correct_decision": 70
+      "reward_on_correct_decision": 150
     },
     {
       "id": "day04_case_002",
@@ -109,7 +109,7 @@
           "quantity": 1
         }
       ],
-      "reward_on_correct_decision": 70
+      "reward_on_correct_decision": 150
     },
     {
       "id": "day04_case_003",
@@ -144,7 +144,7 @@
           "quantity": 1
         }
       ],
-      "reward_on_correct_decision": 70
+      "reward_on_correct_decision": 400
     },
     {
       "id": "day04_case_004",
@@ -179,7 +179,7 @@
           "quantity": 2
         }
       ],
-      "reward_on_correct_decision": 70
+      "reward_on_correct_decision": 150
     },
     {
       "id": "day04_case_005",
@@ -218,7 +218,7 @@
           "quantity": 1
         }
       ],
-      "reward_on_correct_decision": 70
+      "reward_on_correct_decision": 400
     },
     {
       "id": "day04_case_006",
@@ -261,7 +261,7 @@
           "quantity": 1
         }
       ],
-      "reward_on_correct_decision": 70
+      "reward_on_correct_decision": 150
     },
     {
       "id": "day04_case_007",
@@ -296,7 +296,7 @@
           "quantity": 2
         }
       ],
-      "reward_on_correct_decision": 70
+      "reward_on_correct_decision": 400
     },
     {
       "id": "day04_case_008",
@@ -339,7 +339,7 @@
           "quantity": 1
         }
       ],
-      "reward_on_correct_decision": 70
+      "reward_on_correct_decision": 150
     }
   ]
 }

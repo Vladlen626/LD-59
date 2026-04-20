@@ -26,6 +26,10 @@ namespace Project.Gameplay.Station.Controllers
 		private bool _isActive;
 		private bool _isTrainCallInProgress;
 		private bool _isDayFinished;
+		private bool _isDayFinishRequested;
+		private bool _isFinishAfterTrainSettlesInProgress;
+		private bool _shouldRetryCurrentDay;
+		private int _dayFinishRequestRevision;
 		private string _dayFailureNote = string.Empty;
 		private string _forbiddenCargoLogValue = "<none>";
 
@@ -33,15 +37,18 @@ namespace Project.Gameplay.Station.Controllers
 		public event Action DayFinished;
 
 		public bool IsAwaitingTrainCall => _isActive &&
+			_isDayFinishRequested == false &&
 			_isTrainCallInProgress == false &&
 			_runtimeModel.FlowState == StationFlowState.AwaitingTrainCall &&
 			_runtimeModel.HasActiveScenario == false;
 
 		public bool IsAwaitingDecision => _isActive &&
+			_isDayFinishRequested == false &&
 			_runtimeModel.FlowState == StationFlowState.AwaitingDecision &&
 			_runtimeModel.HasActiveScenario;
 
 		public bool IsDayIntroPending => _isActive &&
+			_isDayFinishRequested == false &&
 			_runtimeModel.FlowState == StationFlowState.DayIntroPending &&
 			_runtimeModel.HasActiveScenario == false;
 
@@ -51,6 +58,7 @@ namespace Project.Gameplay.Station.Controllers
 		public bool IsCurrentDayLastAuthored => _campaignProgress.IsCurrentDayLastAuthored;
 		public StationDayContent CurrentDayContent => _campaignProgress.CurrentDay;
 		public string DayFailureNote => _dayFailureNote;
+		public bool ShouldRetryCurrentDay => _shouldRetryCurrentDay;
 		public int CurrentDayIndex => _runtimeModel.StationDay.DayIndex;
 
 		public StationFlowController(
@@ -102,6 +110,9 @@ namespace Project.Gameplay.Station.Controllers
 
 			_isActive = false;
 			_isTrainCallInProgress = false;
+			_isDayFinishRequested = false;
+			_isFinishAfterTrainSettlesInProgress = false;
+			_dayFinishRequestRevision++;
 			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
 			_runtimeModel.SetActiveCaseIndex(-1);
@@ -133,6 +144,10 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.SetTrainTransitState(TrainTransitState.None);
 			_runtimeModel.SetFlowState(StationFlowState.DayIntroPending);
 			_isDayFinished = false;
+			_isDayFinishRequested = false;
+			_isFinishAfterTrainSettlesInProgress = false;
+			_shouldRetryCurrentDay = false;
+			_dayFinishRequestRevision++;
 			_dayFailureNote = string.Empty;
 			UpdateForbiddenCargoLogValue();
 			var progressLogValue = _campaignProgress.IsEndlessMode
@@ -196,6 +211,19 @@ namespace Project.Gameplay.Station.Controllers
 			return true;
 		}
 
+		public bool TryRetryCurrentDay()
+		{
+			if (_isActive == false || _isDayFinished == false || _shouldRetryCurrentDay == false)
+			{
+				return false;
+			}
+
+			_loggerService?.Log(
+				$"[StationFlow] Retrying day {_runtimeModel.StationDay.DayIndex} after failure.");
+			StartDay();
+			return true;
+		}
+
 		public async UniTask<bool> TryStartEndlessModeAsync()
 		{
 			if (_isActive == false || _isDayFinished == false || _campaignProgress.CanStartEndlessMode == false)
@@ -215,7 +243,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		public bool TryCallNextTrain()
 		{
-			if (_isDayFinished || !IsAwaitingTrainCall)
+			if (IsDayEnding || !IsAwaitingTrainCall)
 			{
 				return false;
 			}
@@ -235,7 +263,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		public bool TryCompleteDayIntro()
 		{
-			if (_isActive == false || _isDayFinished || IsDayIntroPending == false)
+			if (_isActive == false || IsDayEnding || IsDayIntroPending == false)
 			{
 				return false;
 			}
@@ -260,14 +288,14 @@ namespace Project.Gameplay.Station.Controllers
 				_runtimeModel.SetFlowState(StationFlowState.CallNextTrain);
 
 				var nextIndex = FindNextCaseIndex(_runtimeModel.ActiveCaseIndex + 1);
-				while (_isActive && _isDayFinished == false && nextIndex >= 0)
+				while (_isActive && IsDayEnding == false && nextIndex >= 0)
 				{
 					var nextScenario = CurrentDayScenarios[nextIndex];
 					_runtimeModel.SetActiveCaseIndex(nextIndex);
 					_runtimeModel.SetActiveScenario(nextScenario);
 
 					var trainView = await _trainSpawnController.SpawnCurrentTrainAsync();
-					if (_isActive == false || _isDayFinished)
+					if (_isActive == false || IsDayEnding)
 					{
 						return;
 					}
@@ -281,7 +309,7 @@ namespace Project.Gameplay.Station.Controllers
 					}
 
 					var presented = await _trainCargoPresentationController.PresentScenarioAsync(trainView, nextScenario);
-					if (_isActive == false || _isDayFinished)
+					if (_isActive == false || IsDayEnding)
 					{
 						return;
 					}
@@ -296,7 +324,7 @@ namespace Project.Gameplay.Station.Controllers
 					}
 
 					var arrived = await _trainMovementController.PlayArrivalAsync();
-					if (_isActive == false || _isDayFinished)
+					if (_isActive == false || IsDayEnding)
 					{
 						return;
 					}
@@ -315,7 +343,10 @@ namespace Project.Gameplay.Station.Controllers
 					return;
 				}
 
-				FinishDay();
+				if (IsDayEnding == false)
+				{
+					FinishDay();
+				}
 			}
 			finally
 			{
@@ -325,7 +356,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		public bool BeginInspection()
 		{
-			if (_isActive == false || _isDayFinished || _runtimeModel.HasActiveScenario == false)
+			if (_isActive == false || IsDayEnding || _runtimeModel.HasActiveScenario == false)
 			{
 				return false;
 			}
@@ -340,7 +371,7 @@ namespace Project.Gameplay.Station.Controllers
 			result = null;
 
 			if (_isActive == false ||
-				_isDayFinished ||
+				IsDayEnding ||
 				_runtimeModel.FlowState != StationFlowState.AwaitingDecision ||
 				_runtimeModel.HasActiveScenario == false)
 			{
@@ -385,7 +416,7 @@ namespace Project.Gameplay.Station.Controllers
 		private async UniTaskVoid CompleteResolvedCaseAsync()
 		{
 			await _trainMovementController.PlayDepartureAsync();
-			if (_isActive == false || _isDayFinished)
+			if (_isActive == false || IsDayEnding)
 			{
 				return;
 			}
@@ -395,17 +426,21 @@ namespace Project.Gameplay.Station.Controllers
 
 		public bool TryFailCurrentDay(string failureNote)
 		{
-			if (_isActive == false || _isDayFinished)
+			if (_isActive == false || IsDayEnding)
 			{
 				return false;
 			}
 
+			_isDayFinishRequested = true;
+			_dayFinishRequestRevision++;
 			_dayFailureNote = string.IsNullOrWhiteSpace(failureNote)
 				? "The shift was lost."
 				: failureNote.Trim();
+			_shouldRetryCurrentDay = true;
 			_loggerService?.LogWarning($"[StationFlow] Day failed. Note='{_dayFailureNote}'.");
 			_runtimeModel.ClearActiveScenario();
-			FinishDay();
+			_runtimeModel.SetFlowState(StationFlowState.FinishDay);
+			FinishDayAfterTrainSettlesAsync(_dayFinishRequestRevision).Forget();
 			return true;
 		}
 
@@ -416,7 +451,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void EnterAwaitingTrainCall()
 		{
-			if (_isDayFinished)
+			if (IsDayEnding)
 			{
 				return;
 			}
@@ -440,6 +475,8 @@ namespace Project.Gameplay.Station.Controllers
 				return;
 			}
 
+			_isDayFinishRequested = true;
+			_isFinishAfterTrainSettlesInProgress = false;
 			var livingCost = CurrentDayContent?.LivingCost;
 			_runtimeModel.Debt.SettleDay(livingCost?.Amount ?? 0);
 			_isDayFinished = true;
@@ -454,6 +491,48 @@ namespace Project.Gameplay.Station.Controllers
 				$"Fines={_runtimeModel.Debt.TotalFines}, Earnings={_runtimeModel.Debt.TotalEarnings}, " +
 				$"LivingCosts={_runtimeModel.Debt.TotalLivingCosts}, Net={_runtimeModel.Debt.NetResult}, " +
 				$"HasNextDay={HasNextDay}.");
+		}
+
+		private async UniTaskVoid FinishDayAfterTrainSettlesAsync(int requestRevision)
+		{
+			if (_isFinishAfterTrainSettlesInProgress)
+			{
+				return;
+			}
+
+			_isFinishAfterTrainSettlesInProgress = true;
+			try
+			{
+				while (_isActive &&
+				       _isDayFinished == false &&
+				       requestRevision == _dayFinishRequestRevision &&
+				       IsCurrentTrainMoving())
+				{
+					await UniTask.Yield();
+				}
+
+				if (_isActive == false ||
+				    _isDayFinished ||
+				    requestRevision != _dayFinishRequestRevision)
+				{
+					return;
+				}
+
+				FinishDay();
+			}
+			finally
+			{
+				if (requestRevision == _dayFinishRequestRevision)
+				{
+					_isFinishAfterTrainSettlesInProgress = false;
+				}
+			}
+		}
+
+		private bool IsCurrentTrainMoving()
+		{
+			return _trainSpawnController.CurrentTrain &&
+				_runtimeModel.IsTrainInTransit;
 		}
 
 		private async UniTask<StationDayContent> GenerateEndlessDayAsync(int endlessDayOrder)
@@ -578,6 +657,8 @@ namespace Project.Gameplay.Station.Controllers
 
 			return false;
 		}
+
+		private bool IsDayEnding => _isDayFinished || _isDayFinishRequested;
 
 		private IReadOnlyList<TrainScenario> CurrentDayScenarios
 		{

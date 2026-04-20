@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using PlatformCore.Infrastructure;
 using PlatformCore.Services;
+using PlatformCore.Services.Audio;
 using PlatformCore.Services.Input;
 using PlatformCore.Services.UI;
 using Project.Gameplay.Player;
@@ -71,7 +72,7 @@ namespace Project.Network
 					return;
 				}
 
-				_movementController = new SamplePlayerMovementController(_playerView, inputService, _cursorService);
+				_movementController = new SamplePlayerMovementController(_playerView, inputService, _cursorService, Locator.Resolve<IAudioService>());
 				await _lifecycleService.RegisterAsync(_movementController);
 				_registered = true;
 
