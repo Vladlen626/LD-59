@@ -4,8 +4,6 @@ namespace Project.Gameplay.Station.Domain
 	{
 		AllowedForbiddenCargo = 0,
 		AllowedManifestMismatch = 1,
-		AllowedHiddenContraband = 2,
-		AllowedIllegalMarker = 3,
-		RejectedCleanTrain = 4,
+		RejectedCleanTrain = 2,
 	}
 }

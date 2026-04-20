@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using PlatformCore.Core;
@@ -7,21 +6,25 @@ using PlatformCore.Services;
 using PlatformCore.Services.Factory;
 using Project.Gameplay.Station.Configs;
 using Project.Gameplay.Station.Domain;
-using Project.Infrastructure;
 using UnityEngine;
 
 namespace Project.Gameplay.Train
 {
 	public sealed class TrainCargoPresentationController : IBaseController, IActivatable, IDeactivatable
 	{
+		private const int ExpectedCargoSlotCount = 10;
+
 		private readonly IObjectFactory _objectFactory;
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly CargoCatalogLoader _cargoCatalogLoader;
 		private readonly ILoggerService _loggerService;
-		private readonly List<GameObject> _spawnedObjects = new List<GameObject>();
-		private readonly List<Transform> _cargoAnchors = new List<Transform>();
+		private readonly List<GameObject> _spawnedObjects = new List<GameObject>(ExpectedCargoSlotCount);
+		private readonly List<Transform> _cargoAnchors = new List<Transform>(ExpectedCargoSlotCount);
+		private readonly List<int> _slotOrder = new List<int>(ExpectedCargoSlotCount);
+		private readonly System.Random _random = new System.Random();
 
 		private bool _isActive;
+		private bool _hasLoggedInsufficientCargoSlots;
 		private int _presentationRevision;
 		private TrainView _presentedTrain;
 
@@ -81,7 +84,7 @@ namespace Project.Gameplay.Train
 				return false;
 			}
 
-			var cargoConfigs = await ResolveCargoConfigsAsync(scenario);
+			var cargoConfigs = await _cargoCatalogLoader.LoadAsync();
 			if (IsPresentationValid(revision, trainView) == false)
 			{
 				return false;
@@ -89,6 +92,16 @@ namespace Project.Gameplay.Train
 
 			var cargoAnchors = ResolveCargoAnchors(trainView);
 			var totalCargoUnits = scenario.ActualCargo.TotalQuantity;
+			if (totalCargoUnits > cargoAnchors.Count)
+			{
+				_loggerService?.LogError(
+					$"[TrainCargoPresentation] Scenario '{scenario.ScenarioId}' requires {totalCargoUnits} " +
+					$"cargo slots, but train has {cargoAnchors.Count}.");
+				ClearPresentationState();
+				return false;
+			}
+
+			BuildRandomizedSlotOrder(cargoAnchors.Count);
 			var slotIndex = 0;
 			for (var i = 0; i < scenario.ActualCargo.Entries.Count; i++)
 			{
@@ -105,15 +118,15 @@ namespace Project.Gameplay.Train
 
 				for (var quantityIndex = 0; quantityIndex < cargoEntry.Quantity; quantityIndex++)
 				{
-					var anchor = ResolveCargoAnchor(cargoAnchors, slotIndex);
+					var randomizedSlotIndex = ResolveRandomizedSlotIndex(slotIndex);
+					var anchor = ResolveCargoAnchor(cargoAnchors, randomizedSlotIndex);
 					var cargoInstance = await SpawnAttachedPrefabAsync(
 						revision,
 						trainView,
 						cargoConfig.prefab_resource_path,
 						anchor,
-						ResolveCargoLocalPosition(slotIndex, cargoAnchors.Count),
+						Vector3.zero,
 						Quaternion.identity,
-						CargoVisualKind.MainCargo,
 						cargoEntry.CargoId);
 					if (!cargoInstance)
 					{
@@ -125,67 +138,11 @@ namespace Project.Gameplay.Train
 				}
 			}
 
-			if (scenario.HasHiddenContraband)
-			{
-				var hiddenSlotIndex = Mathf.Clamp(totalCargoUnits / 2, 0, Math.Max(0, totalCargoUnits - 1));
-				var hiddenAnchor = ResolveCargoAnchor(cargoAnchors, hiddenSlotIndex);
-				var hiddenClue = await SpawnAttachedPrefabAsync(
-					revision,
-					trainView,
-					ProjectGameplayResourcePaths.CargoClues_HiddenContraband,
-					hiddenAnchor,
-					ResolveCargoLocalPosition(hiddenSlotIndex, cargoAnchors.Count) + new Vector3(0f, 0.45f, 0f),
-					Quaternion.identity,
-					CargoVisualKind.HiddenContraband,
-					scenario.ActualCargo.SingleCargoId);
-				if (!hiddenClue)
-				{
-					ClearPresentationState();
-					return false;
-				}
-			}
-
-			if (scenario.HasIllegalMarker)
-			{
-				var markerAnchor = ResolveCargoAnchor(cargoAnchors, 0);
-				var markerClue = await SpawnAttachedPrefabAsync(
-					revision,
-					trainView,
-					ProjectGameplayResourcePaths.CargoClues_IllegalMarker,
-					markerAnchor,
-					ResolveCargoLocalPosition(0, cargoAnchors.Count) + new Vector3(0f, 1.05f, 0f),
-					Quaternion.identity,
-					CargoVisualKind.IllegalMarker,
-					scenario.ActualCargo.SingleCargoId);
-				if (!markerClue)
-				{
-					ClearPresentationState();
-					return false;
-				}
-			}
-
 			_loggerService?.Log(
 				$"[TrainCargoPresentation] Presented cargo '{scenario.ActualCargo.ToDebugString()}' " +
 				$"for scenario '{scenario.ScenarioId}'. CargoUnits={totalCargoUnits}, CargoAnchors={cargoAnchors.Count}, " +
-				$"HiddenContraband={scenario.HasHiddenContraband}, IllegalMarker={scenario.HasIllegalMarker}.");
+				$"RandomSlots={_slotOrder.Count}.");
 			return true;
-		}
-
-		private async UniTask<Dictionary<string, CargoTypeConfig>> ResolveCargoConfigsAsync(TrainScenario scenario)
-		{
-			var result = new Dictionary<string, CargoTypeConfig>(StringComparer.OrdinalIgnoreCase);
-			for (var i = 0; i < scenario.ActualCargo.Entries.Count; i++)
-			{
-				var cargoEntry = scenario.ActualCargo.Entries[i];
-				if (result.ContainsKey(cargoEntry.CargoId))
-				{
-					continue;
-				}
-
-				result[cargoEntry.CargoId] = await _cargoCatalogLoader.GetByIdAsync(cargoEntry.CargoId);
-			}
-
-			return result;
 		}
 
 		private async UniTask<GameObject> SpawnAttachedPrefabAsync(
@@ -195,7 +152,6 @@ namespace Project.Gameplay.Train
 			Transform parent,
 			Vector3 localPosition,
 			Quaternion localRotation,
-			CargoVisualKind visualKind,
 			string cargoId)
 		{
 			if (string.IsNullOrWhiteSpace(resourcePath))
@@ -235,7 +191,8 @@ namespace Project.Gameplay.Train
 
 			instance.transform.localPosition = localPosition;
 			instance.transform.localRotation = localRotation;
-			EnsureFallbackVisual(instance, visualKind, cargoId);
+			ApplyCargoViewVariant(instance);
+			EnsureFallbackVisual(instance, cargoId);
 			_spawnedObjects.Add(instance);
 			return instance;
 		}
@@ -260,6 +217,7 @@ namespace Project.Gameplay.Train
 
 			if (_cargoAnchors.Count > 0)
 			{
+				LogInsufficientCargoSlotsIfRequired(_cargoAnchors.Count);
 				return _cargoAnchors;
 			}
 
@@ -280,30 +238,63 @@ namespace Project.Gameplay.Train
 				return null;
 			}
 
-			var normalizedIndex = Mathf.Clamp(slotIndex, 0, int.MaxValue);
-			return cargoAnchors[normalizedIndex % cargoAnchors.Count];
+			var normalizedIndex = Mathf.Clamp(slotIndex, 0, cargoAnchors.Count - 1);
+			return cargoAnchors[normalizedIndex];
 		}
 
-		private static Vector3 ResolveCargoLocalPosition(int slotIndex, int anchorCount)
+		private void BuildRandomizedSlotOrder(int slotCount)
 		{
-			var safeAnchorCount = Math.Max(1, anchorCount);
-			var repeatedLayer = slotIndex / safeAnchorCount;
-			switch (repeatedLayer)
+			_slotOrder.Clear();
+			for (var i = 0; i < slotCount; i++)
 			{
-				case 0:
-					return Vector3.zero;
-				case 1:
-					return new Vector3(-0.24f, 0f, 0.18f);
-				case 2:
-					return new Vector3(0.24f, 0f, -0.18f);
-				case 3:
-					return new Vector3(0f, 0.2f, 0f);
-				default:
-					return new Vector3(0f, 0.2f * (repeatedLayer - 2), 0f);
+				_slotOrder.Add(i);
+			}
+
+			for (var i = _slotOrder.Count - 1; i > 0; i--)
+			{
+				var swapIndex = _random.Next(i + 1);
+				(_slotOrder[i], _slotOrder[swapIndex]) = (_slotOrder[swapIndex], _slotOrder[i]);
 			}
 		}
 
-		private void EnsureFallbackVisual(GameObject instance, CargoVisualKind visualKind, string cargoId)
+		private int ResolveRandomizedSlotIndex(int sequentialSlotIndex)
+		{
+			if (_slotOrder.Count == 0)
+			{
+				return sequentialSlotIndex;
+			}
+
+			return _slotOrder[Mathf.Clamp(sequentialSlotIndex, 0, _slotOrder.Count - 1)];
+		}
+
+		private void LogInsufficientCargoSlotsIfRequired(int slotCount)
+		{
+			if (_hasLoggedInsufficientCargoSlots || slotCount >= ExpectedCargoSlotCount)
+			{
+				return;
+			}
+
+			_hasLoggedInsufficientCargoSlots = true;
+			_loggerService?.LogWarning(
+				$"[TrainCargoPresentation] Train has {slotCount} cargo support points. " +
+				$"Expected {ExpectedCargoSlotCount} for full wagon variety.");
+		}
+
+		private void ApplyCargoViewVariant(GameObject instance)
+		{
+			if (!instance)
+			{
+				return;
+			}
+
+			var cargoView = instance.GetComponent<CargoView>();
+			if (cargoView)
+			{
+				cargoView.ApplyRandomVariant(_random);
+			}
+		}
+
+		private void EnsureFallbackVisual(GameObject instance, string cargoId)
 		{
 			if (!instance)
 			{
@@ -315,48 +306,15 @@ namespace Project.Gameplay.Train
 				return;
 			}
 
-			switch (visualKind)
-			{
-				case CargoVisualKind.HiddenContraband:
-					CreatePrimitiveVisual(
-						instance.transform,
-						PrimitiveType.Sphere,
-						new Vector3(0f, 0f, 0f),
-						new Vector3(0.24f, 0.24f, 0.24f),
-						new Color(0.74f, 0.12f, 0.08f),
-						Vector3.zero,
-						"HiddenContraband");
-					return;
-				case CargoVisualKind.IllegalMarker:
-					CreatePrimitiveVisual(
-						instance.transform,
-						PrimitiveType.Cube,
-						Vector3.zero,
-						new Vector3(0.1f, 0.7f, 0.08f),
-						new Color(0.88f, 0.14f, 0.12f),
-						new Vector3(0f, 0f, 45f),
-						"IllegalMarkerA");
-					CreatePrimitiveVisual(
-						instance.transform,
-						PrimitiveType.Cube,
-						Vector3.zero,
-						new Vector3(0.1f, 0.7f, 0.08f),
-						new Color(0.88f, 0.14f, 0.12f),
-						new Vector3(0f, 0f, -45f),
-						"IllegalMarkerB");
-					return;
-				default:
-					var spec = ResolveMainCargoSpec(cargoId);
-					CreatePrimitiveVisual(
-						instance.transform,
-						spec.PrimitiveType,
-						spec.LocalPosition,
-						spec.LocalScale,
-						spec.Color,
-						spec.LocalEulerAngles,
-						"CargoVisual");
-					return;
-			}
+			var spec = ResolveMainCargoSpec(cargoId);
+			CreatePrimitiveVisual(
+				instance.transform,
+				spec.PrimitiveType,
+				spec.LocalPosition,
+				spec.LocalScale,
+				spec.Color,
+				spec.LocalEulerAngles,
+				"CargoVisual");
 		}
 
 		private static CargoVisualSpec ResolveMainCargoSpec(string cargoId)
@@ -499,14 +457,8 @@ namespace Project.Gameplay.Train
 
 			_spawnedObjects.Clear();
 			_cargoAnchors.Clear();
+			_slotOrder.Clear();
 			_presentedTrain = null;
-		}
-
-		private enum CargoVisualKind
-		{
-			MainCargo = 0,
-			HiddenContraband = 1,
-			IllegalMarker = 2,
 		}
 
 		private readonly struct CargoVisualSpec

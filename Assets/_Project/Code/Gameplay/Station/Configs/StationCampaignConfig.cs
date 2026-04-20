@@ -7,6 +7,8 @@ namespace Project.Gameplay.Station.Configs
 	[Serializable]
 	public sealed class StationCampaignConfig : BaseConfig
 	{
+		public const int MaxOccupiedSlotsPerTrain = 10;
+
 		[Tooltip("Ordered day resource paths used for authored campaign progression.")]
 		public List<string> day_resource_paths = new List<string>();
 
@@ -25,11 +27,27 @@ namespace Project.Gameplay.Station.Configs
 		[Min(1)]
 		public int endless_max_cases = StationDayConfig.MaxTrainScenariosPerDay;
 
+		[Tooltip("Minimum occupied cargo positions per generated endless train.")]
+		[Min(1)]
+		public int endless_min_occupied_slots_per_train = 6;
+
+		[Tooltip("Maximum occupied cargo positions per generated endless train.")]
+		[Min(1)]
+		public int endless_max_occupied_slots_per_train = MaxOccupiedSlotsPerTrain;
+
 		public override void ParseConfig()
 		{
 			max_cases_per_day = Mathf.Clamp(max_cases_per_day, 1, StationDayConfig.MaxTrainScenariosPerDay);
 			endless_min_cases = Mathf.Clamp(endless_min_cases, 1, max_cases_per_day);
 			endless_max_cases = Mathf.Clamp(endless_max_cases, endless_min_cases, max_cases_per_day);
+			endless_min_occupied_slots_per_train = Mathf.Clamp(
+				endless_min_occupied_slots_per_train,
+				1,
+				MaxOccupiedSlotsPerTrain);
+			endless_max_occupied_slots_per_train = Mathf.Clamp(
+				endless_max_occupied_slots_per_train,
+				endless_min_occupied_slots_per_train,
+				MaxOccupiedSlotsPerTrain);
 
 			if (day_resource_paths == null)
 			{

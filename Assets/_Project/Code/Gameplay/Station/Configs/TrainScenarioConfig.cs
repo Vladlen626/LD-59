@@ -20,12 +20,6 @@ namespace Project.Gameplay.Station.Configs
 		[Tooltip("Real cargo list in wagon with quantities. Preferred over legacy actual_cargo_id.")]
 		public List<CargoQuantityConfig> actual_cargo = new List<CargoQuantityConfig>();
 
-		[Tooltip("True if contraband is hidden in cargo.")]
-		public bool has_hidden_contraband;
-
-		[Tooltip("True if wagon has illegal marker that must trigger SendBack.")]
-		public bool has_illegal_marker;
-
 		[Tooltip("Money earned when player verdict is correct.")]
 		[Min(0)]
 		public int reward_on_correct_decision = 50;
@@ -52,8 +46,6 @@ namespace Project.Gameplay.Station.Configs
 				id,
 				manifest.ToDomain(),
 				BuildActualCargoEntries(),
-				has_hidden_contraband,
-				has_illegal_marker,
 				reward_on_correct_decision);
 		}
 

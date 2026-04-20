@@ -11,6 +11,7 @@ using UnityEngine;
 public sealed class CampaignEndingController : IBaseController, IActivatable, IDeactivatable, IUpdatable
 {
 	private const string ClosePrompt = "E / Esc - Close Report";
+	private const string ContinuePrompt = "Continue Shift";
 	private const string WinTitle = "Debt Cleared";
 	private const string LoseTitle = "Debt Unpaid";
 
@@ -26,6 +27,8 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 	private int _openedFrame;
 	private UniTask _viewLoadTask;
 	private bool _isViewLoadInProgress;
+
+	public event System.Action ContinueRequested;
 
 	public CampaignEndingController(
 		IInputService inputService,
@@ -69,6 +72,7 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 
 		if (_view)
 		{
+			_view.ContinueClicked -= OnContinueClicked;
 			_objectFactory.Destroy(_view.gameObject);
 			_view = null;
 		}
@@ -89,12 +93,12 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 		}
 	}
 
-	public void ShowEnding(bool isWin, int remainingDebt)
+	public void ShowEnding(bool isWin, int outstandingDebt, bool canContinue = false)
 	{
-		ShowEndingAsync(isWin, remainingDebt).Forget();
+		ShowEndingAsync(isWin, outstandingDebt, canContinue).Forget();
 	}
 
-	private async UniTaskVoid ShowEndingAsync(bool isWin, int remainingDebt)
+	private async UniTaskVoid ShowEndingAsync(bool isWin, int outstandingDebt, bool canContinue)
 	{
 		if (_isActive == false)
 		{
@@ -109,8 +113,9 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 
 		_view.SetContent(
 			isWin ? WinTitle : LoseTitle,
-			BuildBody(isWin, remainingDebt),
+			BuildBody(isWin, outstandingDebt),
 			ClosePrompt);
+		_view.SetContinueVisible(canContinue, ContinuePrompt);
 		_view.gameObject.SetActive(true);
 		_view.Show();
 		_isOpen = true;
@@ -124,7 +129,8 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 		}
 
 		_loggerService?.Log(
-			$"[CampaignEnding] Shown. Result={(isWin ? "Win" : "Lose")}, RemainingDebt={remainingDebt}.");
+			$"[CampaignEnding] Shown. Result={(isWin ? "Win" : "Lose")}, OutstandingDebt={outstandingDebt}, " +
+			$"CanContinue={canContinue}.");
 	}
 
 	public void HideEnding()
@@ -198,6 +204,7 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 			view.transform.SetParent(parent, false);
 			view.gameObject.layer = parent.gameObject.layer;
 			view.gameObject.SetActive(false);
+			view.ContinueClicked += OnContinueClicked;
 			_view = view;
 		}
 		finally
@@ -206,7 +213,7 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 		}
 	}
 
-	private static string BuildBody(bool isWin, int remainingDebt)
+	private static string BuildBody(bool isWin, int outstandingDebt)
 	{
 		if (isWin)
 		{
@@ -215,6 +222,17 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 
 		return
 			"Morning comes before the account is cleared. The line stays open, the books stay red, and your name remains under the debt.\n\n" +
-			$"Outstanding debt: {remainingDebt}.";
+			$"Outstanding debt: {outstandingDebt}.";
+	}
+
+	private void OnContinueClicked()
+	{
+		if (_isOpen == false)
+		{
+			return;
+		}
+
+		ContinueRequested?.Invoke();
+		HideEnding();
 	}
 }

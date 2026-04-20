@@ -188,7 +188,10 @@ namespace Project.Bootstrap
 						stationCampaignConfig?.max_cases_per_day ?? StationDayConfig.MaxTrainScenariosPerDay,
 						stationCampaignConfig?.allow_endless_after_campaign ?? false,
 						stationCampaignConfig?.endless_min_cases ?? 6,
-						stationCampaignConfig?.endless_max_cases ?? StationDayConfig.MaxTrainScenariosPerDay);
+						stationCampaignConfig?.endless_max_cases ?? StationDayConfig.MaxTrainScenariosPerDay,
+						stationCampaignConfig?.endless_min_occupied_slots_per_train ?? 6,
+						stationCampaignConfig?.endless_max_occupied_slots_per_train ??
+							StationCampaignConfig.MaxOccupiedSlotsPerTrain);
 					var initialDay = campaignProgress.CurrentDay;
 					if (initialDay == null)
 					{
@@ -216,6 +219,7 @@ namespace Project.Bootstrap
 						stationSetup.TrainSpawnPoint,
 						stationSetup.TrainSpawnParent);
 					var cargoCatalogLoader = new CargoCatalogLoader(configService);
+					var endlessDayGenerator = new StationEndlessDayGenerator(cargoCatalogLoader, loggerService);
 					var trainCargoPresentationController = new TrainCargoPresentationController(
 						objectFactory,
 						trainSpawnController,
@@ -239,6 +243,7 @@ namespace Project.Bootstrap
 						trainSpawnController,
 						trainCargoPresentationController,
 						trainMovementController,
+						endlessDayGenerator,
 						globalNotificationService,
 						loggerService);
 					var stationInspectionInfoController = new StationInspectionInfoController(

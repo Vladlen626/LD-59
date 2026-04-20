@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "day_02",
   "initial_debt": 300,
   "day_index": 3,
@@ -24,7 +24,7 @@
         "declared_cargo": [
           {
             "cargo_id": "grain_sacks",
-            "quantity": 2
+            "quantity": 5
           }
         ],
         "declared_description": "Grain sacks for the mills"
@@ -32,11 +32,9 @@
       "actual_cargo": [
         {
           "cargo_id": "grain_sacks",
-          "quantity": 2
+          "quantity": 5
         }
       ],
-      "has_hidden_contraband": false,
-      "has_illegal_marker": false,
       "reward_on_correct_decision": 55
     },
     {
@@ -45,11 +43,11 @@
         "declared_cargo": [
           {
             "cargo_id": "weapon_crates",
-            "quantity": 1
+            "quantity": 3
           },
           {
             "cargo_id": "timber",
-            "quantity": 1
+            "quantity": 3
           }
         ],
         "declared_description": "Registered weapon shipment with timber braces"
@@ -57,15 +55,13 @@
       "actual_cargo": [
         {
           "cargo_id": "weapon_crates",
-          "quantity": 1
+          "quantity": 3
         },
         {
           "cargo_id": "timber",
-          "quantity": 1
+          "quantity": 3
         }
       ],
-      "has_hidden_contraband": false,
-      "has_illegal_marker": false,
       "reward_on_correct_decision": 55
     },
     {
@@ -74,7 +70,7 @@
         "declared_cargo": [
           {
             "cargo_id": "medical_supplies",
-            "quantity": 2
+            "quantity": 6
           }
         ],
         "declared_description": "Emergency aid crates"
@@ -82,11 +78,13 @@
       "actual_cargo": [
         {
           "cargo_id": "medical_supplies",
-          "quantity": 2
+          "quantity": 5
+        },
+        {
+          "cargo_id": "dynamite_crates",
+          "quantity": 1
         }
       ],
-      "has_hidden_contraband": true,
-      "has_illegal_marker": false,
       "reward_on_correct_decision": 55
     },
     {
@@ -95,11 +93,11 @@
         "declared_cargo": [
           {
             "cargo_id": "cheese_wheels",
-            "quantity": 1
+            "quantity": 2
           },
           {
             "cargo_id": "canned_food",
-            "quantity": 1
+            "quantity": 3
           }
         ],
         "declared_description": "Cheese and reserve food"
@@ -107,15 +105,13 @@
       "actual_cargo": [
         {
           "cargo_id": "cheese_wheels",
-          "quantity": 1
+          "quantity": 2
         },
         {
           "cargo_id": "canned_food",
-          "quantity": 1
+          "quantity": 3
         }
       ],
-      "has_hidden_contraband": false,
-      "has_illegal_marker": false,
       "reward_on_correct_decision": 55
     },
     {
@@ -124,7 +120,7 @@
         "declared_cargo": [
           {
             "cargo_id": "canned_food",
-            "quantity": 2
+            "quantity": 6
           }
         ],
         "declared_description": "Reserve food stock"
@@ -132,11 +128,9 @@
       "actual_cargo": [
         {
           "cargo_id": "canned_food",
-          "quantity": 1
+          "quantity": 5
         }
       ],
-      "has_hidden_contraband": false,
-      "has_illegal_marker": false,
       "reward_on_correct_decision": 55
     },
     {
@@ -145,7 +139,7 @@
         "declared_cargo": [
           {
             "cargo_id": "prisoner_transport",
-            "quantity": 1
+            "quantity": 5
           }
         ],
         "declared_description": "Prisoner transfer papers"
@@ -153,11 +147,9 @@
       "actual_cargo": [
         {
           "cargo_id": "prisoner_transport",
-          "quantity": 1
+          "quantity": 5
         }
       ],
-      "has_hidden_contraband": false,
-      "has_illegal_marker": false,
       "reward_on_correct_decision": 55
     }
   ]

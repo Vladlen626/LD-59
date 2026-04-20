@@ -11,7 +11,7 @@ namespace Project.Gameplay.Station.Configs
 	{
 		public const int MaxTrainScenariosPerDay = 8;
 
-		[Tooltip("Debt value at day start.")]
+		[Tooltip("Debt value at campaign/fallback start. In campaign mode only the first loaded day seeds the shared debt.")]
 		[Min(0)]
 		public int initial_debt = 1000;
 

@@ -15,14 +15,10 @@ namespace Project.Gameplay.Station.Domain
 		{
 			var isForbiddenCargo = HasForbiddenCargo(dayRuleSet, scenario.ActualCargo);
 			var isManifestMismatch = scenario.Manifest.DeclaredCargo.Matches(scenario.ActualCargo) == false;
-			var hasHiddenContraband = scenario.HasHiddenContraband;
-			var hasIllegalMarker = scenario.HasIllegalMarker;
 
 			var hasContraband =
 				isForbiddenCargo ||
-				isManifestMismatch ||
-				hasHiddenContraband ||
-				hasIllegalMarker;
+				isManifestMismatch;
 
 			var expectedDecision = hasContraband
 				? PlayerDecision.SendBack
@@ -41,9 +37,7 @@ namespace Project.Gameplay.Station.Domain
 			var errorReasons = BuildErrorReasons(
 				playerDecision,
 				isForbiddenCargo,
-				isManifestMismatch,
-				hasHiddenContraband,
-				hasIllegalMarker);
+				isManifestMismatch);
 
 			var penalty = playerDecision == PlayerDecision.AllowPassage
 				? dayRuleSet.MissedContrabandPenalty
@@ -60,9 +54,7 @@ namespace Project.Gameplay.Station.Domain
 		private static IReadOnlyList<InspectionErrorReason> BuildErrorReasons(
 			PlayerDecision playerDecision,
 			bool isForbiddenCargo,
-			bool isManifestMismatch,
-			bool hasHiddenContraband,
-			bool hasIllegalMarker)
+			bool isManifestMismatch)
 		{
 			if (playerDecision == PlayerDecision.SendBack)
 			{
@@ -72,8 +64,6 @@ namespace Project.Gameplay.Station.Domain
 			var reasonCount = 0;
 			reasonCount += isForbiddenCargo ? 1 : 0;
 			reasonCount += isManifestMismatch ? 1 : 0;
-			reasonCount += hasHiddenContraband ? 1 : 0;
-			reasonCount += hasIllegalMarker ? 1 : 0;
 
 			if (reasonCount == 0)
 			{
@@ -91,16 +81,6 @@ namespace Project.Gameplay.Station.Domain
 			if (isManifestMismatch)
 			{
 				reasons[index++] = InspectionErrorReason.AllowedManifestMismatch;
-			}
-
-			if (hasHiddenContraband)
-			{
-				reasons[index++] = InspectionErrorReason.AllowedHiddenContraband;
-			}
-
-			if (hasIllegalMarker)
-			{
-				reasons[index] = InspectionErrorReason.AllowedIllegalMarker;
 			}
 
 			return reasons;

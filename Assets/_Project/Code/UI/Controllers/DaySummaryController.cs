@@ -55,11 +55,19 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		_context.Hide();
 		_context.OnCloseClicked += OnCloseClickedHandler;
 		_stationFlowController.DayFinished += OnDayFinishedHandler;
+		if (_campaignEndingController != null)
+		{
+			_campaignEndingController.ContinueRequested += OnEndingContinueRequestedHandler;
+		}
 	}
 
 	protected override void OnDeactivate()
 	{
 		_stationFlowController.DayFinished -= OnDayFinishedHandler;
+		if (_campaignEndingController != null)
+		{
+			_campaignEndingController.ContinueRequested -= OnEndingContinueRequestedHandler;
+		}
 
 		if (_context != null)
 		{
@@ -93,14 +101,15 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 			debt.TotalLivingCosts,
 			debt.NetResult,
 			debt.InitialDebt,
-			debt.RemainingDebt,
+			debt.OutstandingDebt,
 			_stationFlowController.CurrentDayContent?.EndDayNote);
 
 		ShowContext();
 		_audioService?.PlaySound(ProjectAudioEventPaths.DayEnd);
 		_loggerService?.Log(
 			$"[DaySummary] Shown. Checked={journal.Count}, Income={debt.TotalEarnings}, Fines={debt.TotalFines}, " +
-			$"LivingCosts={debt.TotalLivingCosts}, Net={debt.NetResult}, RemainingDebt={debt.RemainingDebt}.");
+			$"LivingCosts={debt.TotalLivingCosts}, Net={debt.NetResult}, " +
+			$"OutstandingDebt={debt.OutstandingDebt}, Balance={debt.RemainingDebt}.");
 	}
 
 	private void OnCloseClickedHandler()
@@ -125,9 +134,9 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 				await _splashScreenService.FadeInAsync(ProjectSplashScreenSettings.DayAdvanceFadeInSeconds);
 			}
 
-			if (_stationFlowController.TryAdvanceToNextDay())
+			if (await _stationFlowController.TryAdvanceToNextDayAsync())
 			{
-				_loggerService?.Log("[DaySummary] Continue requested. Advancing to next authored day.");
+				_loggerService?.Log("[DaySummary] Continue requested. Advancing to next day.");
 				return;
 			}
 
@@ -138,11 +147,46 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 
 			if (hasNextDay == false)
 			{
-				var isWin = _runtimeContext.Debt.RemainingDebt <= 0;
-				_campaignEndingController.ShowEnding(isWin, _runtimeContext.Debt.RemainingDebt);
+				var isWin = _runtimeContext.Debt.IsCleared;
+				_campaignEndingController.ShowEnding(
+					isWin,
+					_runtimeContext.Debt.OutstandingDebt,
+					isWin && _stationFlowController.CanStartEndlessMode);
 				_loggerService?.Log(
-					$"[DaySummary] Campaign ended. Result={(isWin ? "Win" : "Lose")}, RemainingDebt={_runtimeContext.Debt.RemainingDebt}.");
+					$"[DaySummary] Campaign ended. Result={(isWin ? "Win" : "Lose")}, " +
+					$"OutstandingDebt={_runtimeContext.Debt.OutstandingDebt}, Balance={_runtimeContext.Debt.RemainingDebt}.");
 			}
+		}
+		finally
+		{
+			_isCloseTransitionInProgress = false;
+		}
+	}
+
+	private void OnEndingContinueRequestedHandler()
+	{
+		HandleEndingContinueRequestedAsync().Forget();
+	}
+
+	private async UniTaskVoid HandleEndingContinueRequestedAsync()
+	{
+		if (_isCloseTransitionInProgress)
+		{
+			return;
+		}
+
+		_isCloseTransitionInProgress = true;
+		try
+		{
+			await _splashScreenService.FadeInAsync(ProjectSplashScreenSettings.DayAdvanceFadeInSeconds);
+			if (await _stationFlowController.TryStartEndlessModeAsync())
+			{
+				_loggerService?.Log("[DaySummary] Endless mode requested from campaign ending.");
+				return;
+			}
+
+			await _splashScreenService.FadeOutAsync(ProjectSplashScreenSettings.DayAdvanceFallbackFadeOutSeconds);
+			_loggerService?.LogWarning("[DaySummary] Endless mode request failed.");
 		}
 		finally
 		{

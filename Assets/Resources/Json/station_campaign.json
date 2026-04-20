@@ -4,6 +4,8 @@
   "max_cases_per_day": 8,
   "endless_min_cases": 6,
   "endless_max_cases": 8,
+  "endless_min_occupied_slots_per_train": 6,
+  "endless_max_occupied_slots_per_train": 10,
   "day_resource_paths": [
     "Json/station_day_00_prologue",
     "Json/station_day_01",

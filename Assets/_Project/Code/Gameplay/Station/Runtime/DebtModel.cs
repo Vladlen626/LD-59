@@ -16,15 +16,25 @@ namespace Project.Gameplay.Station.Runtime
 		public int TotalEarnings { get; private set; }
 		public int TotalLivingCosts { get; private set; }
 		public int NetResult => TotalEarnings - TotalFines - TotalLivingCosts;
+		public int OutstandingDebt => Math.Max(0, RemainingDebt);
+		public bool IsCleared => RemainingDebt <= 0;
+
+		private bool _isDaySettled;
 
 		public void Reset(int initialDebt)
 		{
 			var normalizedInitialDebt = Math.Max(0, initialDebt);
 			InitialDebt = normalizedInitialDebt;
 			RemainingDebt = normalizedInitialDebt;
+			StartNewDay();
+		}
+
+		public void StartNewDay()
+		{
 			TotalFines = 0;
 			TotalEarnings = 0;
 			TotalLivingCosts = 0;
+			_isDaySettled = false;
 		}
 
 		public void ApplyInspectionOutcome(InspectionResult result, int rewardOnCorrectDecision)
@@ -51,7 +61,6 @@ namespace Project.Gameplay.Station.Runtime
 			}
 
 			TotalFines += fine;
-			RemainingDebt += fine;
 		}
 
 		public void ApplyEarnings(int earnings)
@@ -62,7 +71,6 @@ namespace Project.Gameplay.Station.Runtime
 			}
 
 			TotalEarnings += earnings;
-			RemainingDebt = Math.Max(0, RemainingDebt - earnings);
 		}
 
 		public void ApplyLivingCost(int livingCost)
@@ -73,7 +81,27 @@ namespace Project.Gameplay.Station.Runtime
 			}
 
 			TotalLivingCosts += livingCost;
-			RemainingDebt += livingCost;
+		}
+
+		public void SettleDay(int livingCost)
+		{
+			if (_isDaySettled)
+			{
+				return;
+			}
+
+			ApplyLivingCost(livingCost);
+			var netResult = NetResult;
+			if (netResult >= 0)
+			{
+				RemainingDebt = Math.Max(0, RemainingDebt - netResult);
+			}
+			else
+			{
+				RemainingDebt += -netResult;
+			}
+
+			_isDaySettled = true;
 		}
 	}
 }

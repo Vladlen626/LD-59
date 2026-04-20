@@ -20,6 +20,7 @@ namespace Project.Gameplay.Station.Controllers
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly TrainMovementController _trainMovementController;
 		private readonly TrainCargoPresentationController _trainCargoPresentationController;
+		private readonly StationEndlessDayGenerator _endlessDayGenerator;
 		private readonly IGlobalNotificationService _globalNotificationService;
 		private readonly ILoggerService _loggerService;
 		private bool _isActive;
@@ -43,7 +44,9 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.FlowState == StationFlowState.DayIntroPending &&
 			_runtimeModel.HasActiveScenario == false;
 
-		public bool HasNextDay => _campaignProgress.HasNextDay;
+		public bool HasNextDay => _campaignProgress.HasNextDay || _campaignProgress.IsEndlessMode;
+		public bool CanStartEndlessMode => _campaignProgress.CanStartEndlessMode;
+		public bool IsEndlessMode => _campaignProgress.IsEndlessMode;
 		public bool IsCurrentDayLastAuthored => _campaignProgress.IsCurrentDayLastAuthored;
 		public StationDayContent CurrentDayContent => _campaignProgress.CurrentDay;
 		public int CurrentDayIndex => _runtimeModel.StationDay.DayIndex;
@@ -55,6 +58,7 @@ namespace Project.Gameplay.Station.Controllers
 			TrainSpawnController trainSpawnController,
 			TrainCargoPresentationController trainCargoPresentationController,
 			TrainMovementController trainMovementController,
+			StationEndlessDayGenerator endlessDayGenerator,
 			IGlobalNotificationService globalNotificationService,
 			ILoggerService loggerService)
 		{
@@ -65,10 +69,13 @@ namespace Project.Gameplay.Station.Controllers
 				StationDayConfig.MaxTrainScenariosPerDay,
 				false,
 				6,
-				StationDayConfig.MaxTrainScenariosPerDay);
+				StationDayConfig.MaxTrainScenariosPerDay,
+				6,
+				10);
 			_trainSpawnController = trainSpawnController;
 			_trainCargoPresentationController = trainCargoPresentationController;
 			_trainMovementController = trainMovementController;
+			_endlessDayGenerator = endlessDayGenerator;
 			_globalNotificationService = globalNotificationService;
 			_loggerService = loggerService;
 		}
@@ -116,7 +123,7 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			_runtimeModel.StationDay.SetDay(currentDay.RuleSet);
-			_runtimeModel.Debt.Reset(currentDay.InitialDebt);
+			_runtimeModel.Debt.StartNewDay();
 			_runtimeModel.InspectionJournal.Clear();
 			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
@@ -125,10 +132,14 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.SetFlowState(StationFlowState.DayIntroPending);
 			_isDayFinished = false;
 			UpdateForbiddenCargoLogValue();
+			var progressLogValue = _campaignProgress.IsEndlessMode
+				? $"EndlessDay={_campaignProgress.EndlessDayOrder}"
+				: $"CampaignDay={_campaignProgress.CurrentDayOrder}/{_campaignProgress.TotalDays}";
 			_loggerService?.Log(
 				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} started. " +
-				$"CampaignDay={_campaignProgress.CurrentDayOrder}/{_campaignProgress.TotalDays}, " +
-				$"Cases={CurrentDayScenarios.Count}, InitialDebt={_runtimeModel.Debt.InitialDebt}.");
+				$"{progressLogValue}, " +
+				$"Cases={CurrentDayScenarios.Count}, Debt={_runtimeModel.Debt.OutstandingDebt}, " +
+				$"InitialDebt={_runtimeModel.Debt.InitialDebt}.");
 			if (DayStarted == null)
 			{
 				TryCompleteDayIntro();
@@ -146,6 +157,51 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			if (_campaignProgress.TryAdvanceToNextDay() == false)
+			{
+				return false;
+			}
+
+			StartDay();
+			return true;
+		}
+
+		public async UniTask<bool> TryAdvanceToNextDayAsync()
+		{
+			if (_isActive == false || _isDayFinished == false)
+			{
+				return false;
+			}
+
+			if (_campaignProgress.TryAdvanceToNextDay())
+			{
+				StartDay();
+				return true;
+			}
+
+			if (_campaignProgress.IsEndlessMode == false)
+			{
+				return false;
+			}
+
+			var nextDay = await GenerateEndlessDayAsync(_campaignProgress.EndlessDayOrder + 1);
+			if (nextDay == null || _campaignProgress.SetNextEndlessDay(nextDay) == false)
+			{
+				return false;
+			}
+
+			StartDay();
+			return true;
+		}
+
+		public async UniTask<bool> TryStartEndlessModeAsync()
+		{
+			if (_isActive == false || _isDayFinished == false || _campaignProgress.CanStartEndlessMode == false)
+			{
+				return false;
+			}
+
+			var firstEndlessDay = await GenerateEndlessDayAsync(1);
+			if (firstEndlessDay == null || _campaignProgress.StartEndlessMode(firstEndlessDay) == false)
 			{
 				return false;
 			}
@@ -360,7 +416,7 @@ namespace Project.Gameplay.Station.Controllers
 			}
 
 			var livingCost = CurrentDayContent?.LivingCost;
-			_runtimeModel.Debt.ApplyLivingCost(livingCost?.Amount ?? 0);
+			_runtimeModel.Debt.SettleDay(livingCost?.Amount ?? 0);
 			_isDayFinished = true;
 			_trainSpawnController.ClearCurrentTrain();
 			_runtimeModel.ClearActiveScenario();
@@ -369,9 +425,28 @@ namespace Project.Gameplay.Station.Controllers
 			_loggerService?.Log(
 				$"[StationFlow] Day {_runtimeModel.StationDay.DayIndex} finished. " +
 				$"Cases={_runtimeModel.StationDay.CompletedCasesCount}, " +
-				$"Debt={_runtimeModel.Debt.RemainingDebt}, Fines={_runtimeModel.Debt.TotalFines}, Earnings={_runtimeModel.Debt.TotalEarnings}, " +
+				$"Debt={_runtimeModel.Debt.OutstandingDebt}, Balance={_runtimeModel.Debt.RemainingDebt}, " +
+				$"Fines={_runtimeModel.Debt.TotalFines}, Earnings={_runtimeModel.Debt.TotalEarnings}, " +
 				$"LivingCosts={_runtimeModel.Debt.TotalLivingCosts}, Net={_runtimeModel.Debt.NetResult}, " +
 				$"HasNextDay={HasNextDay}.");
+		}
+
+		private async UniTask<StationDayContent> GenerateEndlessDayAsync(int endlessDayOrder)
+		{
+			if (_endlessDayGenerator == null)
+			{
+				_loggerService?.LogError("[StationFlow] Endless mode requested but endless day generator is missing.");
+				return null;
+			}
+
+			var nextDayIndex = Math.Max(1, _runtimeModel.StationDay.DayIndex + 1);
+			return await _endlessDayGenerator.GenerateAsync(
+				nextDayIndex,
+				Math.Max(1, endlessDayOrder),
+				_campaignProgress.EndlessMinCases,
+				_campaignProgress.EndlessMaxCases,
+				_campaignProgress.EndlessMinOccupiedSlotsPerTrain,
+				_campaignProgress.EndlessMaxOccupiedSlotsPerTrain);
 		}
 
 		private int FindNextCaseIndex(int startIndex)
@@ -402,8 +477,7 @@ namespace Project.Gameplay.Station.Controllers
 				$"[StationFlow] Begin inspection case {caseIndex + 1}: " +
 				$"ManifestCargo='{scenario.Manifest.DeclaredCargo.ToDebugString()}', " +
 				$"ManifestDesc='{scenario.Manifest.DeclaredDescription}', " +
-				$"ActualCargo='{scenario.ActualCargo.ToDebugString()}', HiddenContraband={scenario.HasHiddenContraband}, " +
-				$"IllegalMarker={scenario.HasIllegalMarker}, ForbiddenCargo=[{_forbiddenCargoLogValue}], " +
+				$"ActualCargo='{scenario.ActualCargo.ToDebugString()}', ForbiddenCargo=[{_forbiddenCargoLogValue}], " +
 				$"ActualCargoForbidden={isForbidden}, " +
 				$"Penalties(Missed={ruleSet.MissedContrabandPenalty}, Wrongful={ruleSet.WrongfulRejectionPenalty}).");
 		}
@@ -419,7 +493,8 @@ namespace Project.Gameplay.Station.Controllers
 				$"[StationFlow] Resolve case {_runtimeModel.ActiveCaseIndex + 1}: " +
 				$"Player={result.PlayerDecision}, Expected={result.ExpectedDecision}, Verdict={result.Verdict}, " +
 				$"Penalty={result.Penalty}, Reward={reward}, Reasons=[{reasons}], " +
-				$"Debt={_runtimeModel.Debt.RemainingDebt}, JournalCount={_runtimeModel.InspectionJournal.Count}.");
+				$"Debt={_runtimeModel.Debt.OutstandingDebt}, Balance={_runtimeModel.Debt.RemainingDebt}, " +
+				$"JournalCount={_runtimeModel.InspectionJournal.Count}.");
 		}
 
 		private void ShowMistakeNotification(InspectionResult result)
@@ -447,10 +522,6 @@ namespace Project.Gameplay.Station.Controllers
 						return "Wrong allow. Banned cargo got through.";
 					case InspectionErrorReason.AllowedManifestMismatch:
 						return "Wrong allow. Papers did not match the cargo load.";
-					case InspectionErrorReason.AllowedHiddenContraband:
-						return "Wrong allow. Hidden contraband got through.";
-					case InspectionErrorReason.AllowedIllegalMarker:
-						return "Wrong allow. Illegal cargo got through.";
 				}
 			}
 
