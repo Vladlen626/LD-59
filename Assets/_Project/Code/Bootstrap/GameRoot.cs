@@ -19,6 +19,7 @@ using Project.Gameplay.Station.Runtime;
 using Project.Gameplay.Train;
 using Project.Infrastructure;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace Project.Bootstrap
@@ -235,6 +236,7 @@ namespace Project.Bootstrap
 					var trainAudioController = new TrainAudioController(
 						trainSpawnController,
 						stationRuntimeContext,
+						stationSetup,
 						loggerService);
 					var stationFlowController = new StationFlowController(
 						stationRuntimeContext,
@@ -245,6 +247,11 @@ namespace Project.Bootstrap
 						trainMovementController,
 						endlessDayGenerator,
 						globalNotificationService,
+						loggerService);
+					var trainPlayerCollisionController = new TrainPlayerCollisionController(
+						playerView,
+						trainSpawnController,
+						stationFlowController,
 						loggerService);
 					var stationInspectionInfoController = new StationInspectionInfoController(
 						sceneContext,
@@ -290,7 +297,8 @@ namespace Project.Bootstrap
 						campaignEndingController,
 						splashScreenService,
 						audioService,
-						loggerService);
+						loggerService,
+						() => RestartGameAsync(splashScreenService, loggerService));
 					uiWakeTransitionController = new UIWakeTransitionController(loggerService, objectFactory);
 					nightShiftIntroController = new NightShiftIntroController(
 						playerView,
@@ -312,6 +320,7 @@ namespace Project.Bootstrap
 
 					controllers = new IBaseController[]
 					{
+						trainPlayerCollisionController,
 						playerMovementController,
 						playerBoundaryController,
 						trainSpawnController,
@@ -363,6 +372,19 @@ namespace Project.Bootstrap
 
 			audioService.PlaySoundParallel(SoundNames.DesertAmbience);
 			audioService.PlaySoundParallel(SoundNames.Ost_1);
+		}
+
+		private static async UniTask RestartGameAsync(
+			ISplashScreenService splashScreenService,
+			ILoggerService loggerService)
+		{
+			loggerService?.Log("[GameRoot] Full restart requested. Reloading persistent scene.");
+			if (splashScreenService != null)
+			{
+				await splashScreenService.FadeInAsync(ProjectSplashScreenSettings.DayAdvanceFadeInSeconds);
+			}
+
+			SceneManager.LoadScene(SceneNames.PersistentScene, LoadSceneMode.Single);
 		}
 
 		private async UniTask<List<StationDayContent>> LoadStationDayContentsAsync(

@@ -23,16 +23,32 @@
       "manifest": {
         "declared_cargo": [
           {
-            "cargo_id": "grain_sacks",
-            "quantity": 5
+            "cargo_id": "timber",
+            "quantity": 2
+          },
+          {
+            "cargo_id": "canned_food",
+            "quantity": 2
+          },
+          {
+            "cargo_id": "cheese_wheels",
+            "quantity": 1
           }
         ],
-        "declared_description": "Grain sacks for the mills"
+        "declared_description": "Timber braces, ration crates, and cheese wheels"
       },
       "actual_cargo": [
         {
-          "cargo_id": "grain_sacks",
-          "quantity": 5
+          "cargo_id": "timber",
+          "quantity": 2
+        },
+        {
+          "cargo_id": "canned_food",
+          "quantity": 2
+        },
+        {
+          "cargo_id": "cheese_wheels",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 55
@@ -43,23 +59,39 @@
         "declared_cargo": [
           {
             "cargo_id": "weapon_crates",
-            "quantity": 3
+            "quantity": 2
           },
           {
             "cargo_id": "timber",
-            "quantity": 3
+            "quantity": 2
+          },
+          {
+            "cargo_id": "medical_supplies",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "canned_food",
+            "quantity": 1
           }
         ],
-        "declared_description": "Registered weapon shipment with timber braces"
+        "declared_description": "Registered weapon shipment with timber, aid, and rations"
       },
       "actual_cargo": [
         {
           "cargo_id": "weapon_crates",
-          "quantity": 3
+          "quantity": 2
         },
         {
           "cargo_id": "timber",
-          "quantity": 3
+          "quantity": 2
+        },
+        {
+          "cargo_id": "medical_supplies",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 55
@@ -70,15 +102,31 @@
         "declared_cargo": [
           {
             "cargo_id": "medical_supplies",
-            "quantity": 6
+            "quantity": 4
+          },
+          {
+            "cargo_id": "canned_food",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "timber",
+            "quantity": 1
           }
         ],
-        "declared_description": "Emergency aid crates"
+        "declared_description": "Emergency aid crates with ration tins and timber braces"
       },
       "actual_cargo": [
         {
           "cargo_id": "medical_supplies",
-          "quantity": 5
+          "quantity": 3
+        },
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "timber",
+          "quantity": 1
         },
         {
           "cargo_id": "dynamite_crates",
@@ -97,10 +145,14 @@
           },
           {
             "cargo_id": "canned_food",
-            "quantity": 3
+            "quantity": 2
+          },
+          {
+            "cargo_id": "poison",
+            "quantity": 1
           }
         ],
-        "declared_description": "Cheese and reserve food"
+        "declared_description": "Cheese, reserve food, and sealed poison crates"
       },
       "actual_cargo": [
         {
@@ -109,7 +161,11 @@
         },
         {
           "cargo_id": "canned_food",
-          "quantity": 3
+          "quantity": 2
+        },
+        {
+          "cargo_id": "poison",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 55
@@ -120,15 +176,31 @@
         "declared_cargo": [
           {
             "cargo_id": "canned_food",
-            "quantity": 6
+            "quantity": 3
+          },
+          {
+            "cargo_id": "medical_supplies",
+            "quantity": 2
+          },
+          {
+            "cargo_id": "timber",
+            "quantity": 1
           }
         ],
-        "declared_description": "Reserve food stock"
+        "declared_description": "Reserve food, aid stock, and timber braces"
       },
       "actual_cargo": [
         {
           "cargo_id": "canned_food",
-          "quantity": 5
+          "quantity": 2
+        },
+        {
+          "cargo_id": "medical_supplies",
+          "quantity": 2
+        },
+        {
+          "cargo_id": "timber",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 55
@@ -138,16 +210,32 @@
       "manifest": {
         "declared_cargo": [
           {
-            "cargo_id": "prisoner_transport",
-            "quantity": 5
+            "cargo_id": "poison",
+            "quantity": 2
+          },
+          {
+            "cargo_id": "timber",
+            "quantity": 2
+          },
+          {
+            "cargo_id": "medical_supplies",
+            "quantity": 1
           }
         ],
-        "declared_description": "Prisoner transfer papers"
+        "declared_description": "Sealed poison inventory with timber braces and aid crates"
       },
       "actual_cargo": [
         {
-          "cargo_id": "prisoner_transport",
-          "quantity": 5
+          "cargo_id": "poison",
+          "quantity": 2
+        },
+        {
+          "cargo_id": "timber",
+          "quantity": 2
+        },
+        {
+          "cargo_id": "medical_supplies",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 55

@@ -17,6 +17,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 	private readonly ISplashScreenService _splashScreenService;
 	private readonly IAudioService _audioService;
 	private readonly ILoggerService _loggerService;
+	private readonly System.Func<UniTask> _restartGameAsync;
 
 	private bool _cursorUnlockedBySummary;
 	private bool _isCloseTransitionInProgress;
@@ -30,7 +31,8 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		CampaignEndingController campaignEndingController,
 		ISplashScreenService splashScreenService,
 		IAudioService audioService,
-		ILoggerService loggerService)
+		ILoggerService loggerService,
+		System.Func<UniTask> restartGameAsync)
 		: base(uiService)
 	{
 		_cursorService = cursorService;
@@ -41,6 +43,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		_splashScreenService = splashScreenService;
 		_audioService = audioService;
 		_loggerService = loggerService;
+		_restartGameAsync = restartGameAsync;
 	}
 
 	protected override void OnActivate()
@@ -58,6 +61,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		if (_campaignEndingController != null)
 		{
 			_campaignEndingController.ContinueRequested += OnEndingContinueRequestedHandler;
+			_campaignEndingController.CloseRequested += OnEndingCloseRequestedHandler;
 		}
 	}
 
@@ -67,6 +71,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		if (_campaignEndingController != null)
 		{
 			_campaignEndingController.ContinueRequested -= OnEndingContinueRequestedHandler;
+			_campaignEndingController.CloseRequested -= OnEndingCloseRequestedHandler;
 		}
 
 		if (_context != null)
@@ -102,7 +107,7 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 			debt.NetResult,
 			debt.InitialDebt,
 			debt.OutstandingDebt,
-			_stationFlowController.CurrentDayContent?.EndDayNote);
+			BuildEndDayNote());
 
 		ShowContext();
 		_audioService?.PlaySound(ProjectAudioEventPaths.DayEnd);
@@ -115,6 +120,13 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 	private void OnCloseClickedHandler()
 	{
 		HandleCloseClickedAsync().Forget();
+	}
+
+	private string BuildEndDayNote()
+	{
+		return string.IsNullOrWhiteSpace(_stationFlowController.DayFailureNote)
+			? _stationFlowController.CurrentDayContent?.EndDayNote
+			: _stationFlowController.DayFailureNote;
 	}
 
 	private async UniTaskVoid HandleCloseClickedAsync()
@@ -168,6 +180,11 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 		HandleEndingContinueRequestedAsync().Forget();
 	}
 
+	private void OnEndingCloseRequestedHandler()
+	{
+		HandleEndingCloseRequestedAsync().Forget();
+	}
+
 	private async UniTaskVoid HandleEndingContinueRequestedAsync()
 	{
 		if (_isCloseTransitionInProgress)
@@ -187,6 +204,31 @@ public sealed class DaySummaryController : BaseContextController<UIDaySummary>
 
 			await _splashScreenService.FadeOutAsync(ProjectSplashScreenSettings.DayAdvanceFallbackFadeOutSeconds);
 			_loggerService?.LogWarning("[DaySummary] Endless mode request failed.");
+		}
+		finally
+		{
+			_isCloseTransitionInProgress = false;
+		}
+	}
+
+	private async UniTaskVoid HandleEndingCloseRequestedAsync()
+	{
+		if (_isCloseTransitionInProgress)
+		{
+			return;
+		}
+
+		_isCloseTransitionInProgress = true;
+		try
+		{
+			if (_restartGameAsync != null)
+			{
+				_loggerService?.Log("[DaySummary] Campaign ending closed. Restarting game root.");
+				await _restartGameAsync();
+				return;
+			}
+
+			_loggerService?.LogWarning("[DaySummary] Campaign ending closed, but restart callback is missing.");
 		}
 		finally
 		{

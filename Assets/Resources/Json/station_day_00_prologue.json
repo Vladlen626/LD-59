@@ -9,7 +9,7 @@
   ],
   "shift_letter": {
     "title": "Night Orders",
-    "body": "You were assigned to this station to work off your debt. Three trains tonight. Read the manifest, inspect the wagon, and keep dynamite off this line.",
+    "body": "You were assigned to this station to work off your debt. Two trains tonight. Read the manifest, inspect the wagon, and keep dynamite off this line.",
     "hint": "Start simple: papers first, then cargo."
   },
   "living_cost": {
@@ -24,15 +24,23 @@
         "declared_cargo": [
           {
             "cargo_id": "timber",
-            "quantity": 3
+            "quantity": 2
+          },
+          {
+            "cargo_id": "canned_food",
+            "quantity": 1
           }
         ],
-        "declared_description": "Timber for local repairs"
+        "declared_description": "Timber and ration crates for local repairs"
       },
       "actual_cargo": [
         {
           "cargo_id": "timber",
-          "quantity": 3
+          "quantity": 2
+        },
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 40
@@ -43,15 +51,23 @@
         "declared_cargo": [
           {
             "cargo_id": "canned_food",
-            "quantity": 3
+            "quantity": 2
+          },
+          {
+            "cargo_id": "cheese_wheels",
+            "quantity": 1
           }
         ],
-        "declared_description": "Canned food for station stock"
+        "declared_description": "Canned food and cheese for station stock"
       },
       "actual_cargo": [
         {
           "cargo_id": "canned_food",
-          "quantity": 2
+          "quantity": 1
+        },
+        {
+          "cargo_id": "cheese_wheels",
+          "quantity": 1
         },
         {
           "cargo_id": "dynamite_crates",

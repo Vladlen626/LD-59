@@ -321,13 +321,6 @@ namespace Project.Gameplay.Train
 		{
 			switch (cargoId)
 			{
-				case "grain_sacks":
-					return new CargoVisualSpec(
-						PrimitiveType.Capsule,
-						new Vector3(0f, 0.36f, 0f),
-						new Vector3(0.45f, 0.75f, 0.45f),
-						new Vector3(0f, 0f, 90f),
-						new Color(0.71f, 0.62f, 0.38f));
 				case "timber":
 					return new CargoVisualSpec(
 						PrimitiveType.Cube,
@@ -377,13 +370,13 @@ namespace Project.Gameplay.Train
 						new Vector3(0.48f, 0.42f, 0.48f),
 						Vector3.zero,
 						new Color(0.43f, 0.27f, 0.12f));
-				case "prisoner_transport":
+				case "poison":
 					return new CargoVisualSpec(
 						PrimitiveType.Cube,
-						new Vector3(0f, 0.55f, 0f),
-						new Vector3(1.05f, 1.1f, 1.35f),
+						new Vector3(0f, 0.34f, 0f),
+						new Vector3(0.7f, 0.68f, 0.7f),
 						Vector3.zero,
-						new Color(0.16f, 0.17f, 0.2f));
+						new Color(0.28f, 0.52f, 0.24f));
 				default:
 					return new CargoVisualSpec(
 						PrimitiveType.Cube,

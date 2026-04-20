@@ -24,15 +24,31 @@
         "declared_cargo": [
           {
             "cargo_id": "cheese_wheels",
-            "quantity": 4
+            "quantity": 2
+          },
+          {
+            "cargo_id": "canned_food",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "timber",
+            "quantity": 1
           }
         ],
-        "declared_description": "Aged cheese shipment"
+        "declared_description": "Aged cheese, ration tins, and timber braces"
       },
       "actual_cargo": [
         {
           "cargo_id": "cheese_wheels",
-          "quantity": 4
+          "quantity": 2
+        },
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "timber",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 50
@@ -47,10 +63,14 @@
           },
           {
             "cargo_id": "canned_food",
-            "quantity": 2
+            "quantity": 1
+          },
+          {
+            "cargo_id": "timber",
+            "quantity": 1
           }
         ],
-        "declared_description": "Medical and ration crates"
+        "declared_description": "Medical, ration, and timber crates"
       },
       "actual_cargo": [
         {
@@ -59,7 +79,11 @@
         },
         {
           "cargo_id": "canned_food",
-          "quantity": 2
+          "quantity": 1
+        },
+        {
+          "cargo_id": "timber",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 50
@@ -70,10 +94,18 @@
         "declared_cargo": [
           {
             "cargo_id": "canned_food",
-            "quantity": 4
+            "quantity": 2
+          },
+          {
+            "cargo_id": "cheese_wheels",
+            "quantity": 2
+          },
+          {
+            "cargo_id": "timber",
+            "quantity": 1
           }
         ],
-        "declared_description": "Food crates from the valley"
+        "declared_description": "Food crates, cheese, and timber from the valley"
       },
       "actual_cargo": [
         {
@@ -81,8 +113,12 @@
           "quantity": 2
         },
         {
-          "cargo_id": "grain_sacks",
+          "cargo_id": "timber",
           "quantity": 2
+        },
+        {
+          "cargo_id": "medical_supplies",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 50
@@ -93,15 +129,31 @@
         "declared_cargo": [
           {
             "cargo_id": "timber",
-            "quantity": 5
+            "quantity": 3
+          },
+          {
+            "cargo_id": "medical_supplies",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "cheese_wheels",
+            "quantity": 1
           }
         ],
-        "declared_description": "Processed timber planks"
+        "declared_description": "Repair timber, aid crates, and cheese"
       },
       "actual_cargo": [
         {
           "cargo_id": "timber",
-          "quantity": 5
+          "quantity": 3
+        },
+        {
+          "cargo_id": "medical_supplies",
+          "quantity": 1
+        },
+        {
+          "cargo_id": "cheese_wheels",
+          "quantity": 1
         }
       ],
       "reward_on_correct_decision": 50
@@ -112,15 +164,27 @@
         "declared_cargo": [
           {
             "cargo_id": "moonshine_barrels",
-            "quantity": 4
+            "quantity": 2
+          },
+          {
+            "cargo_id": "canned_food",
+            "quantity": 1
+          },
+          {
+            "cargo_id": "timber",
+            "quantity": 1
           }
         ],
-        "declared_description": "Barrels for cleaning solvent"
+        "declared_description": "Cleaning solvent barrels, food crates, and timber braces"
       },
       "actual_cargo": [
         {
           "cargo_id": "moonshine_barrels",
-          "quantity": 3
+          "quantity": 2
+        },
+        {
+          "cargo_id": "canned_food",
+          "quantity": 1
         },
         {
           "cargo_id": "dynamite_crates",

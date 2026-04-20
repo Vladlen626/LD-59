@@ -8,11 +8,10 @@ namespace Project.Infrastructure
 		public const string Cargo_CannedFood = "Cargo/CannedFood";
 		public const string Cargo_CheeseWheels = "Cargo/CheeseWheels";
 		public const string Cargo_DynamiteCrates = "Cargo/DynamiteCrates";
-		public const string Cargo_GrainSacks = "Cargo/GrainSacks";
 		public const string Cargo_ItemBase = "Cargo/ItemBase";
 		public const string Cargo_MedicalSupplies = "Cargo/MedicalSupplies";
 		public const string Cargo_MoonshineBarrels = "Cargo/MoonshineBarrels";
-		public const string Cargo_PrisonerTransport = "Cargo/PrisonerTransport";
+		public const string Cargo_Poison = "Cargo/Poison";
 		public const string Cargo_Timber = "Cargo/Timber";
 		public const string Cargo_WeaponCrates = "Cargo/WeaponCrates";
 		public const string CargoClues_HiddenContrabandClue = "CargoClues/HiddenContrabandClue";
@@ -28,10 +27,15 @@ namespace Project.Infrastructure
 		public const string Json_station_day_02 = "Json/station_day_02";
 		public const string Json_station_day_03 = "Json/station_day_03";
 		public const string Json_station_day_04 = "Json/station_day_04";
+		public const string Letters_MorningLetterInteractableView = "Letters/MorningLetterInteractableView";
 		public const string Trains_CargoWagon = "Trains/CargoWagon";
+		public const string UI_UICampaignEndingView = "UI/UICampaignEndingView";
 		public const string UI_UIDaySummary = "UI/UIDaySummary";
 		public const string UI_UIHintView = "UI/UIHintView";
+		public const string UI_UILetterView = "UI/UILetterView";
 		public const string UI_UIMainMenu = "UI/UIMainMenu";
 		public const string UI_UISettings = "UI/UISettings";
+		public const string UI_UISplashScreenView = "UI/UISplashScreenView";
+		public const string UI_UIWakeTransitionView = "UI/UIWakeTransitionView";
 	}
 }

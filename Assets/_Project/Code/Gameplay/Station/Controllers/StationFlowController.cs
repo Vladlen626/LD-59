@@ -26,6 +26,7 @@ namespace Project.Gameplay.Station.Controllers
 		private bool _isActive;
 		private bool _isTrainCallInProgress;
 		private bool _isDayFinished;
+		private string _dayFailureNote = string.Empty;
 		private string _forbiddenCargoLogValue = "<none>";
 
 		public event Action<StationDayContent> DayStarted;
@@ -49,6 +50,7 @@ namespace Project.Gameplay.Station.Controllers
 		public bool IsEndlessMode => _campaignProgress.IsEndlessMode;
 		public bool IsCurrentDayLastAuthored => _campaignProgress.IsCurrentDayLastAuthored;
 		public StationDayContent CurrentDayContent => _campaignProgress.CurrentDay;
+		public string DayFailureNote => _dayFailureNote;
 		public int CurrentDayIndex => _runtimeModel.StationDay.DayIndex;
 
 		public StationFlowController(
@@ -131,6 +133,7 @@ namespace Project.Gameplay.Station.Controllers
 			_runtimeModel.SetTrainTransitState(TrainTransitState.None);
 			_runtimeModel.SetFlowState(StationFlowState.DayIntroPending);
 			_isDayFinished = false;
+			_dayFailureNote = string.Empty;
 			UpdateForbiddenCargoLogValue();
 			var progressLogValue = _campaignProgress.IsEndlessMode
 				? $"EndlessDay={_campaignProgress.EndlessDayOrder}"
@@ -212,7 +215,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		public bool TryCallNextTrain()
 		{
-			if (!IsAwaitingTrainCall)
+			if (_isDayFinished || !IsAwaitingTrainCall)
 			{
 				return false;
 			}
@@ -257,14 +260,14 @@ namespace Project.Gameplay.Station.Controllers
 				_runtimeModel.SetFlowState(StationFlowState.CallNextTrain);
 
 				var nextIndex = FindNextCaseIndex(_runtimeModel.ActiveCaseIndex + 1);
-				while (_isActive && nextIndex >= 0)
+				while (_isActive && _isDayFinished == false && nextIndex >= 0)
 				{
 					var nextScenario = CurrentDayScenarios[nextIndex];
 					_runtimeModel.SetActiveCaseIndex(nextIndex);
 					_runtimeModel.SetActiveScenario(nextScenario);
 
 					var trainView = await _trainSpawnController.SpawnCurrentTrainAsync();
-					if (_isActive == false)
+					if (_isActive == false || _isDayFinished)
 					{
 						return;
 					}
@@ -278,7 +281,7 @@ namespace Project.Gameplay.Station.Controllers
 					}
 
 					var presented = await _trainCargoPresentationController.PresentScenarioAsync(trainView, nextScenario);
-					if (_isActive == false)
+					if (_isActive == false || _isDayFinished)
 					{
 						return;
 					}
@@ -293,7 +296,7 @@ namespace Project.Gameplay.Station.Controllers
 					}
 
 					var arrived = await _trainMovementController.PlayArrivalAsync();
-					if (_isActive == false)
+					if (_isActive == false || _isDayFinished)
 					{
 						return;
 					}
@@ -322,7 +325,7 @@ namespace Project.Gameplay.Station.Controllers
 
 		public bool BeginInspection()
 		{
-			if (_isActive == false || _runtimeModel.HasActiveScenario == false)
+			if (_isActive == false || _isDayFinished || _runtimeModel.HasActiveScenario == false)
 			{
 				return false;
 			}
@@ -337,6 +340,7 @@ namespace Project.Gameplay.Station.Controllers
 			result = null;
 
 			if (_isActive == false ||
+				_isDayFinished ||
 				_runtimeModel.FlowState != StationFlowState.AwaitingDecision ||
 				_runtimeModel.HasActiveScenario == false)
 			{
@@ -381,12 +385,28 @@ namespace Project.Gameplay.Station.Controllers
 		private async UniTaskVoid CompleteResolvedCaseAsync()
 		{
 			await _trainMovementController.PlayDepartureAsync();
-			if (_isActive == false)
+			if (_isActive == false || _isDayFinished)
 			{
 				return;
 			}
 
 			EnterAwaitingTrainCall();
+		}
+
+		public bool TryFailCurrentDay(string failureNote)
+		{
+			if (_isActive == false || _isDayFinished)
+			{
+				return false;
+			}
+
+			_dayFailureNote = string.IsNullOrWhiteSpace(failureNote)
+				? "The shift was lost."
+				: failureNote.Trim();
+			_loggerService?.LogWarning($"[StationFlow] Day failed. Note='{_dayFailureNote}'.");
+			_runtimeModel.ClearActiveScenario();
+			FinishDay();
+			return true;
 		}
 
 		private void EnterAwaitingDecision()
@@ -396,6 +416,11 @@ namespace Project.Gameplay.Station.Controllers
 
 		private void EnterAwaitingTrainCall()
 		{
+			if (_isDayFinished)
+			{
+				return;
+			}
+
 			var nextIndex = FindNextCaseIndex(_runtimeModel.ActiveCaseIndex + 1);
 			if (nextIndex < 0)
 			{

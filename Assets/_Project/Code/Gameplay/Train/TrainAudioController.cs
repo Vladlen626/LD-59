@@ -4,34 +4,44 @@ using PlatformCore.Core;
 using PlatformCore.Core.Lifecycle;
 using PlatformCore.Services;
 using PlatformCore.Services.Audio;
+using Project.Gameplay.Scene;
 using Project.Gameplay.Station.Runtime;
 using Project.Infrastructure;
 using UnityEngine;
 
 namespace Project.Gameplay.Train
 {
-	public sealed class TrainAudioController : IBaseController, IActivatable, IDeactivatable
+	public sealed class TrainAudioController : IBaseController, IActivatable, IDeactivatable, IUpdatable
 	{
 		private const string RuntimeManagerTypeName = "FMODUnity.RuntimeManager";
 		private const string EventInstanceTypeName = "FMOD.Studio.EventInstance";
 		private const string StopModeTypeName = "FMOD.Studio.STOP_MODE";
+		private const float MovementDistanceScale = 5f;
+		private const float FullVolumeDistance = 12f;
+		private const float MinimumMovementLoopVolume = 0.18f;
+		private const float ArrivalLoopStopDistance = 7.5f;
 
 		private readonly TrainSpawnController _trainSpawnController;
 		private readonly StationRuntimeModel _runtimeModel;
+		private readonly SceneRuntimeSetup _sceneSetup;
 		private readonly ILoggerService _loggerService;
 
 		private object _movementLoopInstance;
 		private TrainView _currentTrain;
 		private bool _isActive;
 		private bool _isMovementLoopPlaying;
+		private bool _arrivalLoopStoppedBeforeStation;
+		private bool _movementLoopUnavailable;
 
 		public TrainAudioController(
 			TrainSpawnController trainSpawnController,
 			StationSharedRuntimeContext runtimeContext,
+			SceneRuntimeSetup sceneSetup,
 			ILoggerService loggerService)
 		{
 			_trainSpawnController = trainSpawnController;
 			_runtimeModel = runtimeContext?.RuntimeModel;
+			_sceneSetup = sceneSetup;
 			_loggerService = loggerService;
 		}
 
@@ -43,6 +53,8 @@ namespace Project.Gameplay.Train
 			}
 
 			_isActive = true;
+			_arrivalLoopStoppedBeforeStation = false;
+			_movementLoopUnavailable = false;
 			_currentTrain = _trainSpawnController.CurrentTrain;
 			_trainSpawnController.CurrentTrainChanged += OnCurrentTrainChanged;
 
@@ -69,18 +81,53 @@ namespace Project.Gameplay.Train
 
 			_isActive = false;
 			_currentTrain = null;
+			_arrivalLoopStoppedBeforeStation = false;
+			_movementLoopUnavailable = false;
 			StopAndReleaseMovementLoop();
+		}
+
+		public void OnUpdate(float deltaTime)
+		{
+			if (_isActive == false || _currentTrain == null || _runtimeModel == null)
+			{
+				return;
+			}
+
+			if (_runtimeModel.IsTrainInTransit == false)
+			{
+				StopAndReleaseMovementLoop();
+				return;
+			}
+
+			if (ShouldStopArrivalLoopBeforeStation())
+			{
+				_arrivalLoopStoppedBeforeStation = true;
+				StopAndReleaseMovementLoop();
+				return;
+			}
+
+			if (_movementLoopInstance == null || _isMovementLoopPlaying == false)
+			{
+				RefreshMovementLoop();
+				return;
+			}
+
+			UpdateMovementLoopVolume();
 		}
 
 		private void OnCurrentTrainChanged(TrainView currentTrain)
 		{
 			_currentTrain = currentTrain;
+			_arrivalLoopStoppedBeforeStation = false;
+			_movementLoopUnavailable = false;
 			StopAndReleaseMovementLoop();
 			RefreshMovementLoop();
 		}
 
 		private void OnTrainTransitStateChanged(TrainTransitState _)
 		{
+			_arrivalLoopStoppedBeforeStation = false;
+			_movementLoopUnavailable = false;
 			RefreshMovementLoop();
 		}
 
@@ -91,13 +138,26 @@ namespace Project.Gameplay.Train
 				return;
 			}
 
+			if (_movementLoopUnavailable)
+			{
+				return;
+			}
+
 			if (_currentTrain == null || _runtimeModel == null || _runtimeModel.IsTrainInTransit == false)
 			{
 				StopAndReleaseMovementLoop();
 				return;
 			}
 
+			if (_arrivalLoopStoppedBeforeStation &&
+				_runtimeModel.TrainTransitState == TrainTransitState.Arriving)
+			{
+				StopAndReleaseMovementLoop();
+				return;
+			}
+
 			EnsureMovementLoopStarted();
+			UpdateMovementLoopVolume();
 		}
 
 		private void EnsureMovementLoopStarted()
@@ -119,10 +179,12 @@ namespace Project.Gameplay.Train
 
 				FmodRuntime.Start(_movementLoopInstance);
 				_isMovementLoopPlaying = true;
+				UpdateMovementLoopVolume();
 			}
 			catch (Exception exception)
 			{
 				_loggerService?.LogError($"[TrainAudio] Failed to start train loop: {exception.Message}");
+				_movementLoopUnavailable = true;
 				StopAndReleaseMovementLoop();
 			}
 		}
@@ -150,11 +212,56 @@ namespace Project.Gameplay.Train
 			}
 		}
 
+		private void UpdateMovementLoopVolume()
+		{
+			if (_movementLoopInstance == null || _isMovementLoopPlaying == false)
+			{
+				return;
+			}
+
+			FmodRuntime.SetVolume(_movementLoopInstance, ResolveMovementLoopVolume());
+		}
+
+		private bool ShouldStopArrivalLoopBeforeStation()
+		{
+			return _runtimeModel.TrainTransitState == TrainTransitState.Arriving &&
+				_sceneSetup.TrainSpawnPoint &&
+				ResolveDistanceToStation() <= ArrivalLoopStopDistance;
+		}
+
+		private float ResolveMovementLoopVolume()
+		{
+			if (!_sceneSetup.TrainSpawnPoint || !_currentTrain)
+			{
+				return 1f;
+			}
+
+			var distance = ResolveDistanceToStation();
+			var maxConfiguredDistance = Mathf.Max(
+				_sceneSetup.TrainArrivalDistance,
+				_sceneSetup.TrainDepartureDistance) * MovementDistanceScale;
+			var maxAudibleDistance = Mathf.Max(FullVolumeDistance + 0.01f, maxConfiguredDistance);
+			var distanceProgress = Mathf.InverseLerp(maxAudibleDistance, FullVolumeDistance, distance);
+			var easedProgress = Mathf.SmoothStep(0f, 1f, distanceProgress);
+			return Mathf.Lerp(MinimumMovementLoopVolume, 1f, easedProgress);
+		}
+
+		private float ResolveDistanceToStation()
+		{
+			if (!_sceneSetup.TrainSpawnPoint || !_currentTrain)
+			{
+				return 0f;
+			}
+
+			return Vector3.Distance(_currentTrain.transform.position, _sceneSetup.TrainSpawnPoint.position);
+		}
+
 		private static class FmodRuntime
 		{
 			private static readonly MethodInfo CreateInstanceMethod;
 			private static readonly MethodInfo AttachInstanceMethod;
 			private static readonly MethodInfo StartMethod;
+			private static readonly MethodInfo SetVolumeMethod;
 			private static readonly MethodInfo StopMethod;
 			private static readonly MethodInfo ReleaseMethod;
 			private static readonly object AllowFadeoutValue;
@@ -178,6 +285,12 @@ namespace Project.Gameplay.Train
 					new[] { eventInstanceType, typeof(Transform), typeof(bool) },
 					null);
 				StartMethod = eventInstanceType?.GetMethod("start", BindingFlags.Public | BindingFlags.Instance);
+				SetVolumeMethod = eventInstanceType?.GetMethod(
+					"setVolume",
+					BindingFlags.Public | BindingFlags.Instance,
+					null,
+					new[] { typeof(float) },
+					null);
 				StopMethod = eventInstanceType?.GetMethod(
 					"stop",
 					BindingFlags.Public | BindingFlags.Instance,
@@ -205,6 +318,11 @@ namespace Project.Gameplay.Train
 			public static void Start(object instance)
 			{
 				StartMethod?.Invoke(instance, Array.Empty<object>());
+			}
+
+			public static void SetVolume(object instance, float volume)
+			{
+				SetVolumeMethod?.Invoke(instance, new object[] { Mathf.Clamp01(volume) });
 			}
 
 			public static void StopAndRelease(object instance)

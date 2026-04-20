@@ -17,9 +17,9 @@ namespace Project.Gameplay.Scene
 		[SerializeField] [Tooltip("How far forward the train leaves the station before cleanup.")]
 		private float _departureDistance = 30f;
 		[SerializeField] [Tooltip("Arrival duration in seconds. Uses smooth braking near the station.")]
-		private float _arrivalDurationSeconds = 2.4f;
+		private float _arrivalDurationSeconds = 1.846f;
 		[SerializeField] [Tooltip("Departure duration in seconds. Uses smooth acceleration from the station.")]
-		private float _departureDurationSeconds = 1.8f;
+		private float _departureDurationSeconds = 1.385f;
 		[SerializeField] [Tooltip("Single world button: call train if none, send case if train is present.")]
 		private StationActionButtonInteractableView _stationActionButton;
 		[SerializeField] [Tooltip("Single world toggle: switches player verdict Allow/SendBack.")]

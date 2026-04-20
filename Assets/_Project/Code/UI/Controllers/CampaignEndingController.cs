@@ -10,7 +10,7 @@ using UnityEngine;
 
 public sealed class CampaignEndingController : IBaseController, IActivatable, IDeactivatable, IUpdatable
 {
-	private const string ClosePrompt = "E / Esc - Close Report";
+	private const string ClosePrompt = "E / Esc - Restart";
 	private const string ContinuePrompt = "Continue Shift";
 	private const string WinTitle = "Debt Cleared";
 	private const string LoseTitle = "Debt Unpaid";
@@ -29,6 +29,7 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 	private bool _isViewLoadInProgress;
 
 	public event System.Action ContinueRequested;
+	public event System.Action CloseRequested;
 
 	public CampaignEndingController(
 		IInputService inputService,
@@ -89,7 +90,7 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 		    _inputService.IsUISubmitPressedThisFrame ||
 		    _inputService.IsUICancelPressedThisFrame)
 		{
-			HideEnding();
+			RequestClose();
 		}
 	}
 
@@ -234,5 +235,16 @@ public sealed class CampaignEndingController : IBaseController, IActivatable, ID
 
 		ContinueRequested?.Invoke();
 		HideEnding();
+	}
+
+	private void RequestClose()
+	{
+		if (_isOpen == false)
+		{
+			return;
+		}
+
+		HideEnding();
+		CloseRequested?.Invoke();
 	}
 }
